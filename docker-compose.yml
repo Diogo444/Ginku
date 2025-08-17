@@ -1,0 +1,49 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      - PORT=3000
+      - APIKEY=${APIKEY}
+    networks: [ginku]
+    expose:
+      - '3000'
+    restart: always
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/health']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: front/Dockerfile
+    networks: [ginku]
+    expose:
+      - '5173'
+    restart: always
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:5173/']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  caddy:
+    image: caddy:2
+    ports:
+      - '80:80'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks: [ginku]
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: always
+
+networks:
+  ginku:
+    driver: bridge

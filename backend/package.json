@@ -1,0 +1,20 @@
+{
+  "name": "ginku-backend",
+  "private": true,
+  "type": "module",
+  "main": "serveur.js",
+  "scripts": {
+    "dev": "nodemon serveur.js",
+    "start": "node serveur.js",
+    "lint": "echo \"(pas de lint backend pour l'instant)\""
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

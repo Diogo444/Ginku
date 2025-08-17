@@ -1,0 +1,22 @@
+{
+  "name": "ginku",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "front",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -C backend start",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rimraf node_modules dist .turbo",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "rimraf": "^6.0.1"
+  }
+}

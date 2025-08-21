@@ -91,6 +91,21 @@ app.get('/api/getArretFromLigne/:idLigne/:idVariante', async (req, res) => {
   }
 })
 
+app.get('/api/getVariantesDesservantArret/:idArret', async (req, res) => {
+  const { idArret } = req.params
+  try {
+    const data = await fetchWithCache(`getVariantesDesservantArret-${idArret}`, async () => {
+      const response = await api.get('/DR/getVariantesDesservantArret.do', {
+        params: { apiKey: APIKEY, idArret },
+      })
+      return response.data.objets
+    })
+    res.json(data)
+  } catch (error) {
+    res.status(500).send('Error fetching data')
+  }
+})
+
 app.get('/api/getTempsLieu/:nom', async (req, res) => {
   const { nom } = req.params
   try {

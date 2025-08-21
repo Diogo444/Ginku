@@ -58,22 +58,29 @@ const lignesRegroupees = computed(() => {
 
 <template>
   <div
-    class="min-h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text p-4 sm:p-6 lg:p-8 w-screen relative">
+    class="min-h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text p-4 sm:p-6 lg:p-8 w-screen relative"
+  >
     <Buttonback />
 
     <div class="max-w-2xl mx-auto">
       <h1
-        class="pt-20 text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center sm:pt-0">
+        class="pt-20 text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center sm:pt-0"
+      >
         Horaires - {{ route.params.nom }}
       </h1>
 
       <!-- Affichage des horaires -->
       <div v-if="lignes && lignes.listeTemps && lignes.listeTemps.length" class="space-y-6">
-        <div v-for="ligne in lignesRegroupees" :key="ligne.numLignePublic"
-          class="bg-white dark:bg-dark-secondary p-4 rounded-lg shadow-md">
+        <div
+          v-for="ligne in lignesRegroupees"
+          :key="ligne.numLignePublic"
+          class="bg-white dark:bg-dark-secondary p-4 rounded-lg shadow-md"
+        >
           <h2 class="font-bold text-lg mb-3 flex items-center gap-3">
-            <span class="inline-block px-3 py-1 rounded-full font-bold text-sm"
-              :style="{ backgroundColor: '#' + ligne.couleurFond, color: '#' + ligne.couleurTexte }">
+            <span
+              class="inline-block px-3 py-1 rounded-full font-bold text-sm"
+              :style="{ backgroundColor: '#' + ligne.couleurFond, color: '#' + ligne.couleurTexte }"
+            >
               {{ ligne.numLignePublic }}
             </span>
           </h2>
@@ -83,10 +90,13 @@ const lignesRegroupees = computed(() => {
             </h3>
             <ul class="flex justify-between px-10">
               <li v-for="(horaire, index) in dest.horaires" :key="index">
-                <router-link v-if="horaire.numVehicule" :to="{
-                  name: 'InfosTransportPage',
-                  params: { id: horaire.numVehicule },
-                }">
+                <router-link
+                  v-if="horaire.numVehicule"
+                  :to="{
+                    name: 'InfosTransportPage',
+                    params: { id: horaire.numVehicule },
+                  }"
+                >
                   <span class="font-semibold text-light-primary dark:text-dark-text">
                     {{ horaire.temps }}
                   </span>
@@ -101,7 +111,10 @@ const lignesRegroupees = computed(() => {
       </div>
 
       <!-- Aucun horaire -->
-      <div v-else-if="lignes && lignes.listeTemps && lignes.listeTemps.length === 0" class="text-center py-8">
+      <div
+        v-else-if="lignes && lignes.listeTemps && lignes.listeTemps.length === 0"
+        class="text-center py-8"
+      >
         <p class="text-light-text dark:text-dark-text text-lg">
           Aucun horaire disponible pour cet arrêt
         </p>

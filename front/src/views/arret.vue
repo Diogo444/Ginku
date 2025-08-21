@@ -104,6 +104,7 @@ const lignesRegroupees = computed(() => {
           <div v-for="dest in ligne.destinations" :key="dest.destination" class="mb-3">
             <h2 class="font-bold text-lg mb-3 flex items-center gap-3">
               <router-link
+                v-if="dest.idVariante"
                 :to="{
                   name: 'ArretFromLigneView',
                   params: {
@@ -123,6 +124,16 @@ const lignesRegroupees = computed(() => {
                   {{ ligne.numLignePublic }}
                 </span>
               </router-link>
+              <span
+                v-else
+                class="inline-block px-3 py-1 rounded-full font-bold text-sm"
+                :style="{
+                  backgroundColor: '#' + ligne.couleurFond,
+                  color: '#' + ligne.couleurTexte,
+                }"
+              >
+                {{ ligne.numLignePublic }}
+              </span>
               <span class="font-bold text-base text-light-text dark:text-dark-text">
                 {{ dest.destination }}
               </span>

@@ -25,10 +25,15 @@ onMounted(async () => {
           const variantes = await api.get(`/getVariantesDesservantArret/${idArret}`)
           if (variantes.data) {
             const map = {}
-            for (const v of variantes.data) {
-              if (!map[v.idLigne]) map[v.idLigne] = {}
-              if (!map[v.idLigne][v.sensAller]) map[v.idLigne][v.sensAller] = {}
-              map[v.idLigne][v.sensAller][v.destination] = v.idVariante
+            for (const ligne of variantes.data) {
+              if (!map[ligne.id]) map[ligne.id] = {}
+              for (const variante of ligne.variantes) {
+                const destKey = variante.precisionDestination
+                  ? `${variante.destination} ${variante.precisionDestination}`
+                  : variante.destination
+                if (!map[ligne.id][variante.sensAller]) map[ligne.id][variante.sensAller] = {}
+                map[ligne.id][variante.sensAller][destKey] = variante.id
+              }
             }
             variantesMap.value = map
           }
@@ -59,14 +64,17 @@ const lignesRegroupees = computed(() => {
         destinations: {},
       }
     }
-    // Deuxième niveau : destination
-    if (!lignesMap[t.numLignePublic].destinations[t.destination]) {
-      lignesMap[t.numLignePublic].destinations[t.destination] = {
+    // Deuxième niveau : destination (inclut éventuellement la précision)
+    const destKey = t.precisionDestination
+      ? `${t.destination} ${t.precisionDestination}`
+      : t.destination
+    if (!lignesMap[t.numLignePublic].destinations[destKey]) {
+      lignesMap[t.numLignePublic].destinations[destKey] = {
         horaires: [],
         sensAller: t.sensAller,
       }
     }
-    lignesMap[t.numLignePublic].destinations[t.destination].horaires.push(t)
+    lignesMap[t.numLignePublic].destinations[destKey].horaires.push(t)
   }
 
   // On convertit les destinations en tableaux pour itérer plus facilement

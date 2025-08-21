@@ -75,8 +75,7 @@ const lignesRegroupees = computed(() => {
     destinations: Object.entries(ligne.destinations).map(([destination, data]) => ({
       destination,
       horaires: data.horaires,
-      idVariante:
-        variantesMap.value?.[ligne.idLigne]?.[data.sensAller]?.[destination],
+      idVariante: variantesMap.value?.[ligne.idLigne]?.[data.sensAller]?.[destination],
     })),
   }))
 })
@@ -97,36 +96,30 @@ const lignesRegroupees = computed(() => {
 
       <!-- Affichage des horaires -->
       <div v-if="lignes && lignes.listeTemps && lignes.listeTemps.length" class="space-y-6">
-<<<<<<< HEAD
         <div
           v-for="ligne in lignesRegroupees"
           :key="ligne.numLignePublic"
           class="bg-white dark:bg-dark-secondary p-4 rounded-lg shadow-md"
         >
-          <h2 class="font-bold text-lg mb-3 flex items-center gap-3">
-            <span
-              class="inline-block px-3 py-1 rounded-full font-bold text-sm"
-              :style="{ backgroundColor: '#' + ligne.couleurFond, color: '#' + ligne.couleurTexte }"
-            >
-              {{ ligne.numLignePublic }}
-            </span>
-          </h2>
-=======
-        <div v-for="ligne in lignesRegroupees" :key="ligne.numLignePublic"
-          class="bg-white dark:bg-dark-secondary p-4 rounded-lg shadow-md">
->>>>>>> bcbffdfda9eedb3983fc086fcda5ab8298faa1fe
           <div v-for="dest in ligne.destinations" :key="dest.destination" class="mb-3">
             <h2 class="font-bold text-lg mb-3 flex items-center gap-3">
-              <router-link :to="{
-                name: 'ArretFromLigneView',
-                params: {
-                  idLigne: ligne.idLigne,
-                  idVariante: dest.idVariante,
-                  numLigne: ligne.numLignePublic,
-                },
-              }">
-                <span class="inline-block px-3 py-1 rounded-full font-bold text-sm"
-                  :style="{ backgroundColor: '#' + ligne.couleurFond, color: '#' + ligne.couleurTexte }">
+              <router-link
+                :to="{
+                  name: 'ArretFromLigneView',
+                  params: {
+                    idLigne: ligne.idLigne,
+                    idVariante: dest.idVariante,
+                    numLigne: ligne.numLignePublic,
+                  },
+                }"
+              >
+                <span
+                  class="inline-block px-3 py-1 rounded-full font-bold text-sm"
+                  :style="{
+                    backgroundColor: '#' + ligne.couleurFond,
+                    color: '#' + ligne.couleurTexte,
+                  }"
+                >
                   {{ ligne.numLignePublic }}
                 </span>
               </router-link>

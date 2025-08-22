@@ -1,12 +1,13 @@
 services:
   backend:
+    container_name: Ginku_backen
     build:
       context: .
       dockerfile: backend/Dockerfile
     environment:
       - PORT=3000
       - APIKEY=${APIKEY}
-    networks: [ginku]
+    networks: [ginku, caddy_net]
     expose:
       - '3000'
     restart: always
@@ -17,10 +18,11 @@ services:
       retries: 10
 
   frontend:
+    container_name: Ginku_front
     build:
       context: .
       dockerfile: front/Dockerfile
-    networks: [ginku]
+    networks: [ginku, caddy_net]
     expose:
       - '5173'
     restart: always
@@ -30,20 +32,10 @@ services:
       timeout: 3s
       retries: 10
 
-  caddy:
-    image: caddy:2
-    ports:
-      - '80:80'
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-    networks: [ginku]
-    depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    restart: always
+
 
 networks:
   ginku:
     driver: bridge
+  caddy_net:
+    external: true

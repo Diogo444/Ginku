@@ -28,24 +28,41 @@ onMounted(async () => {
     lignes.value = response.data
 
     // Récup variantes desservant l'arrêt pour rendre le badge cliquable
-    const idArret = lignes.value.listeTemps?.[0]?.idArret
-    if (!idArret) return
-
-    const variantes = await api.get(`/getVariantesDesservantArret/${idArret}`)
-    if (!variantes.data) return
+    const idArrets = [
+      ...new Set(
+        (lignes.value.listeTemps || [])
+          .map((t) => t.idArret)
+          .filter((id) => !!id)
+      ),
+    ]
+    if (!idArrets.length) return
 
     const map = {}
-    for (const ligne of variantes.data) {
-      if (!map[ligne.id]) map[ligne.id] = {}
-      for (const variante of ligne.variantes) {
-        const fullDest = variante.precisionDestination
-          ? `${variante.destination} ${variante.precisionDestination}`
-          : variante.destination
-        const destNorm = normalize(fullDest)
-        if (!map[ligne.id][variante.sensAller]) map[ligne.id][variante.sensAller] = {}
-        map[ligne.id][variante.sensAller][destNorm] = variante.id
-      }
-    }
+    await Promise.all(
+      idArrets.map(async (idArret) => {
+        try {
+          const variantes = await api.get(
+            `/getVariantesDesservantArret/${idArret}`
+          )
+          if (!variantes.data) return
+
+          for (const ligne of variantes.data) {
+            if (!map[ligne.id]) map[ligne.id] = {}
+            for (const variante of ligne.variantes) {
+              const fullDest = variante.precisionDestination
+                ? `${variante.destination} ${variante.precisionDestination}`
+                : variante.destination
+              const destNorm = normalize(fullDest)
+              if (!map[ligne.id][variante.sensAller])
+                map[ligne.id][variante.sensAller] = {}
+              map[ligne.id][variante.sensAller][destNorm] = variante.id
+            }
+          }
+        } catch (err) {
+          console.error(err)
+        }
+      })
+    )
     variantesMap.value = map
   } catch (e) {
     console.error(e)

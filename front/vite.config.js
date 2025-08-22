@@ -13,4 +13,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  preview: {
+    allowedHosts: ['ginku.diogo-andrade.org'], // 👈 ajoute ton domaine
+    port: 5173, // optionnel, explicite le port
+    host: true, // permet d’écouter sur 0.0.0.0
+  },
 })

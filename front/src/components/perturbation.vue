@@ -29,8 +29,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- CONTAINER : max-w sm en mobile, xl puis 2xl/3xl sur grands écrans -->
-  <div class="mx-auto w-full max-w-sm md:max-w-xl xl:max-w-2xl 2xl:max-w-3xl p-4">
+  <!-- conteneur centré avec largeur max raisonnable -->
+  <div class="mx-auto w-full max-w-screen-2xl p-4">
     <h1
       class="mb-6 text-center text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary"
     >
@@ -44,18 +44,18 @@ onMounted(async () => {
       Aucune perturbation.
     </div>
 
-    <!-- GRILLE AUTO-FIT RÉACTIVE -->
+    <!-- grille responsive auto-fill -->
     <ul
       v-else
       aria-label="Liste des lignes perturbées"
-      class="grid gap-3 grid-cols-[repeat(auto-fit,minmax(72px,1fr))] sm:grid-cols-[repeat(auto-fit,minmax(88px,1fr))] md:grid-cols-[repeat(auto-fit,minmax(104px,1fr))] xl:grid-cols-[repeat(auto-fit,minmax(120px,1fr))]"
+      class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(64px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(80px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(96px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(112px,1fr))]"
     >
       <li v-for="p in perturbations" :key="p.id">
         <div
           class="aspect-square rounded-xl border border-red-300 bg-red-100 shadow flex items-center justify-center p-2 text-red-700"
         >
           <div class="text-center leading-tight">
-            <div class="font-semibold break-words text-sm md:text-base text-balance line-clamp-2">
+            <div class="font-semibold break-words text-xs sm:text-sm md:text-base text-balance line-clamp-2">
               {{ p.num }}
             </div>
             <div v-if="p.etat !== null" class="text-[11px] opacity-70">

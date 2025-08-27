@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/api'
+import Perturbation from '@/components/perturbation.vue'
 
 defineOptions({ name: 'HomePage' })
 
@@ -20,9 +21,7 @@ onMounted(async () => {
   try {
     const response = await api.get('/search')
     if (Array.isArray(response.data)) {
-      arrets.value = response.data.filter(
-        (obj) => obj && typeof obj.nom === 'string' && obj.id,
-      )
+      arrets.value = response.data.filter((obj) => obj && typeof obj.nom === 'string' && obj.id)
     } else {
       console.error('Erreur lors de la récupération des arrêts:', response.data?.message)
       arrets.value = []
@@ -71,17 +70,14 @@ watch(searchTerm, () => {
 
 <template>
   <div
-    class="flex items-center justify-center flex-col h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text"
+    class="flex items-center justify-start flex-col min-h-full w-full py-8 bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text"
   >
     <div ref="wrapperRef" class="relative w-80" role="search">
       <label for="searchInput" class="sr-only">Rechercher un arrêt</label>
       <div
         class="flex items-center rounded-full border border-light-accent dark:border-dark-accent bg-light-secondary dark:bg-dark-secondary focus-within:ring-2 focus-within:ring-light-primary dark:focus-within:ring-dark-primary"
       >
-        <span
-          class="pl-3 pr-2 text-light-primary dark:text-dark-primary"
-          aria-hidden="true"
-        >
+        <span class="pl-3 pr-2 text-light-primary dark:text-dark-primary" aria-hidden="true">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -135,9 +131,11 @@ watch(searchTerm, () => {
     </div>
     <router-link
       to="/lignes"
-      class="text-left text-light-primary dark:text-dark-primary mt-4 underline w-80"
+      class="text-left text-light-primary dark:text-dark-primary mt-4 underline w-80 mb-5"
     >
       Afficher toutes les lignes
     </router-link>
+
+    <Perturbation />
   </div>
 </template>

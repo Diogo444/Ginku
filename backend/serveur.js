@@ -120,6 +120,34 @@ app.get('/api/getTempsLieu/:nom', async (req, res) => {
     res.status(500).send('Error fetching data')
   }
 })
+
+// Exemple de route FIXÉE (Axios via `api` + cache par fetcher)
+app.get('/api/etatLignes', async (_req, res) => {
+  try {
+    const data = await fetchWithCache(
+      'etatLignes', // 🔑 clé de cache stable
+      async () => {
+        const { data } = await api.get('/TR/getEtatLignes.do', {
+          params: { apiKey: APIKEY },
+        })
+        // On normalise ce que retourne le fetcher
+        return Array.isArray(data?.objets) ? data.objets : null
+      },
+      60_000, // optionnel: 1 min de TTL
+    )
+
+    if (!Array.isArray(data)) {
+      // Schéma inattendu de l'API amont
+      return res.status(502).json({ error: 'Malformed upstream response' })
+    }
+
+    return res.json(data)
+  } catch (error) {
+    console.error('[/api/etatLignes] error:', error)
+    return res.status(502).json({ error: 'Upstream fetch failed' })
+  }
+})
+
 // backend/serveur.js
 app.get('/health', (_req, res) => res.send('ok'))
 

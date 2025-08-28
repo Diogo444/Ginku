@@ -95,7 +95,7 @@ onMounted(async () => {
             {{ p.label }}
           </span>
         </div>
-        <img class="absolute z-10 bottom-0 right-0" src="/svg/check.svg" alt="État de la ligne" />
+        <img class="absolute z-10 bottom-0 right-0" src="/svg/check.svg" :alt="etat(p.etat)" />
       </div>
     </div>
   </div>

@@ -1,27 +1,64 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '@/api'
 
 defineOptions({ name: 'PerturbationView' })
 
-const perturbations = ref([])
+const raw = ref([])
 const isLoading = ref(true)
 const errorMsg = ref('')
+
+const etat = (code) => {
+  switch (code) {
+    case 0:
+      return "pas d'info sur l'état."
+    case 1:
+      return 'La ligne fonctionne normalement (aucune perturbation en cours ni prévue)'
+    case 2:
+      return 'Il y a une information concernant la ligne (nouveauté, évolution)'
+    case 3:
+      return 'La ligne ne fonctionne pas en ce moment, selon sa période de fonctionnement'
+    case 4:
+      return 'Une perturbation est prévue dans le futur'
+    case 5:
+      return 'Une perturbation est en cours'
+    case 6:
+      return 'La circulation de la ligne est interrompue (totalement)'
+  }
+}
+
+/** normalise un code hex en '#RRGGBB' même si 'fff' ou 'ffffff' (majuscules/minuscules) */
+function toHexColor(v, fallback = '#000000') {
+  if (!v) return fallback
+  const s = String(v).replace('#', '').trim()
+  if (!/^[0-9a-fA-F]+$/.test(s)) return fallback
+  const hex =
+    s.length === 3
+      ? s
+          .split('')
+          .map((ch) => ch + ch)
+          .join('')
+      : s.padEnd(6, '0').slice(0, 6)
+  return `#${hex.toUpperCase()}`
+}
+
+const items = computed(() =>
+  (Array.isArray(raw.value) ? raw.value : []).map((d, i) => ({
+    id: d.idLigne ?? d.id ?? i,
+    label: d.numLignePublic ?? '',
+    bg: toHexColor(d.couleurFond, '#222222'),
+    fg: toHexColor(d.couleurTexte, '#FFFFFF'),
+    etat: d.etat ?? null,
+  })),
+)
 
 onMounted(async () => {
   try {
     const { data } = await api.get('/etatLignes')
-    // Sécurise/normalise les champs attendus
-    perturbations.value = Array.isArray(data)
-      ? data.map((d, i) => ({
-          id: d.id ?? d.idLigne ?? i,
-          num: d.numLignePublic ?? '',
-          etat: d.etat ?? null,
-        }))
-      : []
+    raw.value = Array.isArray(data) ? data : []
   } catch (e) {
-    errorMsg.value = 'Impossible de récupérer les perturbations.'
     console.error(e)
+    errorMsg.value = 'Impossible de récupérer les perturbations.'
   } finally {
     isLoading.value = false
   }
@@ -29,41 +66,37 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- conteneur centré avec largeur max raisonnable -->
   <div class="mx-auto w-full max-w-screen-2xl p-4">
     <h1
-      class="mb-6 text-center text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary"
+      class="mb-8 text-center text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary"
     >
       Lignes perturbées
     </h1>
 
-    <!-- états de chargement/erreur -->
-    <div v-if="isLoading" class="py-10 text-center opacity-70">Chargement…</div>
-    <div v-else-if="errorMsg" class="py-10 text-center text-red-600">{{ errorMsg }}</div>
-    <div v-else-if="!perturbations.length" class="py-10 text-center opacity-70">
-      Aucune perturbation.
-    </div>
+    <!-- états de chargement / erreur -->
+    <p v-if="isLoading" class="text-center opacity-70">Chargement…</p>
+    <p v-else-if="errorMsg" class="text-center text-red-500">{{ errorMsg }}</p>
+    <p v-else-if="!items.length" class="text-center opacity-70">Aucune donnée.</p>
 
-    <!-- grille responsive auto-fill -->
-    <ul
+    <!-- grille -->
+    <div
       v-else
       aria-label="Liste des lignes perturbées"
-      class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(64px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(80px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(96px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(112px,1fr))]"
+      class="flex flex-wrap gap-3 justify-center"
     >
-      <li v-for="p in perturbations" :key="p.id">
+      <div v-for="p in items" :key="p.id" class="group relative">
         <div
-          class="aspect-square rounded-xl border border-red-300 bg-red-100 shadow flex items-center justify-center p-2 text-red-700"
+          :aria-label="etat(p.etat)"
+          class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 border border-white/10"
+          :style="{ backgroundColor: p.bg, color: p.fg }"
+          :title="p.label"
         >
-          <div class="text-center leading-tight">
-            <div class="font-semibold break-words text-xs sm:text-sm md:text-base text-balance line-clamp-2">
-              {{ p.num }}
-            </div>
-            <div v-if="p.etat !== null" class="text-[11px] opacity-70">
-              {{ p.etat }}
-            </div>
-          </div>
+          <span class="font-bold text-xs sm:text-sm leading-none text-center">
+            {{ p.label }}
+          </span>
         </div>
-      </li>
-    </ul>
+        <img class="absolute z-10 bottom-0 right-0" src="/svg/check.svg" alt="État de la ligne" />
+      </div>
+    </div>
   </div>
 </template>

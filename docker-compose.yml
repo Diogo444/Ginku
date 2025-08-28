@@ -32,8 +32,6 @@ services:
       timeout: 3s
       retries: 10
 
-
-
 networks:
   ginku:
     driver: bridge

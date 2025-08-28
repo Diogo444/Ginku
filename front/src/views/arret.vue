@@ -29,11 +29,7 @@ onMounted(async () => {
 
     // Récup variantes desservant l'arrêt pour rendre le badge cliquable
     const idArrets = [
-      ...new Set(
-        (lignes.value.listeTemps || [])
-          .map((t) => t.idArret)
-          .filter((id) => !!id)
-      ),
+      ...new Set((lignes.value.listeTemps || []).map((t) => t.idArret).filter((id) => !!id)),
     ]
     if (!idArrets.length) return
 
@@ -41,9 +37,7 @@ onMounted(async () => {
     await Promise.all(
       idArrets.map(async (idArret) => {
         try {
-          const variantes = await api.get(
-            `/getVariantesDesservantArret/${idArret}`
-          )
+          const variantes = await api.get(`/getVariantesDesservantArret/${idArret}`)
           if (!variantes.data) return
 
           for (const ligne of variantes.data) {
@@ -53,15 +47,14 @@ onMounted(async () => {
                 ? `${variante.destination} ${variante.precisionDestination}`
                 : variante.destination
               const destNorm = normalize(fullDest)
-              if (!map[ligne.id][variante.sensAller])
-                map[ligne.id][variante.sensAller] = {}
+              if (!map[ligne.id][variante.sensAller]) map[ligne.id][variante.sensAller] = {}
               map[ligne.id][variante.sensAller][destNorm] = variante.id
             }
           }
         } catch (err) {
           console.error(err)
         }
-      })
+      }),
     )
     variantesMap.value = map
   } catch (e) {
@@ -140,11 +133,11 @@ const lignesRegroupees = computed(() => {
 
 <template>
   <div
-    class="min-h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text p-4 sm:p-6 lg:p-8 w-screen relative"
+    class="min-h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text p-4 sm:p-6 lg:p-8 relative"
   >
     <Buttonback />
 
-    <div class="max-w-2xl mx-auto">
+    <div class="w-full mx-auto sm:w-2xl">
       <h1
         class="pt-20 text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center sm:pt-0"
       >

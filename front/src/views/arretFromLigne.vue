@@ -27,9 +27,9 @@ onMounted(async () => {
     <!-- Bouton de retour -->
     <Buttonback />
 
-    <div class="max-w-2xl mx-auto pt-20 sm:pt-24">
+    <div class="w-full mx-auto pt-20 sm:pt-24 sm:w-2xl">
       <h1
-        class="text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center"
+        class="text- sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center"
       >
         Arrêts de la ligne {{ numLigne }}
       </h1>

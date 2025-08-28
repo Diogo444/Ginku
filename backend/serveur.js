@@ -148,6 +148,30 @@ app.get('/api/etatLignes', async (_req, res) => {
   }
 })
 
+app.get('/api/messages/:idLigne', async (req, res) => {
+  const idLigne = String(req.params.idLigne || '').trim()
+  if (!idLigne) {
+    return res.status(400).json({ error: 'Paramètre idLigne requis' })
+  }
+
+  try {
+    // Même base que l’URL appelée + clé unique par idLigne (et apiKey si besoin)
+    const cacheKey = `/TR/getMessages.do?apiKey=${APIKEY}&idLignes=${encodeURIComponent(idLigne)}`
+
+    const data = await fetchWithCache(cacheKey, async () => {
+      const response = await api.get('/TR/getMessages.do', {
+        params: { apiKey: APIKEY, idLignes: idLigne }, // 'idLignes' (pluriel) si l’API l’exige
+      })
+      return response?.data.objets ?? []
+    })
+
+    res.json(data)
+  } catch (error) {
+    console.error('Error fetching /DR/getMessages.do:', error?.response?.data || error)
+    res.status(502).json({ error: 'Error fetching data' })
+  }
+})
+
 // backend/serveur.js
 app.get('/health', (_req, res) => res.send('ok'))
 

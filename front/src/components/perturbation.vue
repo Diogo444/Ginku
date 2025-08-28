@@ -146,7 +146,7 @@ onMounted(loadData)
         <img
           v-if="item.icon"
           :src="item.icon.src"
-          :alt="item.icon.alt"
+          alt=""
           class="absolute z-10 bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5"
           loading="lazy"
         />

@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+
 import api from '@/api'
+import Loader from './loader.vue'
 
 defineOptions({ name: 'PerturbationView' })
 
@@ -104,17 +106,7 @@ onMounted(loadData)
 
     <!-- États de chargement, erreur et vide -->
     <div v-if="uiState.showLoading" class="text-center opacity-70" role="status" aria-live="polite">
-      <span>Chargement…</span>
-    </div>
-
-    <div v-else-if="uiState.showError" class="text-center text-red-500" role="alert">
-      {{ errorMsg }}
-      <button
-        @click="loadData"
-        class="block mx-auto mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors"
-      >
-        Réessayer
-      </button>
+      <Loader />
     </div>
 
     <div v-else-if="uiState.showEmpty" class="text-center opacity-70">

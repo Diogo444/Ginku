@@ -28,15 +28,15 @@ onMounted(async () => {
 const getEnergieText = (code) => {
   switch (code) {
     case 0:
-      return 'Électrique batterie (BEV)'
+      return 'pas d\'info'
     case 1:
-      return 'Bio-GNV / GNV'
+      return 'Véhicule au gazole'
     case 2:
-      return 'Hybride série parallèle (diesel-élec ou gaz-élec)'
+      return 'Véhicule au gaz naturel'
     case 3:
-      return 'Diesel (gasoil B7) — statut « héritage »'
+      return 'Véhicule hybride (électrique + gaz)'
     case 4:
-      return 'HVO (diesel synthétique renouvelable)'
+      return 'Véhicule électrique'
     case -1:
       return 'Valeur indisponible'
     default:
@@ -96,7 +96,7 @@ const infos = computed(() => details.value ? [
 
 <template>
   <div
-    class="min-h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text p-4 sm:p-6 lg:p-8 w-screen relative">
+    class="min-h-screen p-4 sm:p-6 lg:p-8 relative">
     <!-- Bouton de retour -->
      <Buttonback />
 

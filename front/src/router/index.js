@@ -3,6 +3,7 @@ import ArretFromLigne from '@/views/arretFromLigne.vue'
 import Home from '@/views/home.vue'
 import InfosTransport from '@/views/infos-transport.vue'
 import Lignes from '@/views/lignes.vue'
+import Message from '@/views/message.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -35,6 +36,12 @@ const router = createRouter({
       name: 'InfosTransportPage',
       component: InfosTransport,
     },
+    {
+      path: '/message/:idLigne',
+      name: 'MessagePage',
+      component: Message,
+      props: true,
+    }
   ],
 })
 

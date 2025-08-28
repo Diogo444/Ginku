@@ -45,9 +45,9 @@ const toHexColor = (value, fallback = '#000000') => {
   const hex =
     cleanValue.length === 3
       ? cleanValue
-          .split('')
-          .map((char) => char.repeat(2))
-          .join('')
+        .split('')
+        .map((char) => char.repeat(2))
+        .join('')
       : cleanValue.padEnd(6, '0').slice(0, 6)
 
   return `#${hex.toUpperCase()}`
@@ -58,7 +58,8 @@ const processedItems = computed(() => {
   if (!Array.isArray(raw.value)) return []
 
   return raw.value.map((item, index) => ({
-    id: item.idLigne ?? item.id ?? index,
+    id: item.idLigne ?? item.id ?? index, // garde pour :key
+    idLigne: String(item.idLigne ?? item.id ?? index), // <- param de route
     label: item.numLignePublic ?? '',
     bg: toHexColor(item.couleurFond, '#222222'),
     fg: toHexColor(item.couleurTexte, '#FFFFFF'),
@@ -67,6 +68,7 @@ const processedItems = computed(() => {
     icon: ETAT_ICONS[item.etat] || null,
   }))
 })
+
 
 // Computed pour les états de l'interface
 const uiState = computed(() => ({
@@ -98,9 +100,7 @@ onMounted(loadData)
 
 <template>
   <div class="mx-auto w-full max-w-screen-2xl p-4">
-    <h1
-      class="mb-8 text-center text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary"
-    >
+    <h1 class="mb-8 text-center text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary">
       Lignes perturbées
     </h1>
 
@@ -114,34 +114,24 @@ onMounted(loadData)
     </div>
 
     <!-- Grille des lignes -->
-    <div
-      v-else-if="uiState.showContent"
-      class="flex flex-wrap gap-3 justify-center"
-      role="list"
-      aria-label="Liste des lignes perturbées"
-    >
+    <div v-else-if="uiState.showContent" class="flex flex-wrap gap-3 justify-center" role="list"
+      aria-label="Liste des lignes perturbées">
       <div v-for="item in processedItems" :key="item.id" class="group relative" role="listitem">
-        <div
-          class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 border border-white/10"
-          :style="{ backgroundColor: item.bg, color: item.fg }"
-          :title="`Ligne ${item.label}: ${item.etatMessage}`"
-          :aria-label="`Ligne ${item.label}: ${item.etatMessage}`"
-          role="button"
-          tabindex="0"
-        >
-          <span class="font-bold text-xs sm:text-sm leading-none text-center">
-            {{ item.label }}
-          </span>
-        </div>
+        <router-link :to="{ name: 'MessagePage', params: { idLigne: item.idLigne } }">
 
-        <!-- Icône d'état -->
-        <img
-          v-if="item.icon"
-          :src="item.icon.src"
-          alt=""
-          class="absolute z-10 bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5"
-          loading="lazy"
-        />
+          <div
+            class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md hover:shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 border border-white/10"
+            :style="{ backgroundColor: item.bg, color: item.fg }" :title="`Ligne ${item.label}: ${item.etatMessage}`"
+            :aria-label="`Ligne ${item.label}: ${item.etatMessage}`" role="button" tabindex="0">
+            <span class="font-bold text-xs sm:text-sm leading-none text-center">
+              {{ item.label }}
+            </span>
+          </div>
+
+          <!-- Icône d'état -->
+          <img v-if="item.icon" :src="item.icon.src" alt="" class="absolute z-10 bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5"
+            loading="lazy" />
+        </router-link>
       </div>
     </div>
   </div>

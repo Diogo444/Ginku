@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FF0000"><path d="M330-120 120-330v-300l210-210h300l210 210v300L630-120H330Zm36-190 114-114 114 114 56-56-114-114 114-114-56-56-114 114-114-114-56 56 114 114-114 114 56 56Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960">
+  <!-- Cercle rouge -->
+  <circle cx="480" cy="-480" r="400" fill="#FF0000"/>
+  <!-- Croix blanche -->
+  <path fill="#FFFFFF" d="M366-310 480-424 594-310l56-56-114-114 114-114-56-56-114 114-114-114-56 56 114 114-114 114 56 56Z"/>
+</svg>

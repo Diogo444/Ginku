@@ -57,16 +57,19 @@ const toHexColor = (value, fallback = '#000000') => {
 const processedItems = computed(() => {
   if (!Array.isArray(raw.value)) return []
 
-  return raw.value.map((item, index) => ({
-    id: item.idLigne ?? item.id ?? index, // garde pour :key
-    idLigne: String(item.idLigne ?? item.id ?? index), // <- param de route
-    label: item.numLignePublic ?? '',
-    bg: toHexColor(item.couleurFond, '#222222'),
-    fg: toHexColor(item.couleurTexte, '#FFFFFF'),
-    etat: item.etat ?? null,
-    etatMessage: getEtatMessage(item.etat),
-    icon: ETAT_ICONS[item.etat] || null,
-  }))
+  // Ne conserver que les lignes réellement perturbées
+  return raw.value
+    .filter((item) => typeof item.etat === 'number' && item.etat > 1)
+    .map((item, index) => ({
+      id: item.idLigne ?? item.id ?? index, // garde pour :key
+      idLigne: String(item.idLigne ?? item.id ?? index), // <- param de route
+      label: item.numLignePublic ?? '',
+      bg: toHexColor(item.couleurFond, '#222222'),
+      fg: toHexColor(item.couleurTexte, '#FFFFFF'),
+      etat: item.etat ?? null,
+      etatMessage: getEtatMessage(item.etat),
+      icon: ETAT_ICONS[item.etat] || null,
+    }))
 })
 
 

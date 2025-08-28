@@ -7,14 +7,23 @@ import Loader from '@/components/loader.vue'
 
 defineOptions({ name: 'MessagePage' })
 const message = ref([])
+const isLoading = ref(true)
 const route = useRoute()
 
 onMounted(async () => {
   try {
-    const response = await api.get(`/messages/${route.params.idLigne}`)
-    message.value = response.data
+    const { data } = await api.get(`/messages/${route.params.idLigne}`)
+    message.value = Array.isArray(data)
+      ? data.map((msg) => ({
+          ...msg,
+          sections: parseMessageContent(msg.texte),
+        }))
+      : []
   } catch (error) {
     console.error('Error fetching messages:', error)
+    message.value = []
+  } finally {
+    isLoading.value = false
   }
 })
 
@@ -127,10 +136,10 @@ const parseMessageContent = (htmlContent) => {
       </h1>
 
       <!-- Loader -->
-      <Loader v-if="!message.length" />
+      <Loader v-if="isLoading" />
 
       <!-- Messages -->
-      <div v-else class="w-full max-w-3xl mx-auto space-y-4">
+      <div v-else-if="message.length" class="w-full max-w-3xl mx-auto space-y-4">
         <div
           v-for="msg in message"
           :key="msg.id"
@@ -170,32 +179,34 @@ const parseMessageContent = (htmlContent) => {
 
           <!-- Corps du message restructuré -->
           <div class="p-6 space-y-6">
-            <!-- Parsing intelligent du contenu -->
-            <div v-for="(section, index) in parseMessageContent(msg.texte)" :key="index" class="space-y-4">
+            <!-- Sections parsées -->
+            <template v-if="msg.sections.length">
+              <div v-for="(section, index) in msg.sections" :key="index" class="space-y-4">
 
-              <!-- Titre de section -->
-              <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-r-lg">
-                <h3 class="text-lg font-bold text-light-primary dark:text-dark-primary">
-                  {{ section.title }}
-                </h3>
-              </div>
+                <!-- Titre de section -->
+                <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-r-lg">
+                  <h3 class="text-lg font-bold text-light-primary dark:text-dark-primary">
+                    {{ section.title }}
+                  </h3>
+                </div>
 
-              <!-- Items de la section -->
-              <div class="space-y-3 ml-2">
-                <div
-                  v-for="(item, itemIndex) in section.items"
-                  :key="itemIndex"
-                  class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                >
-                  <div class="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {{ item }}
+                <!-- Items de la section -->
+                <div class="space-y-3 ml-2">
+                  <div
+                    v-for="(item, itemIndex) in section.items"
+                    :key="itemIndex"
+                    class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {{ item }}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </template>
 
             <!-- Fallback si le parsing ne fonctionne pas -->
-            <div v-if="parseMessageContent(msg.texte).length === 0" class="space-y-4">
+            <div v-else class="space-y-4">
               <div class="border-l-4 border-gray-400 pl-4 py-2">
                 <h3 class="text-lg font-semibold text-light-primary dark:text-dark-primary mb-4">
                   Informations
@@ -228,10 +239,7 @@ const parseMessageContent = (htmlContent) => {
       </div>
 
       <!-- Aucun message -->
-      <div
-        v-if="message.length === 0"
-        class="text-center text-gray-500 dark:text-gray-400 mt-10"
-      >
+      <div v-else class="text-center text-gray-500 dark:text-gray-400 mt-10">
         Aucun message disponible.
       </div>
     </div>

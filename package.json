@@ -16,7 +16,7 @@
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
-    "prettier": "^3.3.3",
+    "prettier": "^3.6.2",
     "rimraf": "^6.0.1"
   }
 }

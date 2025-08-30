@@ -4,7 +4,7 @@ defineOptions({ name: 'ButtonBack' })
 <template>
   <button
     onclick="history.back()"
-    class="w-12 h-12 flex items-center justify-center rounded-full bg-light-primary dark:bg-dark-primary hover:bg-light-secondary dark:hover:bg-dark-secondary transition-colors duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent focus:ring-offset-2 focus:ring-offset-light-bg dark:focus:ring-offset-dark-bg absolute left-4 top-4"
+    class="w-12 h-12 flex items-center justify-center rounded-full bg-light-primary dark:bg-dark-primary hover:bg-light-secondary dark:hover:bg-dark-secondary transition-colors duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent focus:ring-offset-2 focus:ring-offset-light-bg dark:focus:ring-offset-dark-bg fixed left-4 top-4 z-30"
     aria-label="Retourner à l'accueil"
   >
     <span class="sr-only">Retour à la page précédente</span>

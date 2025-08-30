@@ -5,6 +5,7 @@ import InfosTransport from '@/views/infos-transport.vue'
 import Lignes from '@/views/lignes.vue'
 import Message from '@/views/message.vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { nextTick } from 'vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +47,20 @@ const router = createRouter({
       props: true,
     }
   ],
+})
+
+router.afterEach(() => {
+  nextTick(() => {
+    const main = document.getElementById('main-content')
+    if (!main) return
+    const h1 = main.querySelector('h1')
+    if (h1) {
+      h1.setAttribute('tabindex', '-1')
+      h1.focus()
+    } else {
+      main.focus()
+    }
+  })
 })
 
 export default router

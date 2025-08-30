@@ -4,7 +4,7 @@
   <div
     class="min-h-screen flex flex-col bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text"
   >
-    <main class="flex-1 flex flex-col">
+    <main id="main-content" tabindex="-1" class="flex-1 flex flex-col">
       <router-view class="flex-1 flex flex-col" />
     </main>
 

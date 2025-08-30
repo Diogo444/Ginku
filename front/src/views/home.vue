@@ -72,6 +72,7 @@ watch(searchTerm, () => {
   <div
     class="flex items-center justify-start flex-col min-h-full w-full py-8 bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text"
   >
+    <h1 class="sr-only">Accueil</h1>
     <div ref="wrapperRef" class="relative w-80" role="search">
       <label for="searchInput" class="sr-only">Rechercher un arrêt</label>
       <div

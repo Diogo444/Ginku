@@ -102,7 +102,7 @@ const infos = computed(() => details.value ? [
 
     <div class="flex flex-col items-center">
       <h1 class="pt-20 text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center">
-        Informations pour les nerds
+        Informations du véhicule
       </h1>
 
       <!-- Bloc infos responsive -->

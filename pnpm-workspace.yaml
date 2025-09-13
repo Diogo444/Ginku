@@ -1,3 +1,7 @@
 packages:
-  - "front"
-  - "backend"
+  - front
+  - backend
+
+ignoredBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild

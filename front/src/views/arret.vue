@@ -21,7 +21,7 @@ const normalize = (s = '') =>
     .trim()
     .toLowerCase()
 
-onMounted(async () => {
+async function fetchHoraires(){
   try {
     const response = await api.get(`/getTempsLieu/${route.params.nom}`)
     if (!response.data) return
@@ -60,7 +60,14 @@ onMounted(async () => {
   } catch (e) {
     console.error(e)
   }
+}
+onMounted(async () => {
+  fetchHoraires()
 })
+
+setInterval(() => {
+  fetchHoraires()
+}, 60000)
 
 // Regroupement par numéro de ligne, puis par destination
 const lignesRegroupees = computed(() => {

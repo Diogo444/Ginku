@@ -1,6 +1,6 @@
 <script setup>
 import Loader from '@/components/loader.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Buttonback from '@/components/buttonback.vue'
 import api from '@/api'
@@ -10,6 +10,8 @@ const route = useRoute()
 
 const lignes = ref({})
 const variantesMap = ref({}) // { [idLigne]: { [sensAller]: { [destNorm]: idVariante } } }
+const refreshTimer = ref(null)
+const abortController = ref(null)
 
 // --- helpers ---
 const normalize = (s = '') =>
@@ -21,9 +23,13 @@ const normalize = (s = '') =>
     .trim()
     .toLowerCase()
 
-async function fetchHoraires(){
+async function fetchHoraires() {
   try {
-    const response = await api.get(`/getTempsLieu/${route.params.nom}`)
+    abortController.value?.abort()
+    abortController.value = new AbortController()
+    const response = await api.get(`/getTempsLieu/${route.params.nom}`, {
+      signal: abortController.value.signal,
+    })
     if (!response.data) return
     lignes.value = response.data
 
@@ -58,16 +64,26 @@ async function fetchHoraires(){
     )
     variantesMap.value = map
   } catch (e) {
+    if (e?.code === 'ERR_CANCELED') return
     console.error(e)
   }
 }
 onMounted(async () => {
-  fetchHoraires()
+  await fetchHoraires()
+  refreshTimer.value = setInterval(fetchHoraires, 60000)
 })
 
-setInterval(() => {
-  fetchHoraires()
-}, 60000)
+watch(
+  () => route.params.nom,
+  () => fetchHoraires(),
+)
+
+onBeforeUnmount(() => {
+  if (refreshTimer.value) {
+    clearInterval(refreshTimer.value)
+  }
+  abortController.value?.abort()
+})
 
 // Regroupement par numéro de ligne, puis par destination
 const lignesRegroupees = computed(() => {

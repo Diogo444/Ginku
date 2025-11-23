@@ -1,17 +1,22 @@
 <script setup>
 import Loader from '@/components/loader.vue'
 defineOptions({ name: 'InfosTransportPage' })
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Buttonback from '@/components/buttonback.vue'
 import api from '@/api'
 
 const details = ref(null)
 const route = useRoute()
+const abortController = ref(null)
 
-onMounted(async () => {
+const loadDetails = async () => {
   try {
-    const response = await api.get(`/detailsVehicule/${route.params.id}`)
+    abortController.value?.abort()
+    abortController.value = new AbortController()
+    const response = await api.get(`/detailsVehicule/${route.params.id}`, {
+      signal: abortController.value.signal,
+    })
     if (response.data) {
       details.value = response.data
     } else {
@@ -21,8 +26,20 @@ onMounted(async () => {
       )
     }
   } catch (error) {
+    if (error?.code === 'ERR_CANCELED') return
     console.error('Erreur lors de la requête:', error)
   }
+}
+
+onMounted(loadDetails)
+
+watch(
+  () => route.params.id,
+  () => loadDetails(),
+)
+
+onBeforeUnmount(() => {
+  abortController.value?.abort()
 })
 
 const getEnergieText = (code) => {

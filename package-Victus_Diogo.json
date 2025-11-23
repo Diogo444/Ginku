@@ -1,0 +1,22 @@
+{
+  "name": "ginku",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.16.0+sha512.8066e7b034217b700a9a4dbb3a005061d641ba130a89915213a10b3ca4919c19c037bec8066afdc559b89635fdb806b16ea673f2468fbb28aabfa13c53e3f769",
+  "workspaces": [
+    "front",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -C backend start",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rimraf node_modules dist .turbo",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1"
+  }
+}

@@ -9,6 +9,7 @@ const arrets = ref([])
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const wrapperRef = ref(null)
+const abortController = ref(null)
 
 function handleClickOutside(e) {
   if (wrapperRef.value && !wrapperRef.value.contains(e.target)) {
@@ -18,8 +19,10 @@ function handleClickOutside(e) {
 
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
+
+  abortController.value = new AbortController()
   try {
-    const response = await api.get('/search')
+    const response = await api.get('/search', { signal: abortController.value.signal })
     if (Array.isArray(response.data)) {
       arrets.value = response.data.filter((obj) => obj && typeof obj.nom === 'string' && obj.id)
     } else {
@@ -34,6 +37,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  abortController.value?.abort()
 })
 
 // Liste des noms d'arrêts uniques filtrés (protection contre objets mal formés)
@@ -91,31 +95,37 @@ watch(searchTerm, () => {
             stroke-linejoin="round"
           >
             <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
         </span>
         <input
           id="searchInput"
           v-model="searchTerm"
           @focus="showDropdown = filteredUniqueNomArrets.length > 0"
           @input="showDropdown = filteredUniqueNomArrets.length > 0"
+          @keydown.escape="showDropdown = false"
           type="text"
           placeholder="Rechercher un arrêt"
           class="flex-1 bg-transparent py-2 pr-4 text-light-text dark:text-dark-text placeholder-light-text dark:placeholder-dark-text focus:outline-none"
           autocomplete="off"
           autofocus
           aria-label="Rechercher un arrêt"
+          :aria-expanded="showDropdown"
+          aria-controls="search-results"
         />
       </div>
       <!-- Dropdown menu -->
       <ul
         v-show="showDropdown"
-        class="absolute z-10 w-full mt-1 max-h-64 overflow-y-auto bg-light-bg dark:bg-dark-secondary text-light-text dark:text-dark-text shadow-lg rounded-lg border border-light-accent dark:border-dark-accent"
+        id="search-results"
+        role="listbox"
+        class="absolute z-30 w-full mt-1 max-h-64 overflow-y-auto bg-light-bg dark:bg-dark-secondary text-light-text dark:text-dark-text shadow-lg rounded-lg border border-light-accent dark:border-dark-accent"
       >
         <li
           v-for="nom in filteredUniqueNomArrets"
           :key="nom"
           class="cursor-pointer px-4 py-2 hover:bg-light-accent dark:hover:bg-dark-accent text-light-text dark:text-dark-text"
+          role="option"
         >
           <router-link
             :to="{

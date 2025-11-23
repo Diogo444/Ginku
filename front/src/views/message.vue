@@ -1,7 +1,7 @@
 <script setup>
 import api from '@/api'
 import { useRoute } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Buttonback from '@/components/buttonback.vue'
 import Loader from '@/components/loader.vue'
 
@@ -9,10 +9,16 @@ defineOptions({ name: 'MessagePage' })
 const message = ref([])
 const isLoading = ref(true)
 const route = useRoute()
+const abortController = ref(null)
 
-onMounted(async () => {
+const loadMessages = async () => {
   try {
-    const { data } = await api.get(`/messages/${route.params.idLigne}`)
+    isLoading.value = true
+    abortController.value?.abort()
+    abortController.value = new AbortController()
+    const { data } = await api.get(`/messages/${route.params.idLigne}`, {
+      signal: abortController.value.signal,
+    })
     message.value = Array.isArray(data)
       ? data.map((msg) => ({
           ...msg,
@@ -20,11 +26,23 @@ onMounted(async () => {
         }))
       : []
   } catch (error) {
+    if (error?.code === 'ERR_CANCELED') return
     console.error('Error fetching messages:', error)
     message.value = []
   } finally {
     isLoading.value = false
   }
+}
+
+onMounted(loadMessages)
+
+watch(
+  () => route.params.idLigne,
+  () => loadMessages(),
+)
+
+onBeforeUnmount(() => {
+  abortController.value?.abort()
 })
 
 const getStatusColor = (etat) => {

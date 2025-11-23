@@ -1,31 +1,41 @@
 <script setup>
-const { idLigne, idVariante, numLigne } = defineProps([
-  'idLigne',
-  'idVariante',
-  'numLigne',
-])
-
-import { ref, onMounted, computed } from 'vue'
+import { ref, onBeforeUnmount, watch, computed } from 'vue'
 import Loader from '@/components/loader.vue'
 import Buttonback from '@/components/buttonback.vue'
 import api from '@/api'
 
+const props = defineProps({
+  idLigne: {
+    type: [String, Number],
+    required: true,
+  },
+  idVariante: {
+    type: [String, Number],
+    required: true,
+  },
+  numLigne: {
+    type: [String, Number],
+    required: true,
+  },
+})
+
 const arret = ref([])
 const variantes = ref([])
-const currentVarianteId = ref(idVariante)
+const currentVarianteId = ref(props.idVariante)
 const loading = ref(true)
+const abortController = ref(null)
 
 async function loadVariantes() {
   try {
     const { data: lignes } = await api.get('/getLingnes')
     const ligne = Array.isArray(lignes)
-      ? lignes.find((l) => String(l.id) === String(idLigne))
+      ? lignes.find((l) => String(l.id) === String(props.idLigne))
       : null
     variantes.value = Array.isArray(ligne?.variantes) ? ligne.variantes : []
 
     // Si l'idVariante courant n'est pas dans la liste, prendre la première disponible
     if (!variantes.value.some((v) => String(v.id) === String(currentVarianteId.value))) {
-      currentVarianteId.value = variantes.value[0]?.id ?? idVariante
+      currentVarianteId.value = variantes.value[0]?.id ?? props.idVariante
     }
   } catch (error) {
     console.error('Erreur lors du chargement des variantes:', error)
@@ -35,8 +45,15 @@ async function loadVariantes() {
 async function loadArrets() {
   try {
     loading.value = true
+    if (!props.idLigne || !currentVarianteId.value) {
+      arret.value = []
+      return
+    }
+    abortController.value?.abort()
+    abortController.value = new AbortController()
     const response = await api.get(
-      `/getArretFromLigne/${idLigne}/${currentVarianteId.value}`,
+      `/getArretFromLigne/${props.idLigne}/${currentVarianteId.value}`,
+      { signal: abortController.value.signal },
     )
     if (response.data) {
       arret.value = response.data
@@ -46,7 +63,9 @@ async function loadArrets() {
       )
     }
   } catch (error) {
-    console.error('Erreur lors de la requête API:', error)
+    if (error?.code !== 'ERR_CANCELED') {
+      console.error('Erreur lors de la requête API:', error)
+    }
   } finally {
     loading.value = false
   }
@@ -93,11 +112,22 @@ const currentDirectionLabel = computed(() => {
   return `${sens} → ${v.destination || ''}`.trim()
 })
 
-onMounted(async () => {
-  // Charger les variantes de la ligne pour pouvoir basculer de sens
+const refreshData = async () => {
   await loadVariantes()
-  // Charger les arrêts pour la variante courante
   await loadArrets()
+}
+
+watch(
+  () => [props.idLigne, props.idVariante],
+  async ([, newVariante]) => {
+    currentVarianteId.value = newVariante
+    await refreshData()
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  abortController.value?.abort()
 })
 </script>
 

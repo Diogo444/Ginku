@@ -26,8 +26,9 @@ WORKDIR /srv
 
 # Copier le build (dist) depuis le stage précédent
 COPY --from=build /app/front/dist /srv
+COPY front/Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 5173
 
-# Serveur de fichiers statiques
-CMD ["caddy", "file-server", "--root", "/srv", "--listen", ":5173"]
+# Serveur de fichiers statiques avec fallback SPA pour les URL dynamiques
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]

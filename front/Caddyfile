@@ -1,0 +1,16 @@
+:5173 {
+  encode zstd gzip
+
+  root * /srv
+
+  # Fallback SPA : toute URL non fichier retourne index.html
+  try_files {path} {path}/ /index.html
+
+  file_server
+
+  header {
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer-when-downgrade"
+  }
+}

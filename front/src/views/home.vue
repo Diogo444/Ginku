@@ -80,44 +80,93 @@ watch(searchTerm, () => {
 const favoritesData = ref(new Map()) // { favoriteId: { loading, error, temps } }
 const favoritesRefreshTimer = ref(null)
 
+// Normalisation pour comparaison
+const normalizeText = (str) => {
+  if (!str) return ''
+  return str
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
 // Charger les temps pour les favoris
 const loadFavoritesData = async () => {
-  for (const fav of favorites.value) {
+  // Copier la liste actuelle des favoris pour éviter les problèmes de réactivité
+  const currentFavorites = [...favorites.value]
+  
+  for (const fav of currentFavorites) {
     if (!fav.nomArret) continue
     
-    // Ne pas écraser si déjà en cours de chargement
-    if (favoritesData.value.get(fav.id)?.loading) continue
+    // Vérifier que le favori existe toujours
+    if (!favorites.value.some(f => f.id === fav.id)) continue
     
+    // Ne pas écraser si déjà en cours de chargement
+    const existing = favoritesData.value.get(fav.id)
+    if (existing?.loading) continue
+    
+    // Marquer comme loading
     favoritesData.value.set(fav.id, { 
-      ...favoritesData.value.get(fav.id),
+      ...existing,
       loading: true 
     })
     
     try {
       const data = await getTempsLieu(fav.nomArret)
+      
+      // Re-vérifier que le favori existe toujours après l'appel API
+      if (!favorites.value.some(f => f.id === fav.id)) {
+        favoritesData.value.delete(fav.id)
+        continue
+      }
+      
       if (data?.listeTemps) {
-        // Trouver le temps pour cette ligne/destination
-        const temps = data.listeTemps.find(t => 
-          t.idLigne === fav.idLigne && 
-          (t.destination === fav.destination || normalize(t.destination) === normalize(fav.destination))
-        )
+        // Trouver le temps pour cette ligne/destination (comparaison plus souple)
+        const temps = data.listeTemps.find(t => {
+          if (t.idLigne !== fav.idLigne) return false
+          // Comparaison souple des destinations
+          const destNorm = normalizeText(t.destination)
+          const favDestNorm = normalizeText(fav.destination)
+          return destNorm === favDestNorm || 
+                 destNorm.includes(favDestNorm) || 
+                 favDestNorm.includes(destNorm)
+        })
         
         favoritesData.value.set(fav.id, {
           loading: false,
           error: null,
           temps: temps ? {
-            minutes: temps.tempsRestant,
-            fiabilite: temps.fiabilite,
-            numVehicule: temps.numVehicule
+            minutes: temps.tempsEnSeconde != null ? Math.round(temps.tempsEnSeconde / 60) : null,
+            fiable: temps.fiable,
+            numVehicule: temps.numVehicule,
+            tempsTexte: temps.temps
           } : null
+        })
+      } else {
+        favoritesData.value.set(fav.id, {
+          loading: false,
+          error: null,
+          temps: null
         })
       }
     } catch (e) {
-      favoritesData.value.set(fav.id, {
-        loading: false,
-        error: 'Erreur de chargement',
-        temps: null
-      })
+      if (e?.code !== 'ERR_CANCELED') {
+        favoritesData.value.set(fav.id, {
+          loading: false,
+          error: 'Erreur',
+          temps: null
+        })
+      }
+    }
+  }
+  
+  // Nettoyer les entrées pour les favoris supprimés
+  const currentIds = new Set(favorites.value.map(f => f.id))
+  for (const [id] of favoritesData.value) {
+    if (!currentIds.has(id)) {
+      favoritesData.value.delete(id)
     }
   }
 }
@@ -128,11 +177,23 @@ onMounted(() => {
   favoritesRefreshTimer.value = setInterval(loadFavoritesData, 30000) // 30s
 })
 
-// Recharger quand les favoris changent
-watch(favorites, loadFavoritesData, { deep: true })
+// Recharger quand les favoris changent (avec debounce implicite)
+watch(favorites, () => {
+  // Petit délai pour éviter les appels multiples lors de modifications rapides
+  setTimeout(loadFavoritesData, 100)
+}, { deep: true })
 
 // Formater le temps d'attente
-const formatTemps = (minutes) => {
+const formatTemps = (data) => {
+  if (!data) return null
+  
+  // Utiliser le texte de l'API si disponible
+  if (data.tempsTexte) {
+    const isClose = data.minutes != null && data.minutes <= 2
+    return { text: data.tempsTexte, isClose }
+  }
+  
+  const minutes = data.minutes
   if (minutes === undefined || minutes === null) return null
   if (minutes <= 0) return { text: 'À l\'approche', isClose: true }
   if (minutes < 60) return { text: `${minutes}`, unit: 'min', isClose: minutes <= 2 }
@@ -258,17 +319,17 @@ const formatTemps = (minutes) => {
                 <Loader size="sm" :centered="false" />
               </template>
               <template v-else-if="favoritesData.get(fav.id)?.temps">
-                <template v-if="formatTemps(favoritesData.get(fav.id).temps.minutes)?.isClose">
+                <template v-if="formatTemps(favoritesData.get(fav.id).temps)?.isClose">
                   <span class="flex items-center gap-2 text-base font-bold text-line-green bg-line-green/10 px-3 py-1 rounded-full">
                     <span class="live-dot"></span>
-                    {{ formatTemps(favoritesData.get(fav.id).temps.minutes).text }}
+                    {{ formatTemps(favoritesData.get(fav.id).temps).text }}
                   </span>
                 </template>
                 <template v-else>
                   <span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    {{ formatTemps(favoritesData.get(fav.id).temps.minutes).text }}
-                    <span class="text-sm font-semibold text-gray-400 ml-0.5">
-                      {{ formatTemps(favoritesData.get(fav.id).temps.minutes).unit }}
+                    {{ formatTemps(favoritesData.get(fav.id).temps).text }}
+                    <span v-if="formatTemps(favoritesData.get(fav.id).temps).unit" class="text-sm font-semibold text-gray-400 ml-0.5">
+                      {{ formatTemps(favoritesData.get(fav.id).temps).unit }}
                     </span>
                   </span>
                 </template>

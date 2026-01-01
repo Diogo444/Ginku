@@ -176,32 +176,32 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex flex-col min-h-full w-full pb-safe">
     <!-- Header sticky -->
-    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
       <!-- Navigation -->
-      <div class="flex items-center gap-4 mb-2">
+      <div class="flex items-center gap-3 sm:gap-4 mb-2">
         <BackButton />
         <div class="flex-1 text-center pr-8">
-          <span class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Horaires en temps réel</span>
+          <span class="text-[10px] sm:text-xs uppercase tracking-wider font-medium text-gray-500 dark:text-gray-400">Horaires en temps réel</span>
         </div>
       </div>
       
       <!-- Nom de l'arrêt -->
-      <div class="flex flex-col items-center justify-center space-y-1 pb-2">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{{ route.params.nom }}</h1>
-        <div v-if="horaires?.nomExact && horaires.nomExact !== route.params.nom" class="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
-          <span class="material-icons-round text-sm">place</span>
-          <span class="text-sm font-medium">{{ horaires.nomExact }}</span>
+      <div class="flex flex-col items-center justify-center space-y-1 pb-1 sm:pb-2">
+        <h1 class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight text-center">{{ route.params.nom }}</h1>
+        <div v-if="horaires?.nomExact && horaires.nomExact !== route.params.nom" class="flex items-center justify-center gap-1.5 text-gray-500 dark:text-gray-400">
+          <span class="material-icons-round text-xs sm:text-sm">place</span>
+          <span class="text-xs sm:text-sm">{{ horaires.nomExact }}</span>
         </div>
       </div>
       
       <!-- Toggle thème -->
-      <div class="absolute right-6 top-6">
+      <div class="absolute right-4 sm:right-6 top-4 sm:top-6">
         <ThemeToggle />
       </div>
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-4 pb-8 pt-6 space-y-6">
+    <main class="flex-grow px-3 sm:px-4 pb-8 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -213,14 +213,14 @@ onBeforeUnmount(() => {
         <div 
           v-for="groupe in groupedHoraires" 
           :key="groupe.numLignePublic"
-          class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800"
+          class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800"
         >
           <div 
             v-for="(horaire, index) in groupe.items" 
             :key="index"
             @click="horaire.numVehicule && openVehicleModal(horaire.numVehicule)"
             :class="[
-              'p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group',
+              'p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group',
               horaire.numVehicule ? 'cursor-pointer' : ''
             ]"
           >
@@ -229,51 +229,51 @@ onBeforeUnmount(() => {
               :num="horaire.numLignePublic" 
               :couleur-fond="horaire.couleurFond" 
               :couleur-texte="horaire.couleurTexte"
-              size="lg"
-              class="group-hover:scale-105 transition-transform rounded-[1.25rem]"
+              size="md"
+              class="group-hover:scale-105 transition-transform rounded-[1rem] flex-shrink-0"
             />
             
             <!-- Destination -->
             <div class="flex-grow min-w-0 flex flex-col justify-center">
-              <span class="text-base font-bold text-gray-900 dark:text-white truncate">
+              <span class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
                 {{ horaire.destination }}
-                <span v-if="horaire.precisionDestination" class="font-normal text-gray-500">
+                <span v-if="horaire.precisionDestination" class="font-normal text-gray-500 text-xs sm:text-sm">
                   {{ horaire.precisionDestination }}
                 </span>
               </span>
-              <span v-if="horaire.modeTransport === 0" class="text-xs text-gray-500 dark:text-gray-400">Tramway</span>
-              <span v-else class="text-xs text-gray-500 dark:text-gray-400">Bus</span>
+              <span v-if="horaire.modeTransport === 0" class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Tramway</span>
+              <span v-else class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Bus</span>
             </div>
             
             <!-- Temps + Favori -->
-            <div class="flex flex-col items-end justify-center min-w-[70px]">
+            <div class="flex flex-col items-end justify-center min-w-[60px] sm:min-w-[70px]">
               <!-- Bouton favori -->
               <button 
                 @click.stop="handleToggleFavorite(horaire)"
                 :class="[
-                  'mb-1 transition-colors',
+                  'mb-0.5 sm:mb-1 transition-colors',
                   checkIsFavorite(horaire) 
                     ? 'text-yellow-500 hover:text-yellow-600' 
                     : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500'
                 ]"
                 :title="checkIsFavorite(horaire) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
               >
-                <span class="material-icons-round text-2xl font-semibold">
+                <span class="material-icons-round text-xl sm:text-2xl">
                   {{ checkIsFavorite(horaire) ? 'star' : 'star_border' }}
                 </span>
               </button>
               
               <!-- Temps d'attente -->
               <template v-if="formatTemps(horaire.tempsRestant)?.isClose">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1 sm:gap-1.5">
                   <span class="live-dot"></span>
-                  <span class="text-lg font-bold text-line-green whitespace-nowrap">
+                  <span class="text-base sm:text-lg font-semibold text-line-green whitespace-nowrap">
                     {{ formatTemps(horaire.tempsRestant).text }}
                   </span>
                 </div>
               </template>
               <template v-else-if="formatTemps(horaire.tempsRestant)">
-                <span class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                <span class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                   {{ formatTemps(horaire.tempsRestant).text }}
                 </span>
               </template>

@@ -135,32 +135,32 @@ const stripHtml = (html) => {
 <template>
   <div class="flex flex-col min-h-full w-full pb-safe">
     <!-- Header sticky -->
-    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-2 border-b border-transparent transition-colors duration-300">
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-transparent transition-colors duration-300">
       <!-- Titre + Toggle thème -->
-      <div class="flex justify-between items-center mb-5">
+      <div class="flex justify-between items-center mb-4 sm:mb-5">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Infos Trafic</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">État du réseau en temps réel</p>
+          <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Infos Trafic</h1>
+          <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">État du réseau en temps réel</p>
         </div>
         <ThemeToggle />
       </div>
       
       <!-- Barre de recherche -->
       <div class="relative mb-2">
-        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <span class="material-icons-round text-primary/70">filter_list</span>
+        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+          <span class="material-icons-round text-primary/70 text-xl">filter_list</span>
         </div>
         <input
           v-model="searchTerm"
           type="text"
           placeholder="Filtrer par ligne..."
-          class="w-full py-3.5 pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-base font-medium"
+          class="w-full py-3 sm:py-3.5 pl-10 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-sm sm:text-base"
         />
       </div>
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-6 pb-8 space-y-6 pt-4">
+    <main class="flex-grow px-4 sm:px-6 pb-8 space-y-4 sm:space-y-6 pt-3 sm:pt-4">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -169,28 +169,28 @@ const stripHtml = (html) => {
       
       <template v-else>
         <!-- Résumé de l'état du réseau -->
-        <div :class="['flex items-center gap-3 p-4 rounded-2xl border', networkSummary.bgClass]">
-          <div :class="['w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0', networkSummary.iconClass]">
-            <span class="material-icons-round">{{ networkSummary.icon }}</span>
+        <div :class="['flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl border', networkSummary.bgClass]">
+          <div :class="['w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0', networkSummary.iconClass]">
+            <span class="material-icons-round text-xl sm:text-2xl">{{ networkSummary.icon }}</span>
           </div>
           <div>
-            <h3 class="font-bold text-sm" :class="networkSummary.status === 'ok' ? 'text-green-800 dark:text-green-200' : networkSummary.status === 'warning' ? 'text-yellow-800 dark:text-yellow-200' : 'text-red-800 dark:text-red-200'">
+            <h3 class="font-semibold text-xs sm:text-sm" :class="networkSummary.status === 'ok' ? 'text-green-800 dark:text-green-200' : networkSummary.status === 'warning' ? 'text-yellow-800 dark:text-yellow-200' : 'text-red-800 dark:text-red-200'">
               {{ networkSummary.title }}
             </h3>
-            <p class="text-xs" :class="networkSummary.status === 'ok' ? 'text-green-700 dark:text-green-300/80' : networkSummary.status === 'warning' ? 'text-yellow-700 dark:text-yellow-300/80' : 'text-red-700 dark:text-red-300/80'">
+            <p class="text-[10px] sm:text-xs" :class="networkSummary.status === 'ok' ? 'text-green-700 dark:text-green-300/80' : networkSummary.status === 'warning' ? 'text-yellow-700 dark:text-yellow-300/80' : 'text-red-700 dark:text-red-300/80'">
               {{ networkSummary.subtitle }}
             </p>
           </div>
         </div>
         
         <!-- Messages de perturbation -->
-        <div v-if="filteredMessages.length > 0" class="space-y-4">
+        <div v-if="filteredMessages.length > 0" class="space-y-3 sm:space-y-4">
           <router-link
             v-for="msg in filteredMessages"
             :key="msg.id"
             :to="{ name: 'MessagePage', params: { idLigne: msg.ligne?.idLigne || msg.lignes?.[0] } }"
             :class="[
-              'bg-surface-light dark:bg-surface-dark rounded-2xl p-5 shadow-soft border-l-4 flex flex-col gap-3 group active:scale-[0.99] transition-transform duration-150 block',
+              'bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-soft border-l-4 flex flex-col gap-2.5 sm:gap-3 group active:scale-[0.99] transition-transform duration-150 block',
               ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.borderColor || 'border-gray-300'
             ]"
           >
@@ -199,12 +199,12 @@ const stripHtml = (html) => {
               <div class="flex items-center gap-2">
                 <span 
                   :class="[
-                    'px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1',
+                    'px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide flex items-center gap-1',
                     ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.bgColor,
                     ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.textColor
                   ]"
                 >
-                  <span class="material-icons-round text-sm">
+                  <span class="material-icons-round text-xs sm:text-sm">
                     {{ ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.icon || 'info' }}
                   </span>
                   {{ ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.label || 'Info' }}
@@ -213,23 +213,23 @@ const stripHtml = (html) => {
             </div>
             
             <!-- Contenu -->
-            <div>
-              <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{{ msg.titre }}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">
+            <div class="min-w-0">
+              <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-0.5 sm:mb-1 truncate">{{ msg.titre }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">
                 {{ stripHtml(msg.texte) }}
               </p>
             </div>
             
             <!-- Lignes impactées -->
-            <div v-if="msg.ligne || msg.lignes?.length" class="flex items-center gap-2 mt-1 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <span class="text-xs font-medium text-gray-500">Ligne impactée :</span>
+            <div v-if="msg.ligne || msg.lignes?.length" class="flex items-center gap-2 mt-0.5 sm:mt-1 pt-2.5 sm:pt-3 border-t border-gray-100 dark:border-gray-800">
+              <span class="text-[10px] sm:text-xs text-gray-500">Ligne impactée :</span>
               <div class="flex -space-x-2">
                 <LineBadge 
                   v-if="msg.ligne"
                   :num="msg.ligne.numLignePublic"
                   :couleur-fond="msg.ligne.couleurFond"
                   :couleur-texte="msg.ligne.couleurTexte"
-                  size="sm"
+                  size="xs"
                 />
               </div>
             </div>
@@ -237,12 +237,12 @@ const stripHtml = (html) => {
         </div>
         
         <!-- Lignes perturbées sans messages détaillés -->
-        <div v-else-if="perturbedLignes.length > 0" class="space-y-4">
+        <div v-else-if="perturbedLignes.length > 0" class="space-y-3 sm:space-y-4">
           <div 
             v-for="ligne in perturbedLignes"
             :key="ligne.idLigne"
             :class="[
-              'bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border-l-4 flex items-center gap-4',
+              'bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border-l-4 flex items-center gap-3 sm:gap-4',
               ETAT_CONFIG[ligne.etat]?.borderColor || 'border-gray-300'
             ]"
           >
@@ -250,11 +250,11 @@ const stripHtml = (html) => {
               :num="ligne.numLignePublic"
               :couleur-fond="ligne.couleurFond"
               :couleur-texte="ligne.couleurTexte"
-              size="md"
+              size="sm"
             />
-            <div class="flex-grow">
-              <span class="font-bold text-gray-900 dark:text-gray-100">Ligne {{ ligne.numLignePublic }}</span>
-              <p :class="['text-sm', ETAT_CONFIG[ligne.etat]?.textColor]">
+            <div class="flex-grow min-w-0">
+              <span class="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100">Ligne {{ ligne.numLignePublic }}</span>
+              <p :class="['text-xs sm:text-sm', ETAT_CONFIG[ligne.etat]?.textColor]">
                 {{ ETAT_CONFIG[ligne.etat]?.label || 'Information' }}
               </p>
             </div>

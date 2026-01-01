@@ -137,12 +137,12 @@ const maxEtat = computed(() => {
 <template>
   <div class="flex flex-col min-h-full w-full pb-safe">
     <!-- Header sticky -->
-    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
-      <div class="flex items-center gap-4 mb-4">
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
+      <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
         <BackButton @click="goBack" />
-        <div class="flex-grow">
-          <h1 class="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
-          <p v-if="ligne" class="text-sm text-gray-500 dark:text-gray-400">
+        <div class="flex-grow min-w-0">
+          <h1 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Messages</h1>
+          <p v-if="ligne" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             Ligne {{ ligne.numLignePublic }}
           </p>
         </div>
@@ -150,22 +150,22 @@ const maxEtat = computed(() => {
       </div>
       
       <!-- Badge de ligne -->
-      <div v-if="ligne && !loading" class="flex items-center gap-3">
+      <div v-if="ligne && !loading" class="flex items-center gap-2.5 sm:gap-3">
         <LineBadge 
           :num="ligne.numLignePublic"
           :couleur-fond="ligne.couleurFond"
           :couleur-texte="ligne.couleurTexte"
-          size="lg"
+          size="md"
         />
         <div>
           <span 
             :class="[
-              'px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1',
+              'px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-semibold uppercase tracking-wide flex items-center gap-1',
               ETAT_CONFIG[maxEtat]?.bgColor,
               ETAT_CONFIG[maxEtat]?.textColor
             ]"
           >
-            <span class="material-icons-round text-sm">{{ ETAT_CONFIG[maxEtat]?.icon }}</span>
+            <span class="material-icons-round text-xs sm:text-sm">{{ ETAT_CONFIG[maxEtat]?.icon }}</span>
             {{ ETAT_CONFIG[maxEtat]?.label }}
           </span>
         </div>
@@ -173,7 +173,7 @@ const maxEtat = computed(() => {
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-6 py-6 space-y-6">
+    <main class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -186,46 +186,46 @@ const maxEtat = computed(() => {
           v-for="msg in messages"
           :key="msg.id"
           :class="[
-            'bg-surface-light dark:bg-surface-dark rounded-2xl overflow-hidden shadow-soft border-l-4',
+            'bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl overflow-hidden shadow-soft border-l-4',
             ETAT_CONFIG[msg.etat]?.borderColor || 'border-gray-300'
           ]"
         >
           <!-- En-tête du message -->
-          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <div class="flex items-start justify-between gap-3">
-              <h2 class="text-lg font-bold text-gray-900 dark:text-white flex-grow" v-html="msg.titre"></h2>
+          <div class="px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-start justify-between gap-2 sm:gap-3">
+              <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-grow min-w-0" v-html="msg.titre"></h2>
               <span 
                 :class="[
-                  'px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1 flex-shrink-0',
+                  'px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide flex items-center gap-1 flex-shrink-0',
                   ETAT_CONFIG[msg.etat]?.bgColor,
                   ETAT_CONFIG[msg.etat]?.textColor
                 ]"
               >
-                <span class="material-icons-round text-sm">{{ ETAT_CONFIG[msg.etat]?.icon }}</span>
+                <span class="material-icons-round text-xs sm:text-sm">{{ ETAT_CONFIG[msg.etat]?.icon }}</span>
                 {{ ETAT_CONFIG[msg.etat]?.label }}
               </span>
             </div>
           </div>
           
           <!-- Corps du message -->
-          <div class="px-5 py-4 space-y-5">
+          <div class="px-3 sm:px-5 py-3 sm:py-4 space-y-4 sm:space-y-5">
             <!-- Sections parsées -->
             <template v-if="msg.sections.length">
-              <div v-for="(section, index) in msg.sections" :key="index" class="space-y-3">
+              <div v-for="(section, index) in msg.sections" :key="index" class="space-y-2.5 sm:space-y-3">
                 <!-- Titre de section -->
-                <div class="flex items-center gap-2">
-                  <span class="material-icons-round text-primary text-lg">subdirectory_arrow_right</span>
-                  <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                  <span class="material-icons-round text-primary text-base sm:text-lg">subdirectory_arrow_right</span>
+                  <h3 class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
                     {{ section.title }}
                   </h3>
                 </div>
                 
                 <!-- Items -->
-                <div class="space-y-2 ml-7">
+                <div class="space-y-1.5 sm:space-y-2 ml-5 sm:ml-7">
                   <div 
                     v-for="(item, itemIndex) in section.items"
                     :key="itemIndex"
-                    class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-sm text-gray-700 dark:text-gray-300 leading-relaxed"
+                    class="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed"
                   >
                     {{ item }}
                   </div>
@@ -234,7 +234,7 @@ const maxEtat = computed(() => {
             </template>
             
             <!-- Fallback si le parsing ne fonctionne pas -->
-            <div v-else class="prose dark:prose-invert max-w-none text-sm">
+            <div v-else class="prose dark:prose-invert max-w-none text-xs sm:text-sm">
               <div v-html="msg.texte"></div>
             </div>
             
@@ -244,22 +244,22 @@ const maxEtat = computed(() => {
               :href="msg.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-colors font-semibold text-sm mt-4"
+              class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg sm:rounded-xl transition-colors font-medium text-xs sm:text-sm mt-3 sm:mt-4"
             >
               <span>Plus d'informations</span>
-              <span class="material-icons-round text-lg">open_in_new</span>
+              <span class="material-icons-round text-base sm:text-lg">open_in_new</span>
             </a>
           </div>
         </div>
       </template>
       
       <!-- Aucun message -->
-      <div v-else class="text-center py-16">
-        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
-          <span class="material-icons-round text-3xl text-green-500">check_circle</span>
+      <div v-else class="text-center py-12 sm:py-16">
+        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+          <span class="material-icons-round text-2xl sm:text-3xl text-green-500">check_circle</span>
         </div>
-        <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Aucune perturbation</p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Cette ligne fonctionne normalement</p>
+        <p class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300">Aucune perturbation</p>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Cette ligne fonctionne normalement</p>
       </div>
     </main>
   </div>

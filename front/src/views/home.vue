@@ -204,12 +204,12 @@ const formatTemps = (data) => {
 <template>
   <div class="flex flex-col min-h-full w-full pb-safe">
     <!-- Header sticky -->
-    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-2 border-b border-transparent transition-colors duration-300">
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-transparent transition-colors duration-300">
       <!-- Titre + Toggle thème -->
-      <div class="flex justify-between items-center mb-5">
+      <div class="flex justify-between items-center mb-4 sm:mb-5">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Bonjour,</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Où souhaitez-vous aller ?</p>
+          <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Bonjour,</h1>
+          <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Où souhaitez-vous aller ?</p>
         </div>
         <ThemeToggle />
       </div>
@@ -227,7 +227,7 @@ const formatTemps = (data) => {
           :placeholder="searchLoading ? 'Chargement...' : 'Rechercher une ligne, un arrêt...'"
           :disabled="searchLoading"
           :class="[
-            'relative z-20 w-full py-3.5 pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm transition-all text-base font-medium focus:outline-none',
+            'relative z-20 w-full py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm transition-all text-sm sm:text-base font-normal focus:outline-none',
             showDropdown && filteredUniqueNomArrets.length > 0
               ? 'rounded-t-2xl rounded-b-none border-b-0 focus:border-gray-200 dark:focus:border-gray-700'
               : 'rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary'
@@ -267,20 +267,20 @@ const formatTemps = (data) => {
     </header>
     
     <!-- Contenu principal -->
-    <main class="flex-grow px-6 pb-8 space-y-8 pt-4">
+    <main class="flex-grow px-4 sm:px-6 pb-8 space-y-6 sm:space-y-8 pt-3 sm:pt-4">
       <!-- Section Favoris -->
       <section>
-        <div class="flex justify-between items-end mb-4">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-gray-100">Mes Favoris</h2>
+        <div class="flex justify-between items-end mb-3 sm:mb-4">
+          <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Mes Favoris</h2>
         </div>
         
         <!-- Liste des favoris -->
-        <div v-if="favorites.length > 0" class="space-y-4">
+        <div v-if="favorites.length > 0" class="space-y-3 sm:space-y-4">
           <router-link
             v-for="fav in favorites"
             :key="fav.id"
             :to="{ name: 'ArretNomView', params: { nom: fav.nomArret } }"
-            class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden block"
+            class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden block"
           >
             <!-- Barre de couleur gauche -->
             <div 
@@ -288,19 +288,19 @@ const formatTemps = (data) => {
               :style="{ backgroundColor: '#' + (fav.couleurFond || '666666') }"
             ></div>
             
-            <div class="flex items-center gap-4 pl-2">
-              <div class="relative">
+            <div class="flex items-center gap-3 sm:gap-4 pl-2 min-w-0 flex-1">
+              <div class="relative flex-shrink-0">
                 <LineBadge 
                   :num="fav.numLigne" 
                   :couleur-fond="fav.couleurFond" 
                   :couleur-texte="fav.couleurTexte"
-                  size="lg"
+                  size="md"
                 />
               </div>
-              <div class="flex flex-col">
-                <span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">{{ fav.destination }}</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 mt-0.5">
-                  Arrêt {{ fav.nomArret }}
+              <div class="flex flex-col min-w-0">
+                <span class="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-[15px] truncate">{{ fav.destination }}</span>
+                <span class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5 truncate">
+                  {{ fav.nomArret }}
                 </span>
               </div>
             </div>
@@ -320,13 +320,13 @@ const formatTemps = (data) => {
               </template>
               <template v-else-if="favoritesData.get(fav.id)?.temps">
                 <template v-if="formatTemps(favoritesData.get(fav.id).temps)?.isClose">
-                  <span class="flex items-center gap-2 text-base font-bold text-line-green bg-line-green/10 px-3 py-1 rounded-full">
+                  <span class="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base font-semibold text-line-green bg-line-green/10 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full">
                     <span class="live-dot"></span>
                     {{ formatTemps(favoritesData.get(fav.id).temps).text }}
                   </span>
                 </template>
                 <template v-else>
-                  <span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  <span class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
                     {{ formatTemps(favoritesData.get(fav.id).temps).text }}
                     <span v-if="formatTemps(favoritesData.get(fav.id).temps).unit" class="text-sm font-semibold text-gray-400 ml-0.5">
                       {{ formatTemps(favoritesData.get(fav.id).temps).unit }}

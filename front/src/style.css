@@ -1,15 +1,136 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-light-bg: #fdf7fa;
-  --color-light-text: #14050b;
-  --color-light-primary: #c93b7d;
-  --color-light-secondary: #e39d96;
-  --color-light-accent: #da9672;
+/* Activer le dark mode basé sur la classe .dark */
+@custom-variant dark (&:where(.dark, .dark *));
 
-  --color-dark-bg: #080205;
-  --color-dark-text: #faebf1;
-  --color-dark-primary: #c43678;
-  --color-dark-secondary: #69221c;
-  --color-dark-accent: #8d4a25;
+@theme {
+  /* Couleurs principales selon le design */
+  --color-primary: #D84358;
+  --color-primary-soft: #FFEDF0;
+  
+  /* Backgrounds */
+  --color-background-light: #F8FAFC;
+  --color-background-dark: #18181b;
+  --color-surface-light: #FFFFFF;
+  --color-surface-dark: #27272a;
+  
+  /* Couleurs des lignes de transport */
+  --color-line-teal: #00A9BC;
+  --color-line-dark-teal: #006C75;
+  --color-line-black: #1F1F1F;
+  --color-line-red: #D6001C;
+  --color-line-brown: #A94E23;
+  --color-line-yellow: #FDB813;
+  --color-line-blue: #005C9E;
+  --color-line-purple: #6B21A8;
+  --color-line-green: #10B981;
+  
+  /* Shadows */
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 15px rgba(216, 67, 88, 0.3);
+}
+
+* {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Scrollbar cachée */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area insets */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Animation pour le point live */
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #10B981;
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  background-color: rgba(16, 185, 129, 0.3);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  50% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(0.8); opacity: 0; }
+}
+
+/* Timeline connector pour la liste des arrêts */
+.timeline-connector {
+  position: absolute;
+  top: 2.5rem;
+  bottom: -1rem;
+  left: 1.5rem;
+  width: 2px;
+  background-color: #e5e7eb;
+  z-index: 0;
+}
+.dark .timeline-connector {
+  background-color: #3f3f46;
+}
+.timeline-item:last-child .timeline-connector {
+  display: none;
+}
+
+/* Animation modale slide-up */
+.modal-enter-active {
+  animation: slideUp 0.3s ease-out;
+}
+.modal-leave-active {
+  animation: slideDown 0.2s ease-in;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+/* Backdrop fade */
+.backdrop-enter-active,
+.backdrop-leave-active {
+  transition: opacity 0.3s ease;
+}
+.backdrop-enter-from,
+.backdrop-leave-to {
+  opacity: 0;
 }

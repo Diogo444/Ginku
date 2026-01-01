@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>All Lines Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: "#D84358",
+                        "primary-soft": "#FFEDF0",
+                        "background-light": "#F8FAFC",
+                        "background-dark": "#18181b", 
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#27272a",
+                        "search-bg": "#E8A6A6", 
+                        "line-teal": "#00A9BC", 
+                        "line-dark-teal": "#006C75", 
+                        "line-black": "#1F1F1F", 
+                        "line-red": "#D6001C", 
+                        "line-brown": "#A94E23", 
+                        "line-yellow": "#FDB813", 
+                        "line-blue": "#005C9E",
+                        "line-purple": "#6B21A8",
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                        '3xl': '2rem',
+                        'full': '9999px',
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(216, 67, 88, 0.3)',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .pt-safe {
+            padding-top: env(safe-area-inset-top);
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-sans min-h-screen antialiased flex flex-col pb-safe">
+<header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-safe pt-6 pb-2 border-b border-transparent transition-colors duration-300">
+<div class="flex justify-between items-center mb-5">
+<div>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white">Le Réseau</h1>
+<p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Explorez toutes les lignes</p>
+</div>
+<button class="w-10 h-10 rounded-full bg-white dark:bg-surface-dark shadow-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-gray-100 dark:border-gray-700" title="Toggle Dark Mode">
+<span class="material-icons-round text-xl">dark_mode</span>
+</button>
+</div>
+<div class="relative mb-2">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-icons-round text-primary/70">search</span>
+</div>
+<input class="w-full py-3.5 pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-base font-medium" placeholder="Chercher une ligne..." type="text"/>
+</div>
+</header>
+<main class="flex-grow px-6 pb-24 space-y-6 pt-4">
+<section>
+<div class="flex items-center gap-2 mb-3 px-1">
+<span class="material-icons-round text-line-teal text-lg">tram</span>
+<h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tramway</h2>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-teal flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        T1
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Hauts du Chazal</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Chalezeule</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-dark-teal flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        T2
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Hauts du Chazal</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Gare Viotte</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center gap-2 mb-3 px-1 pt-2">
+<span class="material-icons-round text-line-red text-lg">directions_bus</span>
+<h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lianes</h2>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-yellow flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        L3
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Centre Ville</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Temis</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-red flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        L4
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Châteaufarine</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Orchamps</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-blue flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        L5
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Saint-Claude</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Bregille</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-black flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        L6
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Agglo</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Campus</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center gap-2 mb-3 px-1 pt-2">
+<span class="material-icons-round text-gray-500 text-lg">directions_bus_filled</span>
+<h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lignes Urbaines</h2>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-brown flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        7
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Palente Espace Ind.</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Campus</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        8
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Espace Industriel</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Centre Ville</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-line-purple flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                        9
+                    </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Velotte</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Tilleroyes</span>
+</div>
+</div>
+<span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe pt-2 px-6 pb-4 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+<div class="flex justify-around items-center max-w-sm mx-auto">
+<a class="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 group transition-colors" href="#">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">star_border</span>
+<span class="text-[10px] font-medium">Favoris</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-primary group" href="#">
+<div class="relative">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">directions_bus</span>
+<span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></span>
+</div>
+<span class="text-[10px] font-bold">Lignes</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 group transition-colors" href="#">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">info</span>
+<span class="text-[10px] font-medium">Infos</span>
+</a>
+</div>
+</nav>
+
+</body></html>

@@ -1,93 +1,108 @@
 <script setup>
-import Loader from '@/components/loader.vue'
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import Buttonback from '@/components/buttonback.vue'
-import api from '@/api'
+import { getTempsLieu, getVariantesDesservantArret } from '@/services/api'
+import { generateFavoriteId, isFavorite, toggleFavorite } from '@/stores/favorites'
+import ThemeToggle from '@/components/ThemeToggle.vue'
+import BackButton from '@/components/BackButton.vue'
+import LineBadge from '@/components/LineBadge.vue'
+import Loader from '@/components/loader.vue'
+import ErrorState from '@/components/ErrorState.vue'
+import VehicleModal from '@/components/VehicleModal.vue'
 
 defineOptions({ name: 'ArretPage' })
+
 const route = useRoute()
 
-const lignes = ref({})
-const variantesMap = ref({}) // { [idLigne]: { [sensAller]: { [destNorm]: idVariante } } }
+const horaires = ref(null)
+const variantesMap = ref({})
+const loading = ref(true)
+const error = ref(null)
 const refreshTimer = ref(null)
 const abortController = ref(null)
 
-// --- helpers ---
+// Modal véhicule
+const showVehicleModal = ref(false)
+const selectedVehicle = ref(null)
+
+// Normalisation
 const normalize = (s = '') =>
-  s
-    .toString()
+  s.toString()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // supprime accents
-    .replace(/\s+/g, ' ') // espaces multiples -> simple espace
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()
 
+// Charger les horaires
 async function fetchHoraires() {
+  if (!route.params.nom) return
+  
+  // Ne pas afficher loading si on a déjà des données (refresh)
+  if (!horaires.value) loading.value = true
+  error.value = null
+  
+  abortController.value?.abort()
+  abortController.value = new AbortController()
+  
   try {
-    abortController.value?.abort()
-    abortController.value = new AbortController()
-    const response = await api.get(`/getTempsLieu/${route.params.nom}`, {
-      signal: abortController.value.signal,
-    })
-    if (!response.data) return
-    lignes.value = response.data
-
-    // Récup variantes desservant l'arrêt pour rendre le badge cliquable
-    const idArrets = [
-      ...new Set((lignes.value.listeTemps || []).map((t) => t.idArret).filter((id) => !!id)),
-    ]
-    if (!idArrets.length) return
-
-    const map = {}
-    await Promise.all(
-      idArrets.map(async (idArret) => {
-        try {
-          const variantes = await api.get(`/getVariantesDesservantArret/${idArret}`)
-          if (!variantes.data) return
-
-          for (const ligne of variantes.data) {
-            if (!map[ligne.id]) map[ligne.id] = {}
-            for (const variante of ligne.variantes) {
-              const fullDest = variante.precisionDestination
-                ? `${variante.destination} ${variante.precisionDestination}`
-                : variante.destination
-              const destNorm = normalize(fullDest)
-              if (!map[ligne.id][variante.sensAller]) map[ligne.id][variante.sensAller] = {}
-              map[ligne.id][variante.sensAller][destNorm] = variante.id
-            }
-          }
-        } catch (err) {
-          console.error(err)
-        }
-      }),
-    )
-    variantesMap.value = map
+    const data = await getTempsLieu(route.params.nom, abortController.value.signal)
+    
+    if (!data) {
+      error.value = 'Arrêt introuvable'
+      return
+    }
+    
+    horaires.value = data
+    
+    // Charger les variantes pour les liens
+    const idArrets = [...new Set((data.listeTemps || []).map((t) => t.idArret).filter(Boolean))]
+    if (idArrets.length) {
+      await loadVariantes(idArrets)
+    }
   } catch (e) {
-    if (e?.code === 'ERR_CANCELED') return
-    console.error(e)
+    if (e?.code !== 'ERR_CANCELED') {
+      console.error('Erreur:', e)
+      error.value = 'Impossible de charger les horaires'
+    }
+  } finally {
+    loading.value = false
   }
 }
-onMounted(async () => {
-  await fetchHoraires()
-  refreshTimer.value = setInterval(fetchHoraires, 60000)
-})
 
-watch(
-  () => route.params.nom,
-  () => fetchHoraires(),
-)
+// Charger les variantes pour les liens
+async function loadVariantes(idArrets) {
+  const map = {}
+  
+  await Promise.all(
+    idArrets.map(async (idArret) => {
+      try {
+        const lignes = await getVariantesDesservantArret(idArret)
+        if (!lignes) return
 
-onBeforeUnmount(() => {
-  if (refreshTimer.value) {
-    clearInterval(refreshTimer.value)
-  }
-  abortController.value?.abort()
-})
+        for (const ligne of lignes) {
+          if (!map[ligne.id]) map[ligne.id] = {}
+          for (const variante of ligne.variantes || []) {
+            const fullDest = variante.precisionDestination
+              ? `${variante.destination} ${variante.precisionDestination}`
+              : variante.destination
+            const destNorm = normalize(fullDest)
+            if (!map[ligne.id][variante.sensAller]) map[ligne.id][variante.sensAller] = {}
+            map[ligne.id][variante.sensAller][destNorm] = variante.id
+          }
+        }
+      } catch (err) {
+        console.error('Erreur variantes:', err)
+      }
+    })
+  )
+  
+  variantesMap.value = map
+}
 
-// Regroupement par numéro de ligne, puis par destination
-const lignesRegroupees = computed(() => {
-  const src = lignes.value?.listeTemps || []
+// Regrouper les horaires par ligne puis destination
+const groupedHoraires = computed(() => {
+  const src = horaires.value?.listeTemps || []
   const lignesMap = {}
 
   for (const t of src) {
@@ -98,155 +113,193 @@ const lignesRegroupees = computed(() => {
         couleurFond: t.couleurFond,
         couleurTexte: t.couleurTexte,
         idLigne: t.idLigne,
-        destinations: {},
-        sensAllerSet: new Set(), // on garde les sens rencontrés pour le fallback
+        items: []
       }
     }
 
-    const group = lignesMap[key]
-    group.sensAllerSet.add(t.sensAller)
-
-    const destRaw = t.precisionDestination
-      ? `${t.destination} ${t.precisionDestination}`
-      : t.destination
-
-    if (!group.destinations[destRaw]) {
-      group.destinations[destRaw] = {
-        horaires: [],
-        sensAller: t.sensAller,
-        destNorm: normalize(destRaw),
-      }
-    }
-    group.destinations[destRaw].horaires.push(t)
+    lignesMap[key].items.push(t)
   }
 
-  // Convertit en tableaux et résout les idVariante + fallback pour le badge
-  return Object.values(lignesMap).map((ligne) => {
-    const dests = Object.entries(ligne.destinations).map(([destination, data]) => {
-      const idVar = variantesMap.value?.[ligne.idLigne]?.[data.sensAller]?.[data.destNorm] || null
-      return { destination, horaires: data.horaires, idVariante: idVar, sensAller: data.sensAller }
-    })
+  return Object.values(lignesMap)
+})
 
-    // idVariante à utiliser pour le badge (clic sur le numéro de ligne)
-    const firstWithVar = dests.find((d) => d.idVariante)?.idVariante
-    let linkVarianteId = firstWithVar || null
+// Formater le temps d'attente
+const formatTemps = (tempsRestant) => {
+  if (tempsRestant === undefined || tempsRestant === null) return null
+  if (tempsRestant <= 0) return { text: 'À l\'approche', isClose: true }
+  if (tempsRestant < 60) return { text: `${tempsRestant} min`, isClose: tempsRestant <= 2 }
+  return { text: `${Math.floor(tempsRestant / 60)}h${tempsRestant % 60}`, isClose: false }
+}
 
-    // Fallback supplémentaire : si rien de trouvé, tente un des sens présents via variantesMap
-    if (!linkVarianteId) {
-      for (const sens of ligne.sensAllerSet) {
-        const bySens = variantesMap.value?.[ligne.idLigne]?.[sens]
-        if (bySens) {
-          const anyId = Object.values(bySens)[0]
-          if (anyId) {
-            linkVarianteId = anyId
-            break
-          }
-        }
-      }
-    }
+// Ouvrir la modale véhicule
+const openVehicleModal = (numVehicule) => {
+  if (!numVehicule) return
+  selectedVehicle.value = numVehicule
+  showVehicleModal.value = true
+}
 
-    return {
-      ...ligne,
-      destinations: dests,
-      linkVarianteId, // utilisé pour rendre le badge cliquable une seule fois
-    }
+// Toggle favori
+const handleToggleFavorite = (horaire) => {
+  const favId = generateFavoriteId(route.params.nom, horaire.idLigne, horaire.destination)
+  toggleFavorite({
+    id: favId,
+    type: 'arret',
+    nomArret: route.params.nom,
+    idLigne: horaire.idLigne,
+    numLigne: horaire.numLignePublic,
+    destination: horaire.destination,
+    couleurFond: horaire.couleurFond,
+    couleurTexte: horaire.couleurTexte
   })
+}
+
+// Vérifier si favori
+const checkIsFavorite = (horaire) => {
+  const favId = generateFavoriteId(route.params.nom, horaire.idLigne, horaire.destination)
+  return isFavorite(favId)
+}
+
+// Lifecycle
+onMounted(async () => {
+  await fetchHoraires()
+  refreshTimer.value = setInterval(fetchHoraires, 30000) // Refresh toutes les 30s
+})
+
+watch(() => route.params.nom, fetchHoraires)
+
+onBeforeUnmount(() => {
+  refreshTimer.value && clearInterval(refreshTimer.value)
+  abortController.value?.abort()
 })
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text p-4 sm:p-6 lg:p-8 relative"
-  >
-    <Buttonback />
-
-    <div class="w-full mx-auto sm:w-2xl">
-      <h1
-        class="pt-20 text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center sm:pt-0"
-      >
-        Horaires - {{ route.params.nom }}
-      </h1>
-
-      <!-- Affichage des horaires -->
-      <div v-if="lignes?.listeTemps?.length" class="space-y-6">
-        <div
-          v-for="ligne in lignesRegroupees"
-          :key="ligne.numLignePublic"
-          class="bg-white dark:bg-dark-secondary p-4 rounded-lg shadow-md"
-        >
-          <!-- HEADER DE LIGNE : badge affiché UNE SEULE FOIS -->
-          <div class="mb-3 flex items-center gap-3">
-            <router-link
-              v-if="ligne.linkVarianteId"
-              :to="{
-                name: 'ArretFromLigneView',
-                params: {
-                  idLigne: ligne.idLigne,
-                  idVariante: ligne.linkVarianteId,
-                  numLigne: ligne.numLignePublic,
-                },
-              }"
-            >
-              <span
-                class="inline-block px-3 py-1 rounded-full font-bold text-sm"
-                :style="{
-                  backgroundColor: '#' + ligne.couleurFond,
-                  color: '#' + ligne.couleurTexte,
-                }"
-              >
-                {{ ligne.numLignePublic }}
-              </span>
-            </router-link>
-
-            <span
-              v-else
-              class="inline-block px-3 py-1 rounded-full font-bold text-sm opacity-60"
-              :style="{
-                backgroundColor: '#' + ligne.couleurFond,
-                color: '#' + ligne.couleurTexte,
-              }"
-              title="Variante introuvable pour cet arrêt"
-            >
-              {{ ligne.numLignePublic }}
-            </span>
-          </div>
-
-          <!-- LISTE DES DESTINATIONS (sans répéter le badge) -->
-          <div v-for="dest in ligne.destinations" :key="dest.destination" class="mb-3">
-            <h2 class="font-bold text-lg mb-3">
-              <span class="font-bold text-base text-light-text dark:text-dark-text">
-                {{ dest.destination }}
-              </span>
-            </h2>
-            <ul class="flex justify-between px-10">
-              <li v-for="(horaire, index) in dest.horaires" :key="index">
-                <router-link
-                  v-if="horaire.numVehicule"
-                  :to="{ name: 'InfosTransportPage', params: { id: horaire.numVehicule } }"
-                >
-                  <span class="font-semibold text-light-primary dark:text-dark-text">
-                    {{ horaire.temps }}
-                  </span>
-                </router-link>
-                <span v-else class="font-semibold text-light-primary dark:text-dark-text">
-                  {{ horaire.temps }}
-                </span>
-              </li>
-            </ul>
-          </div>
+  <div class="flex flex-col min-h-full w-full pb-safe">
+    <!-- Header sticky -->
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+      <!-- Navigation -->
+      <div class="flex items-center gap-4 mb-2">
+        <BackButton />
+        <div class="flex-1 text-center pr-8">
+          <span class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Horaires en temps réel</span>
         </div>
       </div>
-
-      <div
-        v-else-if="lignes && lignes.listeTemps && lignes.listeTemps.length === 0"
-        class="text-center py-8"
-      >
-        <p class="text-light-text dark:text-dark-text text-lg">
-          Aucun horaire disponible pour cet arrêt
-        </p>
+      
+      <!-- Nom de l'arrêt -->
+      <div class="flex flex-col items-center justify-center space-y-1 pb-2">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{{ route.params.nom }}</h1>
+        <div v-if="horaires?.nomExact && horaires.nomExact !== route.params.nom" class="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+          <span class="material-icons-round text-sm">place</span>
+          <span class="text-sm font-medium">{{ horaires.nomExact }}</span>
+        </div>
       </div>
-
-      <Loader v-else />
-    </div>
+      
+      <!-- Toggle thème -->
+      <div class="absolute right-6 top-6">
+        <ThemeToggle />
+      </div>
+    </header>
+    
+    <!-- Contenu -->
+    <main class="flex-grow px-4 pb-8 pt-6 space-y-6">
+      <!-- Loading -->
+      <Loader v-if="loading" />
+      
+      <!-- Erreur -->
+      <ErrorState v-else-if="error" :message="error" @retry="fetchHoraires" />
+      
+      <!-- Liste des horaires -->
+      <template v-else-if="groupedHoraires.length > 0">
+        <div 
+          v-for="groupe in groupedHoraires" 
+          :key="groupe.numLignePublic"
+          class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800"
+        >
+          <div 
+            v-for="(horaire, index) in groupe.items" 
+            :key="index"
+            @click="horaire.numVehicule && openVehicleModal(horaire.numVehicule)"
+            :class="[
+              'p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group',
+              horaire.numVehicule ? 'cursor-pointer' : ''
+            ]"
+          >
+            <!-- Badge ligne -->
+            <LineBadge 
+              :num="horaire.numLignePublic" 
+              :couleur-fond="horaire.couleurFond" 
+              :couleur-texte="horaire.couleurTexte"
+              size="lg"
+              class="group-hover:scale-105 transition-transform rounded-[1.25rem]"
+            />
+            
+            <!-- Destination -->
+            <div class="flex-grow min-w-0 flex flex-col justify-center">
+              <span class="text-base font-bold text-gray-900 dark:text-white truncate">
+                {{ horaire.destination }}
+                <span v-if="horaire.precisionDestination" class="font-normal text-gray-500">
+                  {{ horaire.precisionDestination }}
+                </span>
+              </span>
+              <span v-if="horaire.modeTransport === 0" class="text-xs text-gray-500 dark:text-gray-400">Tramway</span>
+              <span v-else class="text-xs text-gray-500 dark:text-gray-400">Bus</span>
+            </div>
+            
+            <!-- Temps + Favori -->
+            <div class="flex flex-col items-end justify-center min-w-[70px]">
+              <!-- Bouton favori -->
+              <button 
+                @click.stop="handleToggleFavorite(horaire)"
+                :class="[
+                  'mb-1 transition-colors',
+                  checkIsFavorite(horaire) 
+                    ? 'text-yellow-500 hover:text-yellow-600' 
+                    : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500'
+                ]"
+                :title="checkIsFavorite(horaire) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+              >
+                <span class="material-icons-round text-2xl font-semibold">
+                  {{ checkIsFavorite(horaire) ? 'star' : 'star_border' }}
+                </span>
+              </button>
+              
+              <!-- Temps d'attente -->
+              <template v-if="formatTemps(horaire.tempsRestant)?.isClose">
+                <div class="flex items-center gap-1.5">
+                  <span class="live-dot"></span>
+                  <span class="text-lg font-bold text-line-green whitespace-nowrap">
+                    {{ formatTemps(horaire.tempsRestant).text }}
+                  </span>
+                </div>
+              </template>
+              <template v-else-if="formatTemps(horaire.tempsRestant)">
+                <span class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                  {{ formatTemps(horaire.tempsRestant).text }}
+                </span>
+              </template>
+              <template v-else>
+                <span class="text-base font-medium text-gray-500">{{ horaire.temps }}</span>
+              </template>
+            </div>
+          </div>
+        </div>
+      </template>
+      
+      <!-- Aucun horaire -->
+      <div v-else class="text-center py-12">
+        <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+          <span class="material-icons-round text-3xl text-gray-400">schedule</span>
+        </div>
+        <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Aucun passage prévu</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pas de véhicule prévu prochainement à cet arrêt</p>
+      </div>
+    </main>
+    
+    <!-- Modal Véhicule -->
+    <VehicleModal 
+      :show="showVehicleModal"
+      :num-vehicule="selectedVehicle"
+      @close="showVehicleModal = false"
+    />
   </div>
 </template>

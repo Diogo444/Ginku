@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Favorite Lines Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: "#D84358",
+                        "primary-soft": "#FFEDF0",
+                        "background-light": "#F8FAFC",
+                        "background-dark": "#18181b", 
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#27272a",
+                        "search-bg": "#E8A6A6", 
+                        "line-teal": "#00A9BC", 
+                        "line-dark-teal": "#006C75", 
+                        "line-black": "#1F1F1F", 
+                        "line-red": "#D6001C", 
+                        "line-brown": "#A94E23", 
+                        "line-yellow": "#FDB813",
+                        "line-blue": "#005C9E",
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                        '3xl': '2rem',
+                        'full': '9999px',
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(216, 67, 88, 0.3)',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .pt-safe {
+            padding-top: env(safe-area-inset-top);
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-sans min-h-screen antialiased flex flex-col pb-safe">
+<header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-safe pt-6 pb-2 border-b border-transparent transition-colors duration-300">
+<div class="flex justify-between items-center mb-5">
+<div>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white">Bonjour,</h1>
+<p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Où souhaitez-vous aller ?</p>
+</div>
+<button class="w-10 h-10 rounded-full bg-white dark:bg-surface-dark shadow-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-gray-100 dark:border-gray-700" title="Toggle Dark Mode">
+<span class="material-icons-round text-xl">dark_mode</span>
+</button>
+</div>
+<div class="relative mb-2">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-icons-round text-primary/70">search</span>
+</div>
+<input class="w-full py-3.5 pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-base font-medium" placeholder="Rechercher une ligne, un arrêt..." type="text"/>
+</div>
+</header>
+<main class="flex-grow px-6 pb-24 space-y-8 pt-4">
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="text-lg font-bold text-gray-900 dark:text-gray-100">Mes Favoris</h2>
+<button class="text-sm text-primary font-semibold hover:text-red-700 transition-colors bg-primary-soft dark:bg-primary/10 px-3 py-1 rounded-full">Modifier</button>
+</div>
+<div class="space-y-4">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-line-teal"></div>
+<div class="flex items-center gap-4 pl-2">
+<div class="relative">
+<div class="w-12 h-12 rounded-full bg-line-teal flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                                T1
+                            </div>
+<div class="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-surface-dark flex items-center justify-center">
+<span class="material-icons-round text-[10px] text-white">check</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Hauts du Chazal</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                Arrêt Gare Viotte
+                            </span>
+</div>
+</div>
+<div class="flex flex-col items-end pr-1">
+<span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">2<span class="text-sm font-semibold text-gray-400 ml-0.5">min</span></span>
+<span class="text-xs text-gray-400 font-medium">Prochain: 8 min</span>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-line-dark-teal"></div>
+<div class="flex items-center gap-4 pl-2">
+<div class="relative">
+<div class="w-12 h-12 rounded-full bg-line-dark-teal flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                                T2
+                            </div>
+<div class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full border-2 border-white dark:border-surface-dark flex items-center justify-center">
+<span class="material-icons-round text-[10px] text-white">priority_high</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Gare Viotte</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                Arrêt Micropolis
+                            </span>
+</div>
+</div>
+<div class="flex flex-col items-end pr-1">
+<div class="flex items-center text-yellow-600 dark:text-yellow-500 gap-1 mb-0.5 bg-yellow-50 dark:bg-yellow-900/20 px-1.5 rounded text-[10px] font-bold uppercase tracking-wide">
+                            Retard
+                        </div>
+<span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">5<span class="text-sm font-semibold text-gray-400 ml-0.5">min</span></span>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-line-red"></div>
+<div class="flex items-center gap-4 pl-2">
+<div class="w-12 h-12 rounded-full bg-line-red flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                            L4
+                        </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Châteaufarine</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                Arrêt Flore
+                            </span>
+</div>
+</div>
+<div class="flex flex-col items-end pr-1">
+<span class="flex items-center gap-2 text-lg font-bold text-primary bg-primary-soft dark:bg-primary/20 px-3 py-1 rounded-full">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+</span>
+                            Proche
+                        </span>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-line-brown"></div>
+<div class="flex items-center gap-4 pl-2">
+<div class="w-12 h-12 rounded-full bg-line-brown flex items-center justify-center text-white font-bold text-xl shadow-sm border-2 border-white dark:border-gray-700">
+                            7
+                        </div>
+<div class="flex flex-col">
+<span class="font-bold text-gray-900 dark:text-gray-100 text-[15px]">Palente Espace Ind.</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                Arrêt Crous Université
+                            </span>
+</div>
+</div>
+<div class="flex flex-col items-end pr-1">
+<span class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">14<span class="text-sm font-semibold text-gray-400 ml-0.5">min</span></span>
+<span class="text-xs text-gray-400 font-medium">Prochain: 28 min</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe pt-2 px-6 pb-4 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+<div class="flex justify-around items-center max-w-sm mx-auto">
+<a class="flex flex-col items-center gap-1.5 text-primary group" href="#">
+<div class="relative">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">star</span>
+<span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></span>
+</div>
+<span class="text-[10px] font-bold">Favoris</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 group transition-colors" href="#">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">directions_bus</span>
+<span class="text-[10px] font-medium">Lignes</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 group transition-colors" href="#">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">info</span>
+<span class="text-[10px] font-medium">Infos</span>
+</a>
+</div>
+</nav>
+
+</body></html>

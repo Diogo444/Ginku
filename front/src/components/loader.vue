@@ -1,50 +1,36 @@
 <script setup>
-defineOptions({
-  name: 'LoadingSpinner',
+defineOptions({ name: 'LoadingSpinner' })
+
+defineProps({
+  size: {
+    type: String,
+    default: 'md',
+    validator: (value) => ['sm', 'md', 'lg'].includes(value)
+  },
+  centered: {
+    type: Boolean,
+    default: true
+  }
 })
+
+const sizeClasses = {
+  sm: 'w-6 h-6 border-2',
+  md: 'w-10 h-10 border-[3px]',
+  lg: 'w-12 h-12 border-4'
+}
 </script>
 
 <template>
-  <div class="loader-container">
+  <div :class="['flex items-center justify-center', centered ? 'w-full py-12' : '']">
     <span class="sr-only">Chargement...</span>
-    <span class="loader" role="status" aria-live="polite" aria-label="Chargement..."></span>
+    <span 
+      :class="[
+        'border-primary border-b-transparent rounded-full inline-block animate-spin',
+        sizeClasses[size]
+      ]" 
+      role="status" 
+      aria-live="polite" 
+      aria-label="Chargement..."
+    ></span>
   </div>
 </template>
-
-<style>
-.loader-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.loader {
-  width: 48px;
-  height: 48px;
-  border: 5px solid #ffffff;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  box-sizing: border-box;
-  animation: rotation 1s linear infinite;
-}
-
-/* Animation */
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 🌞 Light mode override */
-@media (prefers-color-scheme: light) {
-  .loader {
-    border: 5px solid #222222; /* Couleur foncée pour light mode */
-    border-bottom-color: transparent; /* Toujours transparent pour l'effet */
-  }
-}
-</style>

@@ -1,0 +1,1387 @@
+Ce site s'adresse à des développeurs en informatique.
+
+⚠ Une clé d'API est maintenant obligatoire pour chaque requête effectuée sur l'API. L'utilisation de l'API demeure gratuite. La clé nous permet d'obtenir des statistiques d'utilisation et de mettre en place une gestion de droits pour accéder à des informations complémentaires comme l'affluence. Demandez dès maintenant votre clé en nous contactant à l'adresse ginko.support-ssi@keolis.com
+
+
+Changelog
+Version 1.2 (2023)
+Ajout de nouvelles notions pour manipuler l'affichage des temps d'attente (cf FormTempsAttente)
+Ajout de la notion typologie de ligne (cf. FormLigne)
+Ajout de la notion état d'une ligne (cf. FormInfoLigne et /TR/getEtatLigne)
+/TR/getInfosTrafic.do et FormInfoTrafic devienent deprecated et sont remplacés par /TR/getMessages.do et FormMessage
+Version 1.1 (2022-06)
+Ajout de la notion d'affluence
+Clé API est obligatoire
+Ajout de la génération de clé temporaire pour les tests
+Version 1.0.0 (2019)
+Version initiale de l'API
+
+
+
+L'API bas niveau permet d'interragir avec le serveur Ginko depuis n'importe quel langage; vous devez construire et exécuter les requêtes HTTP, et analyser les résultats. Si vous développez en Javascript, utilisez plutôt l'API Javascript.
+
+Requête
+L'URL à appeler est: https://api.ginko.voyage/chemin_de_la_methode.do?paramètres
+
+Remarque importante: L'API est accessible uniquement en HTTPS.
+
+Nous vous recommandons d'utiliser la méthode POST si vous le pouvez, afin de fournir les paramètres dans le corps de la requête plutôt que dans l'URL.
+
+Encodage des paramètres: les paramètres des requêtes doivent être encodés en UTF-8. Les réponses de l'API sont également encodées en UTF-8.
+
+Clé API: si vous disposez d'une clé API, celle-ci doit être fournie à chaque requête, en plus des paramètres éventuels de la requête (voir exemple ci-dessous). La clé API deviendra prochainement obligatoire.
+
+Exemples
+https://api.ginko.voyage/DR/getLignes.do?apiKey=XXX
+https://api.ginko.voyage/DR/getDetailsVariante.do?apiKey=XXX&idLigne=101&idVariante=15-0
+Réponse
+La réponse est au format JSON.
+
+En cas de succès de la requête, le résultat est toujours encapsulé de la façon suivante:
+
+{ 'ok': true, 'objets': résultat décapsulé, tel qu'il est décrit dans la documentation de la méthode }
+En cas d'échec de la requête, le résultat est toujours encapsulé de la façon suivante:
+
+{ 'ok': false, 'msg': message d'erreur }
+Attention, en cas d'indisponibilité du service ou d'un plantage non prévu, vous pouvez recevoir également une erreur de niveau HTTP (type erreur 5XX par exemple).
+
+
+
+Cas particuliers
+Paramètres booléens: lorsqu'une méthode demande un paramètre de type booléen, spécifiez 1 pour vrai et 0 pour faux.
+Paramètres tableaux: lorsqu'une méthode demande un paramètre de type tableau, fournissez-le sous forme de chaine en séparant les valeurs par le caractère tilde ~ (0x7E). Par exemple, si l'API Javascript reçoit le paramètre param1:['salut','hello'], fournissez param1=salut~hello avec l'API bas niveau.
+
+Catégories :
+ * Tarifs Récupérer la liste des titres de transport Ginko
+ Requête get : /Tarifs/get.do
+ Description : 
+    Récupérer la liste des titres de transport Ginko
+    Retourne la liste des titres au voyage et des abonnements. Ces informations sont mises à jour à chaque modification de la gamme tarifaire. Tarifs actuels valables depuis le 1er juillet 2019.
+ Parameters
+ Name = apiKey string (query)
+ Description = numéro de la clé api
+ Response JSON
+ Code 200 
+ Description Tableau d'objet formTarif = [
+  {
+    "type": 0,
+    "libelle": "string",
+    "description": "string",
+    "pointsDeVente": "string",
+    "tarif": 0
+  }
+]
+Response Format Model 
+[FormTarif{
+type	integer Type de titre de transport. Vaut 0 pour un titre au voyage, 1 pour un abonnement mensuel et 2 pour un abonnement annuel.
+
+libelle	string Nom commercial du titre de transport.
+
+description	string Description complète et conditions d'utilisation.
+
+pointsDeVente	string Points de vente où les clients peuvent se procurer ce titre de transport.
+
+tarif	number Prix TTC en euros.
+}]
+
+DR Données référentielles du réseau Ginko : lignes, arrets, etc...
+GET /DR/getLignes.do Retourne la liste des lignes et variantes de lignes (sens) qui circulent aujourd'hui.
+Description : Dans une application serveur, nous vous conseillons d'appeler cette méthode une fois par jour (à 4h du matin) et de mémoriser les résultats pour le reste de la journée. Dans une application client (application smartphone par exemple), nous vous conseillons d'appeler cette méthode au lancement de l'application.
+Paramètres 
+Name = apiKey string (query)
+Description = numéro de la clé api
+Response JSON
+Code 20
+Description Tableau d'objet formLigne = [
+  {
+    "id": "string",
+    "numLignePublic": "string",
+    "libellePublic": "string",
+    "modeTransport": 0,
+    "couleurFond": "string",
+    "couleurTexte": "string",
+    "variantes": [
+      {
+        "id": "string",
+        "sensAller": true,
+        "destination": "string",
+        "precisionDestination": "string"
+      }
+    ],
+    "periurbain": true,
+    "scolaire": true,
+    "typologie": 10
+  }
+]
+Response Format Model
+FormLigne > nouveauté 1.2 > {
+	id                  string
+	    Identifiant de la ligne. Ne doit pas être affiché à l'utilisateur final.
+	    Certaines méthodes de l'API reçoivent en paramètre un identifiant de ligne.
+
+	numLignePublic      string
+	    Numéro de ligne, affichable à l'utilisateur.
+	    Par exemple "1".
+
+	libellePublic       string
+	    Description de la ligne, affichable à l'utilisateur.
+	    Par exemple "Hauts-du-chazal <> Chalezeule".
+
+	modeTransport       integer
+	    type de véhicule
+	        0 : "bus"
+	        1 : "tramway"
+
+	    Enum:
+	        [ 0, 1 ]
+
+	couleurFond         string
+	    Couleur d'arrière-plan caractéristique de la ligne
+	    (utilisée sur tous les documents et affichages dynamiques).
+	    Format HTML, sans le #
+
+	couleurTexte        string
+	    Couleur de texte caractéristique de la ligne
+	    (utilisée sur tous les documents et affichages dynamiques).
+	    En général blanc ou noir.
+	    Format HTML, sans le #
+
+	variantes           [
+	    Chaque ligne est composée de plusieurs variantes.
+	    La plupart des lignes en contiennent deux : une pour chaque sens de circulation.
+	    Toutefois, certaines lignes peuvent en contenir plus, lorsqu’un ou plusieurs arrêts
+	    sont desservis seulement à certaines heures de la journée.
+	    Attention, si vous avez obtenu cet objet en réponse à la requête
+	    DR/getVariantesDesservantArret, seules les variantes de lignes desservant l’arrêt
+	    demandé sont présentes dans la liste.
+
+	    FormVariante { ... }
+	]
+
+	periurbain          boolean
+	    (Ajouté le 08/08/2017)
+	    Indique s'il s'agit d'une ligne périurbaine.
+	    Les lignes périurbaines relient les villages situés dans le Grand Besançon
+	    aux Pôles d'Échange Intermodaux (PEI).
+
+	scolaire            boolean
+	    (Ajouté le 26/06/2018)
+	    Indique s'il s'agit d'une ligne conçue spécialement pour les transports scolaires
+	    (collèges et lycées).
+
+	typologie           integer
+	    title: nouveauté 1.2
+	    Permet de classer les lignes selon leur typologie.
+	    Le numéro permet également de les trier dans un ordre d'importance.
+
+	        10 : "Tramway (T1 / T2)"
+	        20 : "LIANES (L3 à L6)"
+	        30 : "Lignes urbaines (7 à 12 + Ginko Citadelle + PLAN.B)"
+	        40 : "Lignes complémentaires (20 à 24)"
+	        50 : "Lignes périurbaines (51 à 87 + Ginko Osselle Plage + Ginko Piscine + Ginko Chailluz)"
+	        60 : "Lignes scolaires (Diabolo)"
+	        70 : "Services à la demande (Ginko Proxi, Ginko Proxi TGV, Ginko Hôpital, Ginko Cliniques, Ginko Gare)"
+	        80 : "Autre"
+
+	    Enum:
+	        [ 10, 20, 30, 40, 50, 60, 70 ]
+}
+
+GET /DR/getDetailsVariante.do Retourne la liste des arrêts qui composent une variante de ligne.
+paramètres 
+Name = apiKey string (query)
+Description = numéro de la clé apiKey
+Name = idLigne string (query)
+Description = identifiant de la ligne
+Name = idVariante string (query)
+Description = identifiant de la variante de ligne
+Response JSON
+Code 200
+	
+Liste des arrêts desservis par cette variante de ligne, dans l'ordre géographique (le premier arrêt est le terminus de départ, le dernier arrêt le terminus d'arrivée).
+
+Example Value
+Model
+[
+  {
+    "id": "string",
+    "nom": "string",
+    "latitude": 0,
+    "longitude": 0,
+    "accessiblite": 0
+  }
+]
+Response Format Model
+FormArret > {
+	id              string
+	    Identifiant de l'arrêt.
+	    Chaque arrêt a un identifiant unique.
+	    Vous aurez rarement besoin de cet identifiant ; en général,
+	    les méthodes de l'API reçoivent le nom de l'arrêt en paramètre.
+
+	nom             string
+	    Nom de l'arrêt, tel qu'il doit être affiché à l'utilisateur.
+	    Plusieurs arrêts peuvent avoir le même nom
+	    (par exemple, deux arrêts situés de part et d'autre de la route).
+
+	latitude        number (float)
+	    Latitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	longitude       number (float)
+	    Longitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	accessibilite   integer
+	    (Ajouté le 24/05/2018)
+	    Indique si l'arrêt est accessible aux personnes à mobilité réduite
+	    et si l'arrêt est aménagé pour permettre leur embarquement /
+	    débarquement dans les véhicules (bande d'éveil de vigilance,
+	    quai rehaussé).
+
+	        0 : Aucune information n'est disponible
+	        1 : Arrêt accessible
+	        2 : Arrêt difficilement accessible ou non accessible
+
+	    Attention, même si l'arrêt est accessible, tous les véhicules
+	    qui le desservent ne le sont pas forcément
+	    (reportez-vous au champ accessibiliteVehicule de l'objet
+	    FormTempsAttente).
+}
+
+GET /DR/getArrets.do Récupère la liste des arrêts de bus et tram
+Description :
+Retourne la liste des arrêts de bus et des stations tramway. La liste est triée par ordre alphabétique.
+Attention, plusieurs arrêts peuvent avoir le même nom (typiquement, deux arrêts de bus l'un en face de l'autre); si vous prévoyez d'afficher cette liste à l'utilisateur, il est sans doute nécessaire de dédupliquer les arrêts au préalable (opération simple, car les arrêts de même nom se suivent dans la liste).
+Cette liste évolue très rarement, vous pouvez la mettre en cache pendant plusieurs jours. Il se peut que d'anciens arrêts sont encore présents dans cette liste.
+
+Paramètres 
+Name = apiKey string (query)
+Description = numéro de la clé d'api
+Response JSON
+Code 200
+Description Tableau d'objet formArret = [
+  {
+    "id": "string",
+    "nom": "string",
+    "latitude": 0,
+    "longitude": 0,
+    "accessiblite": 0
+  }
+]
+Response Format Model
+FormArret > {
+	id              string
+	    Identifiant de l'arrêt.
+	    Chaque arrêt a un identifiant unique.
+	    Vous aurez rarement besoin de cet identifiant ; en général,
+	    les méthodes de l'API reçoivent le nom de l'arrêt en paramètre.
+
+	nom             string
+	    Nom de l'arrêt, tel qu'il doit être affiché à l'utilisateur.
+	    Plusieurs arrêts peuvent avoir le même nom
+	    (par exemple, deux arrêts situés de part et d'autre de la route).
+
+	latitude        number($float)
+	    Latitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	longitude       number($float)
+	    Longitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	accessibilite   integer
+	    (Ajouté le 24/05/2018)
+	    Indique si l'arrêt est accessible aux personnes à mobilité réduite
+	    et aménagé pour permettre leur embarquement/débarquement
+	    dans les véhicules (bande d'éveil de vigilance, quai réhaussé).
+
+	        0 : Aucune information n'est disponible
+	        1 : Arrêt accessible
+	        2 : Arrêt difficilement accessible ou non accessible
+
+	    Attention, même si l'arrêt est accessible,
+	    les véhicules qui le desservent ne le sont pas forcément
+	    (reportez-vous au champ accessibiliteVehicule de l'objet
+	    FormTempsAttente).
+}
+
+GET
+/DR/getVariantesDesservantArret.do Récupère la liste des lignes et sens qui desservent un arrêt
+Parametètres
+Name = apiKey string (query)
+Description = numéro de la clé d'api
+Name = idArret string (query)
+Description = identifiant de l'arrêt
+Response JSON
+Code 200
+Description Tableau d'objet formVariante = [
+  {
+    "id": "string",
+    "numLignePublic": "string",
+    "libellePublic": "string",
+    "modeTransport": 0,
+    "couleurFond": "string",
+    "couleurTexte": "string",
+    "variantes": [
+      {
+        "id": "string",
+        "sensAller": true,
+        "destination": "string",
+        "precisionDestination": "string"
+      }
+    ],
+    "periurbain": true,
+    "scolaire": true,
+    "typologie": 10
+  }
+]
+Response Format Model
+FormLigne > nouveauté 1.2 > {
+	id                  string
+	    Identifiant de la ligne. Ne doit pas être affiché à l'utilisateur final.
+	    Certaines méthodes de l'API reçoivent en paramètre un identifiant de ligne.
+
+	numLignePublic      string
+	    Numéro de ligne, affichable à l'utilisateur.
+	    Par exemple "1".
+
+	libellePublic       string
+	    Description de la ligne, affichable à l'utilisateur.
+	    Par exemple "Hauts-du-chazal <> Chalezeule".
+
+	modeTransport       integer
+	    type de véhicule
+	        0 : "bus"
+	        1 : "tramway"
+
+	    Enum:
+	        [ 0, 1 ]
+
+	couleurFond         string
+	    Couleur d'arrière-plan caractéristique de la ligne
+	    (utilisée sur tous les documents et affichages dynamiques).
+	    Format HTML, sans le #
+
+	couleurTexte        string
+	    Couleur de texte caractéristique de la ligne
+	    (utilisée sur tous les documents et affichages dynamiques).
+	    En général blanc ou noir.
+	    Format HTML, sans le #
+
+	variantes           [
+	    Chaque ligne est composée de plusieurs variantes.
+	    La plupart des lignes en contiennent deux : une pour chaque sens de circulation.
+	    Toutefois, certaines lignes peuvent en contenir deux ou plus, lorsqu’un ou plusieurs
+	    arrêts sont desservis seulement à certaines heures de la journée.
+	    Attention, si vous avez obtenu cet objet en réponse à la requête
+	    DR/getVariantesDesservantArret, seules les variantes de lignes desservant l’arrêt
+	    demandé sont présentes dans la liste.
+
+	    FormVariante { ... }
+	]
+
+	periurbain          boolean
+	    (Ajouté le 08/08/2017)
+	    Indique s'il s'agit d'une ligne périurbaine.
+	    Les lignes périurbaines relient les villages situés dans le Grand Besançon
+	    aux Pôles d'Échange Intermodaux (PEI).
+
+	scolaire            boolean
+	    (Ajouté le 26/06/2018)
+	    Indique s'il s'agit d'une ligne conçue spécialement
+	    pour les transports scolaires (collèges et lycées).
+
+	typologie           integer
+	    title: nouveauté 1.2
+	    Permet de classer les lignes selon leur typologie.
+	    Le numéro permet également de les trier dans un ordre d'importance.
+
+	        10 : "Tramway (T1 / T2)"
+	        20 : "LIANES (L3 à L6)"
+	        30 : "Lignes urbaines (7 à 12 + Ginko Citadelle + PLAN.B)"
+	        40 : "Lignes complémentaires (20 à 24)"
+	        50 : "Lignes périurbaines (51 à 87 + Ginko Osselle Plage + Ginko Piscine + Ginko Chailluz)"
+	        60 : "Lignes scolaires (Diabolo)"
+	        70 : "Services à la demande (Ginko Proxi, Ginko Proxi TGV, Ginko Hôpital, Ginko Cliniques, Ginko Gare)"
+	        80 : "Autre"
+
+	    Enum:
+	        [ 10, 20, 30, 40, 50, 60, 70 ]
+}
+
+GET /DR/getArretsProches.do 
+Description :
+Retourne la liste des arrêts de bus et tram situés à proximité de la position fournie
+Retourne la liste des arrêts Ginko situés à proximité de la position fournie. Les arrêts sont triés du plus proche au plus lointain. Les arrêts situés à plus de 500 mètres à vol d'oiseau ne sont pas retournés.
+Attention, plusieurs arrêts peuvent avoir le même nom (typiquement, deux arrêts de bus l'un en face de l'autre); cette méthode n'est pas conçue pour afficher une liste d'arrêts à l'utilisateur, mais plutôt pour montrer les arrêts à proximité sur une carte. Si vous prévoyez malgré tout d'afficher cette liste à l'utilisateur, il est sans doute nécessaire de dédupliquer les arrêts au préalable.
+Attention, si vous obtenez la position de l'utilisateur à partir du GPS de son téléphone, assurez-vous de la précision de la position.
+Paramètres 
+Name = apiKey string (query)
+Description = numéro de la clé d'api
+Name = latitude  number($float) (query)
+Description = Coordonnée GPS par rapport à l'équateur, en degrés décimaux. Exemple: 47.236288
+Name = longitude number($float) (query
+Description = Coordonnée GPS par rapport au méridien de Greenwich, en degrés décimaux. Exemple: 6.022884
+Response JSON
+Code 200
+Description Tableau d'objet format Json 
+[
+  {
+    "id": "string",
+    "nom": "string",
+    "latitude": 0,
+    "longitude": 0,
+    "accessiblite": 0
+  }
+]
+Response Format Model
+FormArret > {
+	id              string
+	    Identifiant de l'arrêt.
+	    Chaque arrêt a un identifiant unique.
+	    Vous aurez rarement besoin de cet identifiant ; en général,
+	    les méthodes de l'API reçoivent le nom de l'arrêt en paramètre.
+
+	nom             string
+	    Nom de l'arrêt, tel qu'il doit être affiché à l'utilisateur.
+	    Plusieurs arrêts peuvent avoir le même nom
+	    (par exemple, deux arrêts situés de part et d'autre de la route).
+
+	latitude        number($float)
+	    Latitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	longitude       number($float)
+	    Longitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	accessibilite   integer
+	    (Ajouté le 24/05/2018)
+	    Indique si l'arrêt est accessible aux personnes à mobilité réduite
+	    et aménagé pour permettre leur embarquement/débarquement
+	    dans les véhicules (bande d'éveil de vigilance, quai réhaussé).
+
+	        0 : Aucune information n'est disponible
+	        1 : Arrêt accessible
+	        2 : Arrêt difficilement accessible ou non accessible
+
+	    Attention, même si l'arrêt est accessible,
+	    tous les véhicules qui le desservent ne le sont pas forcément
+	    (reportez-vous au champ accessibiliteVehicule de l'objet
+	    FormTempsAttente).
+}
+GET /DR/getDetailsArret.do Retourne les détails d'un arrêt à partir de son identifiant
+Description :
+Retourne les détails d'un arrêt à partir de son identifiant. Les méthodes DR/getArrets et DR/getArretsProches décrites ci-dessus fournissent déjà les informations détaillées; en revanche, certaines méthodes TR (Temps Réel) indiquent uniquement l'identifiant de l'arrêt. Cette méthode peut vous permettre d'obtenir ponctuellement les détails de l'arrêt sans avoir à charger la liste complète.
+paramètres :
+Name = apiKey string (query)
+Description = numéro de la clé d'api
+Name = id string
+Description = identifiant de l'arrêt
+Response JSON
+Code 200
+Description Tableau d'objet formArret = {
+  "id": "string",
+  "nom": "string",
+  "latitude": 0,
+  "longitude": 0,
+  "accessiblite": 0
+}
+Response Format Model
+FormArret {
+	id              string
+	    Identifiant de l'arrêt.
+	    Chaque arrêt a un identifiant unique.
+	    Vous aurez rarement besoin de cet identifiant ; en général,
+	    les méthodes de l'API reçoivent le nom de l'arrêt en paramètre.
+
+	nom             string
+	    Nom de l'arrêt, tel qu'il doit être affiché à l'utilisateur.
+	    Plusieurs arrêts peuvent avoir le même nom
+	    (par exemple, deux arrêts situés de part et d'autre de la route).
+
+	latitude        number($float)
+	    Latitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	longitude       number($float)
+	    Longitude de l'arrêt (en degrés décimaux).
+	    Si cette valeur vaut 0, c'est que les coordonnées GPS de l'arrêt
+	    sont inconnues (très rare).
+
+	accessibilite   integer
+	    (Ajouté le 24/05/2018)
+	    Indique si l'arrêt est accessible aux personnes à mobilité réduite
+	    et aménagé pour permettre leur embarquement/débarquement
+	    dans les véhicules (bande d'éveil de vigilance, quai réhaussé).
+
+	        0 : Aucune information n'est disponible
+	        1 : Arrêt accessible
+	        2 : Arrêt difficilement accessible ou non accessible
+
+	    Attention, même si l'arrêt est accessible,
+	    tous les véhicules qui le desservent ne le sont pas forcément
+	    (reportez-vous au champ accessibiliteVehicule de l'objet
+	    FormTempsAttente).
+}
+
+GET /DR/getDetailsVehicule.do Récupérer les détails d'un véhicule
+Description :
+Retourne les détails d'un véhicule à partir de son numéro. Les méthodes TR (Temps Réel) indiquent uniquement le numéro du véhicule, et cette méthode permet d'obtenir des informations sur les équipements présents dans le véhicule.
+Les informations concernant un véhicule évoluent rarement; vous pouvez mettre en cache les résultats de cette requête (pour un véhicule) pendant 24h.
+Cette méthode ne fonctionne que pour les véhicules urbains (bus et tramways); les méthodes TR ne fournissent pas le numéro des autocars périurbains.
+
+Paramètres :
+Name = apiKey string (query)
+Description = numéro de la clé d'api
+Name = num integer (query)
+Description = numéro du véhicule
+Response JSON
+Code 200
+Description Tableau d'objet formVehicule = {
+  "num": "string",
+  "affichageDynamique": true,
+  "annoncesSonores": true,
+  "climatisation": true,
+  "prisesUSB": true,
+  "accessiblite": 0,
+  "energie": 0,
+  "typeVehicule": "string"
+}
+Response format model:
+FormVehicule {
+	num                 string
+	    Identifiant du véhicule, pour rappel.
+	    Ce numéro est celui qui est inscrit à l'extérieur des véhicules,
+	    à l'avant et à l'arrière.
+	    Il est de type chaîne car il est possible, à l'avenir,
+	    que certains véhicules soient numérotés avec des lettres
+	    ou d'autres caractères.
+
+	affichageDynamique  boolean
+	    Indique si le véhicule est équipé d'affichages dynamiques
+	    annonçant les prochaines stations desservies.
+	    Attention, cette information ne tient pas compte
+	    d'un éventuel dysfonctionnement de l'équipement.
+
+	annoncesSonores     boolean
+	    Indique si le véhicule est équipé d'un dispositif d'annonces sonores
+	    des prochaines stations desservies.
+	    Attention, cette information ne tient pas compte
+	    d'un éventuel dysfonctionnement de l'équipement.
+
+	climatisation       boolean
+	    Indique si le véhicule est climatisé.
+	    Attention, cette information ne tient pas compte
+	    d'un éventuel dysfonctionnement de l'équipement.
+
+	prisesUSB           boolean
+	    Indique si le véhicule est équipé de prises USB accessibles
+	    aux voyageurs et permettant le rechargement d'appareils
+	    (smartphones par exemple).
+	    Attention, cette information ne tient pas compte
+	    d'un éventuel dysfonctionnement de l'équipement.
+
+	accessibilite       integer
+	    Indique si le véhicule est accessible aux personnes
+	    à mobilité réduite.
+	        0 : Aucune information n'est disponible
+	        1 : Véhicule accessible
+	        2 : Véhicule non accessible
+	    Attention, cette information ne tient pas compte
+	    d'un éventuel dysfonctionnement de l'équipement
+	    (rampe d'accès).
+
+	energie              integer
+	    Indique le type d'énergie qu'utilise le véhicule.
+	        0 : pas d'info
+	        1 : Véhicule au gazole
+	        2 : Véhicule au gaz naturel
+	        3 : Véhicule hybride (électrique + gaz)
+	        4 : Véhicule électrique
+	    Attention, cette information ne tient pas compte
+	    d'un éventuel dysfonctionnement de l'équipement.
+
+	typeVehicule        string
+	    Indique le type de véhicule
+	    (Bus articulé, Bus moyenne capacité, Bus standard,
+	    Tramway 22 mètres, Tramway 33 mètres).
+}
+
+
+TR Données temps réel du réseau Ginko : temps d'attente à un arrêt, info trafic, etc...
+GET /TR/getTempsLieu.do Récupère les temps d'attente pour un lieu ou un arrêt
+Un lieu est un ensemble d'arrêts portant le même nom. Par exemple, le lieu 'Ile de France' regroupe les deux arrêts de la ligne 13 et les deux stations tram. Cette notion permet d'afficher à l'utilisateur les temps d'attente de toutes les lignes/sens qui passent à un endroit donné, même s'il ne s'agit pas physiquement du même arrêt (par exemple, deux arrêts situés de part et d'autre de la route). A contrario, un arrêt est un point physique unique, desservi par une ou plusieurs lignes, dans un seul sens de circulation; en général, un arrêt correspond à un abribus ou poteau sur le terrain. Les temps d'attente des bus sont recalculés toutes les 30 secondes, et ceux des tram toutes les 10. Il est donc recommandé de renouveller cette requête toutes les 10 secondes afin d'actualiser l'affichage.
+Paramètres :
+Name = apiKey string (query)
+Description  = numéro de la clé api
+
+Name = nom string (query)
+Description : lieu recherché (nom d'arrêt). Exemple: Ile de france. L'API recherche les arrêts dont le nom ressemble à celui indiqué (par exemple 'Ile-de-France' ou 'ile france' fonctionneront); vous pouvez donc fournir ici directement la saisie de l'utilisateur, sans traitement préalable.
+
+Name = idArret string (query)
+Description = identifiant de l'arrêt recherché, si vous le connaissez. Exemple: t_idf1. En effectuant la recherche par identifiant d'arrêt, l'API renverra uniquement les temps d'attente de cet arrêt, pas ceux des autres arrêts éventuels portant le même nom. Vous devez renseigner le paramètre 'nom' ou le paramètre 'idArret', mais pas les deux.
+
+
+nb integer (query)
+Description = nombre de temps d'attente souhaités pour chaque ligne/sens. Doit être compris entre 1 et 5. Attention, le résultat peut contenir moins de temps d'attente que souhaité, par exemple en fin de journée. Optionnel (2 par défaut).
+
+Reponse format Json
+Code 200
+Description =
+{
+  "nomExact": "string",
+  "listeTemps": [
+    {
+      "idArret": "string",
+      "latitude": 0,
+      "longitude": 0,
+      "idLigne": "string",
+      "numLignePublic": "string",
+      "couleurFond": "string",
+      "couleurTexte": "string",
+      "sensAller": true,
+      "destination": "string",
+      "precisionDestination": "string",
+      "temps": "string",
+      "tempsHTML": "string",
+      "tempsEnSeconde": 0,
+      "typeDeTemps": 0,
+      "alternance": true,
+      "tempsHTMLEnAlternance": "string",
+      "fiable": true,
+      "numVehicule": "string",
+      "accessibiliteArret": 0,
+      "accessibiliteVehicule": 0,
+      "affluence": -1,
+      "texteAffluence": "string",
+      "aideDecisionAffluence": "string",
+      "tauxDeCharge": 0,
+      "idInfoTrafic": 0,
+      "modeTransport": 0
+    }
+  ],
+  "latitude": 0,
+  "longitude": 0
+}
+Réponse format modèle :
+{
+	nomExact            string
+	    nom précis (corrigé par rapport au nom fourni en paramètre)
+
+	listeTemps          [
+	    tableau d'objets FormTempsAttente.
+	    Liste des prochains passages à ce lieu,
+	    triés par ligne/sens puis par temps d'attente croissant.
+
+	    FormTempsAttente > nouveauté v1.2 > {
+			idArret             string
+			    Identifiant de l'arrêt.
+			    Normalement, si vous obtenez un objet FormTempsAttente,
+			    vous connaissez déjà le nom de l'arrêt à afficher à l'utilisateur.
+			    Cet identifiant peut en revanche vous servir pour obtenir
+			    d'autres informations sur l'arrêt
+			    (méthode DR/getDetailsArret).
+
+			latitude            number($float)
+			    (Ajouté le 01/06/2017)
+			    Latitude de l'arrêt (en degrés décimaux).
+			    Si cette valeur vaut 0, c'est que les coordonnées GPS
+			    de l'arrêt sont inconnues (très rare).
+
+			longitude           number($float)
+			    (Ajouté le 01/06/2017)
+			    Longitude de l'arrêt (en degrés décimaux).
+			    Si cette valeur vaut 0, c'est que les coordonnées GPS
+			    de l'arrêt sont inconnues (très rare).
+
+			idLigne             string
+			    Identifiant de la ligne.
+			    Ne doit pas être affichée à l'utilisateur.
+			    Consultez la documentation de l'objet FormLigne.
+
+			numLignePublic      string
+			    Consultez la documentation de l'objet FormLigne.
+
+			couleurFond         string
+			    Consultez la documentation de l'objet FormLigne.
+
+			couleurTexte        string
+			    Consultez la documentation de l'objet FormLigne.
+
+			sensAller           boolean
+			    Indique si la ligne circule en sens Aller (true)
+			    ou Retour (false).
+
+			destination         string
+			    Destination du bus ou tram à afficher à l'utilisateur.
+
+			precisionDestination    [ ... ]
+
+			temps               string
+			    title: nouveauté v1.2
+			    Temps d'attente à afficher à l'utilisateur
+			    (ex : "3 min", "17h05", "Travaux").
+
+			tempsHTML           string
+			    title: nouveauté v1.2
+			    Temps d'attente formaté en HTML.
+
+			        exemple 1 : <span class="gk-temps">2</span> <span class="gk-mn">min</span>
+			        exemple 2 : <span class="gk-horaire">17:22</span>
+			        exemple 3 : <span class="gk-mot">Déviation</span>
+			        exemple 4 : <span class="gk-mot">Bus complet</span>
+
+			tempsEnSeconde      integer
+			    title: nouveauté v1.2
+			    Temps d'attente en secondes.
+
+			typeDeTemps         integer
+			    title: nouveauté v1.2
+			        0 : temps avant arrivée
+			        1 : horaire d'arrivée
+			        2 : texte
+
+			    Enum:
+			        [ 0, 1, 2 ]
+
+			alternance          boolean
+			    title: nouveauté v1.2
+
+			tempsHTMLenAlternance   string
+			    title: nouveauté v1.2
+
+			fiable              boolean
+			    Temps réel (true) ou théorique (false).
+
+			numVehicule         string
+			    Numéro du bus ou de la rame.
+
+			accessibiliteArret  integer
+			    (Ajouté le 24/05/2018)
+
+			        0 : Aucune information
+			        1 : Arrêt accessible
+			        2 : Arrêt difficilement accessible ou non accessible
+
+			    Enum:
+			        [ 0, 1, 2 ]
+
+			accessibiliteVehicule   integer
+			    (Ajouté le 24/05/2018)
+
+			        0 : Aucune information
+			        1 : Véhicule accessible
+			        2 : Véhicule non accessible
+
+			    Enum:
+			        [ 0, 1, 2 ]
+
+			affluence           integer
+			    Indique la prévision d'affluence en temps réel
+			    à l'arrêt pour ce véhicule.
+
+			        0  : Faible
+			        1  : Modérée
+			        2  : Forte
+			        -1 : Indisponible
+			        -2 : Droits insuffisants
+
+			    Enum:
+			        [ -1, 0, 1, 2 ]
+
+			texteAffluence      string
+			    Texte décrivant l'affluence pour l'usager.
+
+			aideDecisionAffluence   string
+			    Texte d'aide à la décision selon l'affluence.
+
+			tauxDeCharge        integer
+			    Taux de charge en pourcentage.
+			        100 : bus complet
+			        -1  : info indisponible
+			        -2  : droits insuffisants
+
+			idInfoTrafic        integer
+			    title: nouveauté v1.2
+			    S'il n'y a pas d'idInfoTrafic lié au temps d'attente,
+			    id de la FormInfoTrafic.
+			    Permet d'afficher un contexte lorsque le temps est remplacé
+			    par un texte ("déviation", "travaux").
+
+			modeTransport       integer
+			    title: nouveauté v1.2
+			    type de véhicule
+			        0 : "bus"
+			        1 : "tramway"
+
+			    Enum:
+			        [ 0, 1 ]
+	    }
+	]
+
+	latitude            number($float)
+	    (Ajouté le 01/06/2017)
+	    Latitude approximative de la zone.
+
+	longitude           number($float)
+	    (Ajouté le 01/06/2017)
+	    Longitude approximative de la zone.
+}
+
+GET /TR/getListeTemps.do Récupérer un ensemble de temps d'attente
+Description :
+Cette méthode permet de récupérer les temps d'attente à un ou plusieurs lieux, pour une ou plusieurs lignes.
+Les temps d'attente des bus sont recalculés toutes les 30 secondes, et ceux des tram toutes les 10. Il est donc recommandé de renouveller cette requête toutes les 10 secondes afin d'actualiser l'affichage.
+Les trois paramètres 'listeXXX' fonctionnent en parallèle; elles doivent contenir le même nombre de valeurs. Regardez les exemples et faites des essais pour bien comprendre le fonctionnement.
+
+Paramètres :
+Nom = apiKey string (query)
+Description = numéro de la clé
+Name = listeNoms array[sring]
+Description : tableau de chaines, indiquant les lieux recherchés (nom d'arrêt; la notion de lieu est expliquée à la méthode précédente). Exemple: ['Ile de France', 'Poste'].
+Nom = listeidLignes array[string]
+Description = tableau de chaines, indiquant les identifiants des lignes recherchées (attention, il ne s'agit pas du numéro public, voir doc de l'objet FormLigne). Exemple: ['101', '4'].
+Nom = listeSensAller array[boolean] 
+Description = tableau de booléens, indiquant si l'on souhaite le sens aller (true) ou retour (false) des lignes. Exemple: [true, false].
+Nom = preserverOrdre boolean 
+Description = booléen indiquant si l'ordre des demandes (paramètres listesXXX) doit être respecté dans la réponse du serveur, ou non. Si le paramètre est fourni et de valeur true, alors les temps d'attente seront retournés dans l'ordre où ils sont demandés; sinon, ils sont retournés par ordre alphabétique du nom d'arrêt, puis numéro de ligne public, puis sens (aller puis retour). A moins que vous ne réalisiez une IHM permettant à l'utilisateur d'ordonner les temps comme il le souhaite, nous vous conseillons de ne pas fournir ce paramètre.
+Nom = nb integer
+Description = nombre de temps d'attente souhaités pour chaque arrêt/ligne/sens. Doit être compris entre 1 et 5. Attention, le résultat peut contenir moins de temps d'attente que souhaité, par exemple en fin de journée. Optionnel (2 par défaut).
+
+Réponse format JSON
+Code 200
+Description =
+[
+  {
+    "nomExact": "string",
+    "listeTemps": [
+      {
+        "idArret": "string",
+        "latitude": 0,
+        "longitude": 0,
+        "idLigne": "string",
+        "numLignePublic": "string",
+        "couleurFond": "string",
+        "couleurTexte": "string",
+        "sensAller": true,
+        "destination": "string",
+        "precisionDestination": "string",
+        "temps": "string",
+        "tempsHTML": "string",
+        "tempsEnSeconde": 0,
+        "typeDeTemps": 0,
+        "alternance": true,
+        "tempsHTMLEnAlternance": "string",
+        "fiable": true,
+        "numVehicule": "string",
+        "accessibiliteArret": 0,
+        "accessibiliteVehicule": 0,
+        "affluence": -1,
+        "texteAffluence": "string",
+        "aideDecisionAffluence": "string",
+        "tauxDeCharge": 0,
+        "idInfoTrafic": 0,
+        "modeTransport": 0
+      }
+    ],
+    "latitude": 0,
+    "longitude": 0
+  }
+]
+Réponse format modèle :
+Tableau de tableau de temps d'attente par lieu
+
+{
+	nomExact            string
+	    nom précis (corrigé par rapport au nom fourni en paramètre)
+
+	listeTemps          [
+	    tableau d'objets FormTempsAttente.
+	    Liste des prochains passages à ce lieu
+	    (uniquement ceux demandés),
+	    triés par arrêt/ligne/sens
+	    (si preserveOrdre est false ou non fourni)
+	    puis par temps d'attente croissant.
+	    Notez que si vous spécifiez le paramètre preserveOrdre,
+	    le même lieu peut apparaître plusieurs fois dans la réponse,
+	    si deux demandes concernant le même arrêt ne sont pas côte à côte
+	    dans la requête.
+
+	    FormTempsAttente > nouveauté v1.2 > {
+			idArret                 string
+			    Identifiant de l'arrêt.
+			    Normalement, si vous obtenez un objet FormTempsAttente,
+			    vous connaissez déjà le nom de l'arrêt à afficher
+			    à l'utilisateur.
+			    Cet identifiant peut en revanche vous servir pour obtenir
+			    d'autres informations sur l'arrêt
+			    (méthode DR/getDetailsArret).
+
+			latitude                number($float)
+			    (Ajouté le 01/06/2017)
+			    Latitude de l'arrêt (en degrés décimaux).
+			    Si cette valeur vaut 0, c'est que les coordonnées GPS
+			    de l'arrêt sont inconnues (très rare).
+
+			longitude               number($float)
+			    (Ajouté le 01/06/2017)
+			    Longitude de l'arrêt (en degrés décimaux).
+			    Si cette valeur vaut 0, c'est que les coordonnées GPS
+			    de l'arrêt sont inconnues (très rare).
+
+			idLigne                 string
+			    Identifiant de la ligne.
+			    Ne doit pas être affichée à l'utilisateur.
+			    Consultez la documentation de l'objet FormLigne
+			    pour plus d'infos.
+
+			numLignePublic          string
+			    Consultez la documentation de l'objet FormLigne
+			    pour plus d'infos.
+
+			couleurFond             string
+			    Consultez la documentation de l'objet FormLigne
+			    pour plus d'infos.
+
+			couleurTexte            string
+			    Consultez la documentation de l'objet FormLigne
+			    pour plus d'infos.
+
+			sensAller               boolean
+			    Indique si la ligne circule en sens Aller (true)
+			    ou Retour (false).
+
+			destination             string
+			    Destination du bus ou tram à afficher à l'utilisateur.
+			    Cette destination ne correspond pas forcément
+			    à celle d'une variante de la ligne
+			    (certains voyages ne circulent pas jusqu'au terminus
+			    habituel de la variante).
+
+			precisionDestination    string
+			    Précisions sur l'itinéraire emprunté pour rejoindre
+			    la destination.
+			    La plupart du temps, ce champ est une chaîne vide.
+			    Il est utilisé pour certains voyages qui effectuent
+			    un crochet dans leur itinéraire pour desservir
+			    un point d'attraction particulier à certaines heures
+			    de la journée.
+			    Par exemple : "Par Clinique St Vincent".
+
+			temps                   string
+			    title: nouveauté v1.2
+			    Temps d'attente à afficher à l'utilisateur
+			    (exemples : "3 min").
+			    Parfois, cette information est remplacée
+			    par l'annonce d'une perturbation
+			    ("Travaux", "Manifestation"...).
+			    Nouveauté v1.2 :
+			    parfois ce temps peut être une heure d'arrivée,
+			    ex : "17h05".
+
+			tempsHTML               string
+			    title: nouveauté v1.2
+			    Temps d'attente à afficher à l'utilisateur
+			    comme pour le champ "temps",
+			    avec des balises span pour aider à la mise en forme.
+			    Les différents éléments sont dans des balises <span>
+			    avec des classes CSS.
+
+			    Exemples :
+			        exemple 1 : <span class="gk-temps">2</span> <span class="gk-mn">min</span>
+			        exemple 2 : <span class="gk-horaire">17:22</span>
+			        exemple 3 : <span class="gk-mot">Déviation</span>
+			        exemple 4 : <span class="gk-mot">Bus complet</span>
+
+			tempsEnSeconde          integer
+			    title: nouveauté v1.2
+			    Temps d'attente en seconde.
+			    Ne doit pas être affiché directement,
+			    mais peut être utilisé pour faire des règles (if).
+
+			typeDeTemps             integer
+			    title: nouveauté v1.2
+			    Indique le type de données présentes
+			    dans "temps" ou "tempsHTML".
+
+			        0 : temps avant l'arrivée du véhicule (ex : "2 mn")
+			        1 : horaire d'arrivée (ex : "17:30")
+			            (généralement si le temps d'attente dépasse 59 mn)
+			        2 : texte court
+			            ex : "travaux", "déviation", "bus complet"
+
+			    Enum:
+			        [ 0, 1, 2 ]
+
+			alternance              boolean
+			    title: nouveauté v1.2
+			    Optionnel.
+			    Indique si le texte "tempsHTML" est à alterner
+			    avec le champ tempsHTMLenAlternance
+			    toutes les 3 secondes.
+
+			tempsHTMLenAlternance   string
+			    title: nouveauté v1.2
+			    Optionnel, cf. description "alternance".
+			    Exemple :
+			        <span class="gk-temps">2</span>
+			        <span class="gk-mn">min</span>
+
+			fiable                  boolean
+			    Indique si le temps d'attente est calculé
+			    à l'aide d'informations précises
+			    sur la localisation du véhicule (true)
+			    ou s'il s'agit d'une estimation basée
+			    sur les horaires théoriques (false).
+			    Lorsque cette information vaut false,
+			    vous devez remplacer le temps par la mention
+			    "Non localisé" ou préciser clairement
+			    que le temps indiqué est théorique.
+
+			numVehicule             string
+			    Numéro du bus ou de la rame.
+			    Non destiné à être affiché à l'utilisateur.
+			    Peut servir à récupérer des informations
+			    d'accessibilité (annonces vocales,
+			    accessibilité PMR...)
+			    via la méthode DR/getInfosVehicule.
+
+			accessibiliteArret      integer
+			    (Ajouté le 24/05/2018)
+			        0 : Aucune information n'est disponible
+			        1 : Arrêt accessible
+			        2 : Arrêt difficilement accessible ou non accessible
+
+			    Enum:
+			        [ 0, 1, 2 ]
+
+			accessibiliteVehicule   integer
+			    (Ajouté le 24/05/2018)
+			        0 : Aucune information n'est disponible
+			        1 : Véhicule accessible
+			        2 : Véhicule non accessible
+
+			    Attention :
+			    ne tient pas compte d'un éventuel
+			    dysfonctionnement de l'équipement
+			    (rampe d'accès).
+
+			    Enum:
+			        [ 0, 1, 2 ]
+
+			affluence               integer
+			    Indique la prévision d'affluence en temps réel
+			    à l'arrêt pour ce véhicule.
+
+			        0  : Faible
+			        1  : Modérée
+			        2  : Forte
+			        -1 : Indisponible
+			        -2 : Droits insuffisants
+
+			    Enum:
+			        [ -1, 0, 1, 2 ]
+
+			texteAffluence          string
+			    Texte décrivant l'affluence pour les usagers.
+
+			aideDecisionAffluence   string
+			    Texte facultatif aidant l'usager à prendre
+			    une décision en fonction de l'affluence.
+
+			tauxDeCharge            integer
+			    Taux en % indiquant le remplissage du véhicule.
+			        100 : bus complet
+			        -1  : information indisponible
+			        -2  : droits insuffisants
+
+			idInfoTrafic            integer
+			    title: nouveauté v1.2
+			    S'il n'y a pas d'idInfoTrafic lié au temps d'attente,
+			    id de la FormInfoTrafic.
+			    Permet d'afficher un contexte lorsque le temps
+			    est remplacé par un texte
+			    ("déviation", "travaux").
+
+			modeTransport           integer
+			    title: nouveauté v1.2
+			    type de véhicule
+			        0 : "bus"
+			        1 : "tramway"
+
+			    Enum:
+			        [ 0, 1 ]
+	    }
+	]
+
+	latitude                number($float)
+	    (Ajouté le 01/06/2017)
+	    Latitude approximative (position moyenne des arrêts physiques).
+	    Ne doit pas être affichée sur une carte
+	    du fait de son imprécision.
+	    Utilisable pour des calculs de distance.
+
+	longitude               number($float)
+	    (Ajouté le 01/06/2017)
+	    Longitude approximative.
+	    Mêmes remarques que pour la latitude.
+}
+
+GET /TR/getEtatLignes.do Retourne une liste de ligne avec leur état en terme d'infotrafic
+Description :
+Nouveauté v1.2 Cette méthode permet de récupérer l'état de chaque ligne du réseau Ginko. exemple 'La ligne fonctionne normalement' ou 'Il y a une information concernant la ligne' ou 'La circulation de la ligne est interrompue'
+
+paramètres :
+Nom = apiKey string (query)
+Description = numéro de la clé d'api
+Réponse au format JSON :
+code 200
+Description =
+[
+  {
+    "idLigne": "string",
+    "numLignePublic": "string",
+    "couleurFond": "string",
+    "couleurTexte": "string",
+    "etat": 0
+  }
+]
+Réponse format modèle :
+Tableaux de FormInfoLigne trié dans l'ordre dans le quel elles doivent être affichées
+
+FormInfoLigne > nouveauté v1.2 > {
+	idLigne          string
+	    Identifiant de la ligne. Ne doit pas être affichée à l'utilisateur.
+	    Consultez la documentation de l'objet FormLigne pour plus d'infos.
+
+	numLignePublic   string
+	    Consultez la documentation de l'objet FormLigne pour plus d'infos.
+
+	couleurFond      string
+	    Consultez la documentation de l'objet FormLigne pour plus d'infos.
+
+	couleurTexte     string
+	    Consultez la documentation de l'objet FormLigne pour plus d'infos.
+
+	etat             integer
+	    title: nouveauté v1.2
+	    Etat de la ligne en terme d'info trafic
+
+	        0 : "Pas de couleur (pas de picto) - pas d'info sur l'état. Exemple pour les lignes TAD"
+	        1 : "Vert (picto check) - La ligne fonctionne normalement (aucune perturbation en cours ni prévue)"
+	        2 : "Bleu (picto info) - Il y a une information concernant la ligne (nouveauté, évolution)"
+	        3 : "Gris (picto croix) - La ligne ne fonctionne pas en ce moment, selon sa période de fonctionnement"
+	        4 : "Gris (picto attention) - Une perturbation est prévue dans le futur"
+	        5 : "Orange (picto attention) - Une perturbation est en cours"
+	        6 : "Rouge (picto croix) - La circulation de la ligne est interrompue (totalement)"
+
+	    Enum:
+	        [ 0, 1, 2, 3, 4, 5, 6 ]
+}
+
+GET /TR/getMessages.do Récupérer les infos-trafic du réseau Ginko
+Description :
+Cette méthode permet de récupérer les infos-trafic concernant le réseau urbain et périurbain Ginko (perturbations, travaux, incidents...). Ces informations ne changent pas souvent en général; toutefois, elle peuvent changer à tout moment, et ne doivent donc pas être mises en cache plus d'une minute.
+Paramètres :
+Nom = apiKey string (query)
+Description = numéro de la clé d'api
+Nom = idLignes array[string]
+Description = optionnel : pour filtrer les messages par ligne, il s'agit d'un tableau d'identifiants de ligne (cf. FormLigne)
+Nom = idArrets array[string]]
+Description = optionnel : pour filtrer les messages par arrêt, il s'agit d'un tableau d'identifiants d'arrêt (cf. FormArret)
+Réponse au format JSON :
+code 200
+Description =
+[
+  {
+    "id": 0,
+    "titre": "string",
+    "texte": "string",
+    "url": "string",
+    "etat": 1,
+    "idEvenement": 0,
+    "lignes": [
+      "string"
+    ],
+    "arrets": [
+      "string"
+    ],
+    "supports": [
+      0
+    ]
+  }
+]
+Réponse au format modèle :
+FormMessage > nouveauté v1.2 > {
+	id              integer
+	    Identifiant numérique de l'information.
+	    Ce numéro ne doit pas être affiché au public, il est unique.
+
+	titre           string
+	    Titre de l'information.
+	    Peut contenir de l'HTML / CSS.
+	    Jamais vide.
+
+	texte           string
+	    Contenu de l'information pour un support Web,
+	    avec de l'HTML / CSS.
+	    Jamais vide.
+
+	url             string
+	    URL d'une page du site ginko.voyage
+	    sur laquelle des informations complémentaires sont disponibles.
+	    On pourra voir sur cette page tous les messages d'une même campagne
+	    (cf. idCampagne).
+	    Peut être une chaîne vide.
+
+	etat            integer
+	    Etat de la ligne en terme d'info trafic
+
+	        1 : Aucune perturbation
+	        2 : Information concernant la (ou les) ligne(s)
+	            (nouveauté, évolution)
+	        4 : Une perturbation est prévue dans le futur
+	        5 : Une perturbation est en cours
+	        6 : La circulation de la (ou des) ligne(s)
+	            est interrompue (totalement)
+
+	    Enum:
+	        [ 1, 2, 4, 5, 6 ]
+
+	idEvenement     integer
+	    Identifiant de l'évènement qui regroupe plusieurs messages.
+	    Peut être utilisé pour afficher sur une même page
+	    tous les messages liés par un même évènement.
+
+	lignes          [
+	    Tableau de numéro de ligne.
+	    Liste des lignes concernées par cette info-trafic,
+	    triée par ordre logique d'affichage.
+	    Cette liste n'est jamais vide,
+	    mais elle peut ne contenir qu'un seul élément.
+	    string
+	]
+
+	arrets          [
+	    Tableau d'id arrêt.
+	    Si le tableau est vide, le message est à diffuser
+	    sur toutes les lignes de la liste "lignes",
+	    sinon l'information n'est à diffuser que sur les arrêts
+	    dont l'id est dans cette liste.
+	    (Ne concerne pas les supports WEB)
+	    string
+	]
+
+	supports        [
+	    Liste des supports de diffusion du message.
+	    Sans droit supplémentaire, seuls les messages de type "web"
+	    apparaissent.
+
+	        1 => borne info voyageur
+	        2 => écran embarqué
+	        3 => web
+	        4 => notification
+	        5 => mail
+
+	    integer
+	]
+}
+
+GET /TR/getDetailsVehicule.do Récupérer les info temps réel d'un véhicule
+Retourne les info temps réel d'un véhicule à partir de son numéro. Les informations temps réel concernant un véhicule évoluent rapidement; cette méthode ne fonctionne que pour les véhicules urbains (bus et tramways); les méthodes TR ne fournissent pas le numéro des autocars périurbains.
+Paramètres :
+Nom = apiKey string (query)
+Description = numéro de la clé d'api
+Nom = num integer (query)
+Description = numéro du véhicule
+Réponse au format JSON :
+code 200
+Description =
+	
+Objet FormVehiculeTR contenant toutes les informations du véhicule.
+
+{
+  "num": "string",
+  "affluence": -1,
+  "texteAffluence": "string",
+  "nbPassagersABord": 0,
+  "tauxDeCharge": 0,
+  "position": "string"
+}
+Réponse au format modèle :
+FormVehiculeTR {
+	num                 string
+	    Identifiant du véhicule,
+	    inscrit à l'extérieur des véhicules,
+	    à l'avant et à l'arrière.
+	    Il est possible que certains véhicules
+	    soient numérotés avec des lettres
+	    ou d'autres caractères.
+
+	affluence           integer
+	    Indique l'affluence en temps réel
+	    pour ce véhicule, de -1 à 2.
+
+	        -1 : "Indisponible -
+	             Il est actuellement impossible
+	             de connaître l'affluence
+	             à bord de ce véhicule"
+
+	        -2 : "Vous n'avez pas les droits
+	             d'accès à l'affluence
+	             dans les véhicules"
+
+	         0 : "Faible -
+	              il y a peu de voyageurs à bord"
+
+	         1 : "Modérée -
+	              il y a déjà quelques voyageurs
+	              à bord, il reste sûrement
+	              quelques places assises"
+
+	         2 : "Forte -
+	              il y a déjà beaucoup de voyageurs
+	              à bord, il n'y a probablement
+	              plus de places assises"
+
+	    Enum:
+	        [ -1, -2, 0, 1, 2 ]
+
+	texteAffluence      string
+	    Texte qui décrit l'affluence pour les usagers.
+	    Exemple :
+	    si affluence vaut 0, le texte pourrait être :
+	    "Il y a peu de voyageurs à bord de ce véhicule actuellement"
+
+	nbPassagersABord    integer
+	    Indique le nombre de passagers à bord du véhicule.
+	        -1 : information non disponible
+	        -2 : droits insuffisants
+
+	tauxDeCharge        integer
+	    Taux en % indiquant comment le véhicule est rempli
+	    en fonction de sa capacité.
+	        100 : bus complet
+	        -1  : information non disponible
+	        -2  : droits insuffisants
+
+	position            string
+	    Texte qui indique la position du véhicule.
+	    Ex :
+	    "Le véhicule est actuellement entre les stations
+	     Voirin et Giblotte sur la ligne L3
+	     direction Pôle Temis par Gare Viotte et Campus"
+	    ou
+	    "Le véhicule n'est actuellement pas localisable
+	     avec précision"
+	    ou vide "" si vous n'avez pas les droits.
+}

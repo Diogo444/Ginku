@@ -5,6 +5,7 @@ const Home = () => import('@/views/home.vue')
 const Lignes = () => import('@/views/lignes.vue')
 const Arret = () => import('@/views/arret.vue')
 const ArretFromLigne = () => import('@/views/arretFromLigne.vue')
+const InfosTrafic = () => import('@/views/infos-trafic.vue')
 const InfosTransport = () => import('@/views/infos-transport.vue')
 const Message = () => import('@/views/message.vue')
 
@@ -33,9 +34,13 @@ const router = createRouter({
       path: '/arretFromLigne/:idLigne/:idVariante/:numLigne',
       name: 'ArretFromLigneView',
       component: ArretFromLigne,
-      props: true, // active automatiquement le passage en props
+      props: true,
     },
-
+    {
+      path: '/infos',
+      name: 'InfosTrafic',
+      component: InfosTrafic,
+    },
     {
       path: '/infos-transport/:id',
       name: 'InfosTransportPage',

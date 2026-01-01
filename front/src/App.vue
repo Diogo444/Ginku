@@ -1,16 +1,14 @@
-<script setup></script>
+<script setup>
+import BottomNav from '@/components/BottomNav.vue'
+import '@/stores/theme' // Initialise le thème au démarrage
+</script>
 
 <template>
-  <div
-    class="min-h-screen flex flex-col bg-light-bg text-light-text dark:bg-dark-bg dark:text-dark-text"
-  >
-    <main id="main-content" tabindex="-1" class="flex-1 flex flex-col">
+  <div class="min-h-screen flex flex-col bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-sans antialiased">
+    <main id="main-content" tabindex="-1" class="flex-1 flex flex-col pb-20">
       <router-view class="flex-1 flex flex-col" />
     </main>
-
-    <footer class="mt-auto p-4 text-center text-xs opacity-80">
-      Données fournies par l’API Ginko — Grand Besançon Métropole<br />
-      © Grand Besançon Métropole
-    </footer>
+    
+    <BottomNav />
   </div>
 </template>

@@ -1,98 +1,89 @@
 <script setup>
 import { ref, onBeforeUnmount, watch, computed } from 'vue'
+import { getLignes, getArretsFromLigne } from '@/services/api'
+import ThemeToggle from '@/components/ThemeToggle.vue'
+import BackButton from '@/components/BackButton.vue'
+import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
-import Buttonback from '@/components/buttonback.vue'
-import api from '@/api'
+import ErrorState from '@/components/ErrorState.vue'
+
+defineOptions({ name: 'ArretFromLigneView' })
 
 const props = defineProps({
-  idLigne: {
-    type: [String, Number],
-    required: true,
-  },
-  idVariante: {
-    type: [String, Number],
-    required: true,
-  },
-  numLigne: {
-    type: [String, Number],
-    required: true,
-  },
+  idLigne: { type: [String, Number], required: true },
+  idVariante: { type: [String, Number], required: true },
+  numLigne: { type: [String, Number], required: true },
 })
 
-const arret = ref([])
+const arrets = ref([])
 const variantes = ref([])
+const ligneInfo = ref(null)
 const currentVarianteId = ref(props.idVariante)
 const loading = ref(true)
+const error = ref(null)
 const abortController = ref(null)
 
+// Charger les variantes de la ligne
 async function loadVariantes() {
   try {
-    const { data: lignes } = await api.get('/getLingnes')
+    const lignes = await getLignes()
     const ligne = Array.isArray(lignes)
       ? lignes.find((l) => String(l.id) === String(props.idLigne))
       : null
-    variantes.value = Array.isArray(ligne?.variantes) ? ligne.variantes : []
-
-    // Si l'idVariante courant n'est pas dans la liste, prendre la première disponible
-    if (!variantes.value.some((v) => String(v.id) === String(currentVarianteId.value))) {
-      currentVarianteId.value = variantes.value[0]?.id ?? props.idVariante
+    
+    if (ligne) {
+      ligneInfo.value = ligne
+      variantes.value = Array.isArray(ligne?.variantes) ? ligne.variantes : []
+      
+      // Si l'idVariante courant n'est pas dans la liste, prendre la première disponible
+      if (!variantes.value.some((v) => String(v.id) === String(currentVarianteId.value))) {
+        currentVarianteId.value = variantes.value[0]?.id ?? props.idVariante
+      }
     }
-  } catch (error) {
-    console.error('Erreur lors du chargement des variantes:', error)
+  } catch (e) {
+    console.error('Erreur lors du chargement des variantes:', e)
   }
 }
 
+// Charger les arrêts de la variante
 async function loadArrets() {
+  loading.value = true
+  error.value = null
+  
+  if (!props.idLigne || !currentVarianteId.value) {
+    arrets.value = []
+    loading.value = false
+    return
+  }
+  
+  abortController.value?.abort()
+  abortController.value = new AbortController()
+  
   try {
-    loading.value = true
-    if (!props.idLigne || !currentVarianteId.value) {
-      arret.value = []
-      return
-    }
-    abortController.value?.abort()
-    abortController.value = new AbortController()
-    const response = await api.get(
-      `/getArretFromLigne/${props.idLigne}/${currentVarianteId.value}`,
-      { signal: abortController.value.signal },
-    )
-    if (response.data) {
-      arret.value = response.data
-    } else {
-      console.error(
-        'Erreur: données manquantes ou incorrectes dans la réponse API',
-      )
-    }
-  } catch (error) {
-    if (error?.code !== 'ERR_CANCELED') {
-      console.error('Erreur lors de la requête API:', error)
+    arrets.value = await getArretsFromLigne(props.idLigne, currentVarianteId.value, abortController.value.signal)
+  } catch (e) {
+    if (e?.code !== 'ERR_CANCELED') {
+      console.error('Erreur lors de la requête API:', e)
+      error.value = 'Impossible de charger les arrêts'
     }
   } finally {
     loading.value = false
   }
 }
 
+// Inverser le sens de la ligne
 async function toggleDirection() {
   if (!variantes.value.length) return
 
-  // Variante courante
-  const current = variantes.value.find(
-    (v) => String(v.id) === String(currentVarianteId.value),
-  )
-
+  const current = variantes.value.find((v) => String(v.id) === String(currentVarianteId.value))
   let targetVariante = null
 
   if (current && typeof current.sensAller === 'boolean') {
-    // Cherche une variante avec le sens opposé
-    targetVariante = variantes.value.find(
-      (v) => v && typeof v.sensAller === 'boolean' && v.sensAller !== current.sensAller,
-    )
+    targetVariante = variantes.value.find((v) => v && typeof v.sensAller === 'boolean' && v.sensAller !== current.sensAller)
   }
 
-  // Fallback: si pas trouvé, alterner simplement avec la suivante
   if (!targetVariante) {
-    const idx = variantes.value.findIndex(
-      (v) => String(v.id) === String(currentVarianteId.value),
-    )
+    const idx = variantes.value.findIndex((v) => String(v.id) === String(currentVarianteId.value))
     const nextIdx = idx >= 0 ? (idx + 1) % variantes.value.length : 0
     targetVariante = variantes.value[nextIdx]
   }
@@ -103,15 +94,16 @@ async function toggleDirection() {
   }
 }
 
-const currentDirectionLabel = computed(() => {
-  const v = variantes.value.find(
-    (vv) => String(vv.id) === String(currentVarianteId.value),
-  )
-  if (!v) return ''
-  const sens = v.sensAller ? 'Aller' : 'Retour'
-  return `${sens} → ${v.destination || ''}`.trim()
+// Destination actuelle
+const currentDestination = computed(() => {
+  const v = variantes.value.find((vv) => String(vv.id) === String(currentVarianteId.value))
+  return v?.destination || ''
 })
 
+// Origine (premier arrêt)
+const origin = computed(() => arrets.value[0]?.nom || '')
+
+// Initialisation
 const refreshData = async () => {
   await loadVariantes()
   await loadArrets()
@@ -123,7 +115,7 @@ watch(
     currentVarianteId.value = newVariante
     await refreshData()
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 onBeforeUnmount(() => {
@@ -132,57 +124,117 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="lignes-view p-4">
-    <!-- Bouton de retour -->
-    <Buttonback />
-
-    <div class="w-full mx-auto pt-20 sm:pt-24 sm:w-2xl">
-      <!-- En-tête avec titre centré et bouton à droite -->
-      <div class="relative flex items-center justify-center mb-3">
-        <h1 class="text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary text-center">
-          Arrêts de la ligne {{ numLigne }}
-        </h1>
-
-        <button
-          type="button"
-          @click="toggleDirection"
-          :disabled="!variantes.length || loading"
-          :title="`Inverser le sens (${currentDirectionLabel || 'sens inconnu'})`"
-          aria-label="Inverser le sens de la ligne"
-          class="absolute right-0 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 p-2 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <img
-            src="/svg/swap.svg"
-            alt=""
-            class="w-6 h-6 transition-transform hover:rotate-180 filter dark:invert"
-            aria-hidden="true"
-          />
-        </button>
-      </div>
-
-
-      <!-- Loader -->
-      <Loader v-if="loading" />
-
-      <!-- Liste des lignes -->
-      <div v-else-if="arret.length" class="space-y-6">
-        <div
-          v-for="arrets in arret"
-          :key="arrets.id"
-          class="bg-white dark:bg-dark-secondary p-4 rounded-lg shadow-md"
-        >
-          <RouterLink :to="`/arret/${arrets.nom}`" class="block">
-            <h2 class="font-bold text-lg mb-3 flex items-center gap-3">
-              {{ arrets.nom }}
-            </h2>
-          </RouterLink>
+  <div class="flex flex-col min-h-full w-full pb-safe">
+    <!-- Header sticky -->
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+      <!-- Navigation -->
+      <div class="flex items-center gap-4 mb-4">
+        <BackButton />
+        <div class="flex-1 text-center pr-8">
+          <span class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Détails de la ligne</span>
         </div>
       </div>
-
+      
+      <!-- Badge ligne + destination -->
+      <div class="flex flex-col items-center justify-center space-y-2 pb-2">
+        <LineBadge 
+          v-if="ligneInfo"
+          :num="numLigne" 
+          :couleur-fond="ligneInfo.couleurFond" 
+          :couleur-texte="ligneInfo.couleurTexte"
+          size="xl"
+          class="shadow-glow mb-1"
+        />
+        <div v-else class="w-16 h-16 rounded-full bg-gray-300 dark:bg-gray-700 mb-1"></div>
+        
+        <div class="text-center">
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white leading-tight">{{ origin }}</h1>
+          <div v-if="currentDestination" class="flex items-center justify-center gap-2 mt-1 text-gray-500 dark:text-gray-400">
+            <span class="material-icons-round text-sm">arrow_forward</span>
+            <span class="text-sm font-medium">{{ currentDestination }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Toggle thème en haut à droite -->
+      <div class="absolute right-6 top-6">
+        <ThemeToggle />
+      </div>
+    </header>
+    
+    <!-- Contenu -->
+    <main class="flex-grow px-6 pb-8 pt-6">
+      <!-- Header avec compteur et bouton inverser -->
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+          Arrêts <span v-if="arrets.length > 0">({{ arrets.length }})</span>
+        </h2>
+        <button 
+          @click="toggleDirection"
+          :disabled="!variantes.length || loading"
+          class="text-primary text-sm font-semibold flex items-center gap-1 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span class="material-icons-round text-lg">swap_vert</span>
+          Inverser
+        </button>
+      </div>
+      
+      <!-- Loading -->
+      <Loader v-if="loading" />
+      
+      <!-- Erreur -->
+      <ErrorState v-else-if="error" :message="error" @retry="loadArrets" />
+      
+      <!-- Timeline des arrêts -->
+      <div v-else-if="arrets.length > 0" class="relative space-y-0">
+        <router-link
+          v-for="(arret, index) in arrets"
+          :key="arret.id"
+          :to="{ name: 'ArretNomView', params: { nom: arret.nom } }"
+          class="timeline-item relative flex items-start gap-4 pb-6 group cursor-pointer"
+        >
+          <!-- Connector -->
+          <div v-if="index < arrets.length - 1" class="timeline-connector"></div>
+          
+          <!-- Point de la timeline -->
+          <div class="relative z-10 flex-shrink-0 w-12 h-12 flex items-center justify-center">
+            <!-- Premier / dernier arrêt (plus gros) -->
+            <div 
+              v-if="index === 0 || index === arrets.length - 1"
+              class="w-4 h-4 bg-white dark:bg-surface-dark border-[3px] rounded-full shadow-sm group-hover:scale-125 transition-transform duration-200"
+              :style="{ borderColor: '#' + (ligneInfo?.couleurFond || '888888') }"
+            ></div>
+            <!-- Arrêts intermédiaires -->
+            <div 
+              v-else
+              class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full group-hover:scale-125 transition-colors duration-200"
+              :class="{ 'group-hover:bg-primary': true }"
+            ></div>
+          </div>
+          
+          <!-- Nom de l'arrêt -->
+          <div :class="['flex-grow pb-2 border-b border-gray-100 dark:border-gray-800', index === 0 || index === arrets.length - 1 ? 'pt-2.5' : 'pt-3']">
+            <div class="flex justify-between items-center">
+              <span 
+                :class="[
+                  'text-base transition-colors',
+                  index === 0 || index === arrets.length - 1
+                    ? 'font-bold text-gray-900 dark:text-gray-100 group-hover:text-primary'
+                    : 'font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
+                ]"
+              >
+                {{ arret.nom }}
+              </span>
+              <span class="material-icons-round text-gray-300 dark:text-gray-600 text-lg group-hover:text-primary transition-colors">chevron_right</span>
+            </div>
+          </div>
+        </router-link>
+      </div>
+      
       <!-- Aucun résultat -->
       <div v-else class="text-center text-gray-500 dark:text-gray-400 mt-10">
         Aucun arrêt trouvé pour {{ numLigne }}.
       </div>
-    </div>
+    </main>
   </div>
 </template>

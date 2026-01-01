@@ -1,126 +1,113 @@
 <script setup>
-import api from '@/api'
-import { useRoute } from 'vue-router'
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import Buttonback from '@/components/buttonback.vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { getMessages, getLignes } from '@/services/api'
+import BackButton from '@/components/BackButton.vue'
+import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
+import ErrorState from '@/components/ErrorState.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 defineOptions({ name: 'MessagePage' })
-const message = ref([])
-const isLoading = ref(true)
+
+const messages = ref([])
+const ligne = ref(null)
+const loading = ref(true)
+const error = ref(null)
 const route = useRoute()
+const router = useRouter()
 const abortController = ref(null)
 
-const loadMessages = async () => {
+// Configuration des états
+const ETAT_CONFIG = {
+  1: { label: 'Normal', color: 'green', icon: 'check_circle', bgColor: 'bg-green-50 dark:bg-green-900/10', textColor: 'text-green-600 dark:text-green-400', borderColor: 'border-green-500' },
+  2: { label: 'Information', color: 'blue', icon: 'info', bgColor: 'bg-blue-50 dark:bg-blue-900/10', textColor: 'text-blue-600 dark:text-blue-400', borderColor: 'border-blue-500' },
+  3: { label: 'Hors service', color: 'gray', icon: 'cancel', bgColor: 'bg-gray-50 dark:bg-gray-900/10', textColor: 'text-gray-600 dark:text-gray-400', borderColor: 'border-gray-500' },
+  4: { label: 'Perturbation prévue', color: 'yellow', icon: 'schedule', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20', textColor: 'text-yellow-700 dark:text-yellow-500', borderColor: 'border-yellow-500' },
+  5: { label: 'Perturbation en cours', color: 'orange', icon: 'warning', bgColor: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-600 dark:text-orange-400', borderColor: 'border-orange-500' },
+  6: { label: 'Circulation interrompue', color: 'red', icon: 'construction', bgColor: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500' }
+}
+
+async function loadData() {
+  loading.value = true
+  error.value = null
+  
+  abortController.value?.abort()
+  abortController.value = new AbortController()
+  
   try {
-    isLoading.value = true
-    abortController.value?.abort()
-    abortController.value = new AbortController()
-    const { data } = await api.get(`/messages/${route.params.idLigne}`, {
-      signal: abortController.value.signal,
-    })
-    message.value = Array.isArray(data)
-      ? data.map((msg) => ({
-          ...msg,
-          sections: parseMessageContent(msg.texte),
-        }))
-      : []
-  } catch (error) {
-    if (error?.code === 'ERR_CANCELED') return
-    console.error('Error fetching messages:', error)
-    message.value = []
+    // Charger messages et info ligne en parallèle
+    const [messagesData, lignesData] = await Promise.all([
+      getMessages(route.params.idLigne, abortController.value.signal),
+      getLignes(abortController.value.signal)
+    ])
+    
+    messages.value = messagesData.map(msg => ({
+      ...msg,
+      sections: parseMessageContent(msg.texte)
+    }))
+    
+    // Trouver la ligne correspondante
+    ligne.value = lignesData.find(l => l.idLigne === route.params.idLigne) || null
+  } catch (e) {
+    if (e?.code !== 'ERR_CANCELED') {
+      console.error('Erreur:', e)
+      error.value = 'Impossible de charger les messages'
+    }
   } finally {
-    isLoading.value = false
+    loading.value = false
   }
 }
 
-onMounted(loadMessages)
+onMounted(loadData)
 
-watch(
-  () => route.params.idLigne,
-  () => loadMessages(),
-)
+watch(() => route.params.idLigne, loadData)
 
 onBeforeUnmount(() => {
   abortController.value?.abort()
 })
 
-const getStatusColor = (etat) => {
-  switch (etat) {
-    case 1:
-      return 'bg-green-500'
-    case 2:
-      return 'bg-blue-500'
-    case 4:
-      return 'bg-yellow-500'
-    case 5:
-      return 'bg-orange-500'
-    case 6:
-      return 'bg-red-500'
-    default:
-      return 'bg-gray-500'
+// Retour arrière
+function goBack() {
+  if (window.history.length > 2) {
+    router.back()
+  } else {
+    router.push({ name: 'InfosTrafic' })
   }
 }
 
-const getStatusText = (etat) => {
-  switch (etat) {
-    case 1:
-      return 'Aucune perturbation'
-    case 2:
-      return 'Information'
-    case 4:
-      return 'Perturbation prévue'
-    case 5:
-      return 'Perturbation en cours'
-    case 6:
-      return 'Circulation interrompue'
-    default:
-      return 'État inconnu'
-  }
-}
-
-// Fonction pour parser et structurer le contenu HTML des messages
-const parseMessageContent = (htmlContent) => {
-  // Créer un élément DOM temporaire pour parser le HTML
+// Parser le contenu HTML des messages en sections
+function parseMessageContent(htmlContent) {
+  if (!htmlContent) return []
+  
   const tempDiv = document.createElement('div')
   tempDiv.innerHTML = htmlContent
-
+  
   const sections = []
   let currentSection = null
-
-  // Parcourir tous les éléments
-  const walker = document.createTreeWalker(
-    tempDiv,
-    NodeFilter.SHOW_ALL,
-    null,
-    false
-  )
-
+  
+  const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_ALL, null, false)
   let node = walker.nextNode()
+  
   while (node) {
     const text = node.textContent?.trim()
     if (!text) {
       node = walker.nextNode()
       continue
     }
-
-    // Détecter les titres de section (mots en gras ou en début de ligne)
+    
+    // Détecter les titres de section
     if (node.tagName === 'STRONG' || node.tagName === 'B' ||
         (node.nodeType === Node.TEXT_NODE && text.includes(':') && text.length < 50)) {
-
       if (currentSection) {
         sections.push(currentSection)
       }
-
       currentSection = {
         title: text.replace(':', '').trim(),
         items: []
       }
-    }
-    // Contenu d'information
-    else if (node.nodeType === Node.TEXT_NODE && text.length > 10) {
+    } else if (node.nodeType === Node.TEXT_NODE && text.length > 10) {
       if (currentSection) {
-        // Diviser les lignes multiples
         const lines = text.split(/\n|<br>/).filter(line => line.trim())
         lines.forEach(line => {
           const cleanLine = line.trim()
@@ -132,134 +119,148 @@ const parseMessageContent = (htmlContent) => {
     }
     node = walker.nextNode()
   }
-
+  
   if (currentSection && currentSection.items.length > 0) {
     sections.push(currentSection)
   }
-
+  
   return sections
 }
+
+// État le plus sévère parmi tous les messages
+const maxEtat = computed(() => {
+  if (!messages.value.length) return 1
+  return Math.max(...messages.value.map(m => m.etat || 1))
+})
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-6 lg:p-8 relative">
-    <!-- Bouton de retour -->
-    <Buttonback />
-
-    <div class="flex flex-col items-center">
-      <h1
-        class="pt-20 text-2xl sm:text-3xl font-bold text-light-primary dark:text-dark-primary mb-6 text-center"
-      >
-        Messages d'information
-      </h1>
-
-      <!-- Loader -->
-      <Loader v-if="isLoading" />
-
+  <div class="flex flex-col min-h-full w-full pb-safe">
+    <!-- Header sticky -->
+    <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
+      <div class="flex items-center gap-4 mb-4">
+        <BackButton @click="goBack" />
+        <div class="flex-grow">
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
+          <p v-if="ligne" class="text-sm text-gray-500 dark:text-gray-400">
+            Ligne {{ ligne.numLignePublic }}
+          </p>
+        </div>
+        <ThemeToggle />
+      </div>
+      
+      <!-- Badge de ligne -->
+      <div v-if="ligne && !loading" class="flex items-center gap-3">
+        <LineBadge 
+          :num="ligne.numLignePublic"
+          :couleur-fond="ligne.couleurFond"
+          :couleur-texte="ligne.couleurTexte"
+          size="lg"
+        />
+        <div>
+          <span 
+            :class="[
+              'px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide flex items-center gap-1',
+              ETAT_CONFIG[maxEtat]?.bgColor,
+              ETAT_CONFIG[maxEtat]?.textColor
+            ]"
+          >
+            <span class="material-icons-round text-sm">{{ ETAT_CONFIG[maxEtat]?.icon }}</span>
+            {{ ETAT_CONFIG[maxEtat]?.label }}
+          </span>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Contenu -->
+    <main class="flex-grow px-6 py-6 space-y-6">
+      <!-- Loading -->
+      <Loader v-if="loading" />
+      
+      <!-- Erreur -->
+      <ErrorState v-else-if="error" :message="error" @retry="loadData" />
+      
       <!-- Messages -->
-      <div v-else-if="message.length" class="w-full max-w-3xl mx-auto space-y-4">
-        <div
-          v-for="msg in message"
+      <template v-else-if="messages.length">
+        <div 
+          v-for="msg in messages"
           :key="msg.id"
-          class="bg-white dark:bg-dark-secondary rounded-lg shadow-md overflow-hidden"
+          :class="[
+            'bg-surface-light dark:bg-surface-dark rounded-2xl overflow-hidden shadow-soft border-l-4',
+            ETAT_CONFIG[msg.etat]?.borderColor || 'border-gray-300'
+          ]"
         >
           <!-- En-tête du message -->
-          <div class="p-4 border-b border-light-accent dark:border-dark-accent">
-            <div class="flex items-center justify-between mb-4">
-              <h2
-                class="text-xl font-semibold text-light-primary dark:text-dark-primary"
-                v-html="msg.titre"
-              ></h2>
-              <span
+          <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-start justify-between gap-3">
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white flex-grow" v-html="msg.titre"></h2>
+              <span 
                 :class="[
-                  getStatusColor(msg.etat),
-                  'px-3 py-1 rounded-full text-white text-sm font-medium',
+                  'px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide flex items-center gap-1 flex-shrink-0',
+                  ETAT_CONFIG[msg.etat]?.bgColor,
+                  ETAT_CONFIG[msg.etat]?.textColor
                 ]"
               >
-                {{ getStatusText(msg.etat) }}
+                <span class="material-icons-round text-sm">{{ ETAT_CONFIG[msg.etat]?.icon }}</span>
+                {{ ETAT_CONFIG[msg.etat]?.label }}
               </span>
             </div>
-
-            <!-- Lignes concernées -->
-            <div class="space-y-2">
-              <p class="text-sm text-light-text dark:text-dark-text font-medium">Lignes concernées :</p>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="ligne in msg.lignes"
-                  :key="ligne"
-                  class="px-2 py-1 text-sm bg-light-accent dark:bg-dark-accent text-light-text dark:text-dark-text rounded"
-                >
-                  Ligne {{ ligne }}
-                </span>
-              </div>
-            </div>
           </div>
-
-          <!-- Corps du message restructuré -->
-          <div class="p-6 space-y-6">
+          
+          <!-- Corps du message -->
+          <div class="px-5 py-4 space-y-5">
             <!-- Sections parsées -->
             <template v-if="msg.sections.length">
-              <div v-for="(section, index) in msg.sections" :key="index" class="space-y-4">
-
+              <div v-for="(section, index) in msg.sections" :key="index" class="space-y-3">
                 <!-- Titre de section -->
-                <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-r-lg">
-                  <h3 class="text-lg font-bold text-light-primary dark:text-dark-primary">
+                <div class="flex items-center gap-2">
+                  <span class="material-icons-round text-primary text-lg">subdirectory_arrow_right</span>
+                  <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
                     {{ section.title }}
                   </h3>
                 </div>
-
-                <!-- Items de la section -->
-                <div class="space-y-3 ml-2">
-                  <div
+                
+                <!-- Items -->
+                <div class="space-y-2 ml-7">
+                  <div 
                     v-for="(item, itemIndex) in section.items"
                     :key="itemIndex"
-                    class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                    class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl text-sm text-gray-700 dark:text-gray-300 leading-relaxed"
                   >
-                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {{ item }}
-                    </div>
+                    {{ item }}
                   </div>
                 </div>
               </div>
             </template>
-
+            
             <!-- Fallback si le parsing ne fonctionne pas -->
-            <div v-else class="space-y-4">
-              <div class="border-l-4 border-gray-400 pl-4 py-2">
-                <h3 class="text-lg font-semibold text-light-primary dark:text-dark-primary mb-4">
-                  Informations
-                </h3>
-              </div>
-              <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div
-                  class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed"
-                  v-html="msg.texte"
-                ></div>
-              </div>
+            <div v-else class="prose dark:prose-invert max-w-none text-sm">
+              <div v-html="msg.texte"></div>
             </div>
-
+            
             <!-- Lien vers plus d'informations -->
-            <div v-if="msg.url" class="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <a
-                :href="msg.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-              >
-                <span>Plus d'informations</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-            </div>
+            <a
+              v-if="msg.url"
+              :href="msg.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-colors font-semibold text-sm mt-4"
+            >
+              <span>Plus d'informations</span>
+              <span class="material-icons-round text-lg">open_in_new</span>
+            </a>
           </div>
         </div>
-      </div>
-
+      </template>
+      
       <!-- Aucun message -->
-      <div v-else class="text-center text-gray-500 dark:text-gray-400 mt-10">
-        Aucun message disponible.
+      <div v-else class="text-center py-16">
+        <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
+          <span class="material-icons-round text-3xl text-green-500">check_circle</span>
+        </div>
+        <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Aucune perturbation</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Cette ligne fonctionne normalement</p>
       </div>
-    </div>
+    </main>
   </div>
 </template>

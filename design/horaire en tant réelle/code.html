@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Real-time Stop Schedule (Prominent Favorites)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: "#D84358",
+                        "primary-soft": "#FFEDF0",
+                        "background-light": "#F8FAFC",
+                        "background-dark": "#18181b", 
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#27272a",
+                        "line-teal": "#00A9BC", 
+                        "line-dark-teal": "#006C75", 
+                        "line-black": "#1F1F1F", 
+                        "line-red": "#D6001C", 
+                        "line-brown": "#A94E23", 
+                        "line-yellow": "#FDB813", 
+                        "line-blue": "#005C9E",
+                        "line-purple": "#6B21A8",
+                        "line-green": "#10B981",
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                        '3xl': '2rem',
+                        'full': '9999px',
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(216, 67, 88, 0.3)',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .pt-safe {
+            padding-top: env(safe-area-inset-top);
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10B981;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+        }
+        .live-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            background-color: rgba(16, 185, 129, 0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            50% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(0.8); opacity: 0; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 font-sans min-h-screen antialiased flex flex-col pb-safe">
+<header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-6 pt-safe pt-6 pb-4 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+<div class="flex items-center gap-4 mb-2">
+<button class="w-10 h-10 -ml-2 rounded-full bg-transparent flex items-center justify-center text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="history.back()">
+<span class="material-icons-round text-2xl">arrow_back</span>
+</button>
+<div class="flex-1 text-center pr-8">
+<span class="text-xs uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Horaires en temps réel</span>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center space-y-1 pb-2">
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">Gare Viotte</h1>
+<div class="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+<span class="material-icons-round text-sm">place</span>
+<span class="text-sm font-medium">Arrêt n° 1042</span>
+</div>
+</div>
+<div class="absolute right-6 top-6 pt-safe">
+<button class="w-10 h-10 rounded-full bg-white dark:bg-surface-dark shadow-sm flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border border-gray-100 dark:border-gray-700" title="Toggle Dark Mode">
+<span class="material-icons-round text-xl">dark_mode</span>
+</button>
+</div>
+</header>
+<main class="flex-grow px-4 pb-24 pt-6 space-y-6">
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-[1.25rem] bg-line-yellow flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
+                    L3
+                </div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<span class="text-base font-bold text-gray-900 dark:text-white truncate">Temis</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">via Campus</span>
+</div>
+<div class="flex flex-col items-end justify-center min-w-[70px]">
+<button class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 mb-1 transition-colors" title="Ajouter aux favoris">
+<span class="material-icons-round text-2xl font-semibold">star_border</span>
+</button>
+<div class="flex items-center gap-1.5">
+<span class="live-dot"></span>
+<span class="text-lg font-bold text-line-green whitespace-nowrap">À l'approche</span>
+</div>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-[1.25rem] bg-line-yellow flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
+                    L3
+                </div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<span class="text-base font-bold text-gray-900 dark:text-white truncate">Centre Ville</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">via République</span>
+</div>
+<div class="flex flex-col items-end justify-center min-w-[70px]">
+<button class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 mb-1 transition-colors" title="Ajouter aux favoris">
+<span class="material-icons-round text-2xl font-semibold">star_border</span>
+</button>
+<span class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">2 min</span>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-[1.25rem] bg-line-teal flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
+                    T1
+                </div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<span class="text-base font-bold text-gray-900 dark:text-white truncate">Hauts du Chazal</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">Tramway</span>
+</div>
+<div class="flex flex-col items-end justify-center min-w-[70px]">
+<button class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 mb-1 transition-colors" title="Ajouter aux favoris">
+<span class="material-icons-round text-2xl font-semibold">star_border</span>
+</button>
+<span class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">5 min</span>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-[1.25rem] bg-line-teal flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
+                    T1
+                </div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<span class="text-base font-bold text-gray-900 dark:text-white truncate">Chalezeule</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">Tramway</span>
+</div>
+<div class="flex flex-col items-end justify-center min-w-[70px]">
+<button class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 mb-1 transition-colors" title="Ajouter aux favoris">
+<span class="material-icons-round text-2xl font-semibold">star_border</span>
+</button>
+<span class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">8 min</span>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group">
+<div class="w-12 h-12 rounded-[1.25rem] bg-line-purple flex items-center justify-center text-white font-bold text-xl shadow-sm group-hover:scale-105 transition-transform">
+                    L5
+                </div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<span class="text-base font-bold text-gray-900 dark:text-white truncate">Saint-Claude</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">Bus</span>
+</div>
+<div class="flex flex-col items-end justify-center min-w-[70px]">
+<button class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 mb-1 transition-colors" title="Ajouter aux favoris">
+<span class="material-icons-round text-2xl font-semibold">star_border</span>
+</button>
+<span class="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">12 min</span>
+</div>
+</div>
+<div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group opacity-75">
+<div class="w-12 h-12 rounded-[1.25rem] bg-line-yellow flex items-center justify-center text-white font-bold text-xl shadow-sm">
+                    L3
+                </div>
+<div class="flex-grow min-w-0 flex flex-col justify-center">
+<span class="text-base font-bold text-gray-900 dark:text-white truncate">Centre Ville</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">via République</span>
+</div>
+<div class="flex flex-col items-end justify-center min-w-[70px]">
+<button class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 mb-1 transition-colors" title="Ajouter aux favoris">
+<span class="material-icons-round text-2xl font-semibold">star_border</span>
+</button>
+<span class="text-lg font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">18 min</span>
+</div>
+</div>
+</div>
+</main>
+<nav class="fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe pt-2 px-6 pb-4 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+<div class="flex justify-around items-center max-w-sm mx-auto">
+<a class="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 group transition-colors" href="#">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">star_border</span>
+<span class="text-[10px] font-medium">Favoris</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-primary group" href="#">
+<div class="relative">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">directions_bus</span>
+<span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></span>
+</div>
+<span class="text-[10px] font-bold">Lignes</span>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 group transition-colors" href="#">
+<span class="material-icons-round text-2xl group-hover:scale-110 transition-transform">info</span>
+<span class="text-[10px] font-medium">Infos</span>
+</a>
+</div>
+</nav>
+<script>
+        // Simple toggle for dark mode demonstration
+        const toggleBtn = document.querySelector('button[title="Toggle Dark Mode"]');
+        const html = document.querySelector('html');
+        // Check system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            html.classList.add('dark');
+        }
+        toggleBtn.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            const icon = toggleBtn.querySelector('.material-icons-round');
+            if (html.classList.contains('dark')) {
+                icon.textContent = 'light_mode';
+            } else {
+                icon.textContent = 'dark_mode';
+            }
+        });
+    </script>
+</body></html>

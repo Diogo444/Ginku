@@ -100,27 +100,38 @@ async function loadVariantes(idArrets) {
   variantesMap.value = map
 }
 
-// Regrouper les horaires par ligne puis destination
+// Regrouper les horaires par ligne + destination
 const groupedHoraires = computed(() => {
   const src = horaires.value?.listeTemps || []
-  const lignesMap = {}
+  const groupMap = {}
 
   for (const t of src) {
-    const key = t.numLignePublic
-    if (!lignesMap[key]) {
-      lignesMap[key] = {
+    // Clé unique: ligne + destination + précision
+    const destKey = `${t.numLignePublic}_${t.destination}_${t.precisionDestination || ''}`
+    
+    if (!groupMap[destKey]) {
+      groupMap[destKey] = {
         numLignePublic: t.numLignePublic,
         couleurFond: t.couleurFond,
         couleurTexte: t.couleurTexte,
         idLigne: t.idLigne,
-        items: []
+        destination: t.destination,
+        precisionDestination: t.precisionDestination,
+        modeTransport: t.modeTransport,
+        idArret: t.idArret,
+        horaires: []
       }
     }
 
-    lignesMap[key].items.push(t)
+    // Ajouter l'horaire avec ses infos véhicule
+    groupMap[destKey].horaires.push({
+      tempsRestant: t.tempsRestant,
+      temps: t.temps,
+      numVehicule: t.numVehicule
+    })
   }
 
-  return Object.values(lignesMap)
+  return Object.values(groupMap)
 })
 
 // Formater le temps d'attente
@@ -139,23 +150,23 @@ const openVehicleModal = (numVehicule) => {
 }
 
 // Toggle favori
-const handleToggleFavorite = (horaire) => {
-  const favId = generateFavoriteId(route.params.nom, horaire.idLigne, horaire.destination)
+const handleToggleFavorite = (groupe) => {
+  const favId = generateFavoriteId(route.params.nom, groupe.idLigne, groupe.destination)
   toggleFavorite({
     id: favId,
     type: 'arret',
     nomArret: route.params.nom,
-    idLigne: horaire.idLigne,
-    numLigne: horaire.numLignePublic,
-    destination: horaire.destination,
-    couleurFond: horaire.couleurFond,
-    couleurTexte: horaire.couleurTexte
+    idLigne: groupe.idLigne,
+    numLigne: groupe.numLignePublic,
+    destination: groupe.destination,
+    couleurFond: groupe.couleurFond,
+    couleurTexte: groupe.couleurTexte
   })
 }
 
 // Vérifier si favori
-const checkIsFavorite = (horaire) => {
-  const favId = generateFavoriteId(route.params.nom, horaire.idLigne, horaire.destination)
+const checkIsFavorite = (groupe) => {
+  const favId = generateFavoriteId(route.params.nom, groupe.idLigne, groupe.destination)
   return isFavorite(favId)
 }
 
@@ -212,75 +223,69 @@ onBeforeUnmount(() => {
       <template v-else-if="groupedHoraires.length > 0">
         <div 
           v-for="groupe in groupedHoraires" 
-          :key="groupe.numLignePublic"
-          class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800"
+          :key="`${groupe.numLignePublic}_${groupe.destination}`"
+          class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden p-3 sm:p-4"
         >
-          <div 
-            v-for="(horaire, index) in groupe.items" 
-            :key="index"
-            @click="horaire.numVehicule && openVehicleModal(horaire.numVehicule)"
-            :class="[
-              'p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group',
-              horaire.numVehicule ? 'cursor-pointer' : ''
-            ]"
-          >
+          <!-- En-tête: Ligne + Destination + Favori -->
+          <div class="flex items-center gap-3 sm:gap-4 mb-3">
             <!-- Badge ligne -->
             <LineBadge 
-              :num="horaire.numLignePublic" 
-              :couleur-fond="horaire.couleurFond" 
-              :couleur-texte="horaire.couleurTexte"
+              :num="groupe.numLignePublic" 
+              :couleur-fond="groupe.couleurFond" 
+              :couleur-texte="groupe.couleurTexte"
               size="md"
-              class="group-hover:scale-105 transition-transform rounded-[1rem] flex-shrink-0"
+              class="rounded-[1rem] flex-shrink-0"
             />
             
             <!-- Destination -->
             <div class="flex-grow min-w-0 flex flex-col justify-center">
               <span class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
-                {{ horaire.destination }}
-                <span v-if="horaire.precisionDestination" class="font-normal text-gray-500 text-xs sm:text-sm">
-                  {{ horaire.precisionDestination }}
+                {{ groupe.destination }}
+                <span v-if="groupe.precisionDestination" class="font-normal text-gray-500 text-xs sm:text-sm">
+                  {{ groupe.precisionDestination }}
                 </span>
               </span>
-              <span v-if="horaire.modeTransport === 0" class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Tramway</span>
+              <span v-if="groupe.modeTransport === 0" class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Tramway</span>
               <span v-else class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Bus</span>
             </div>
             
-            <!-- Temps + Favori -->
-            <div class="flex flex-col items-end justify-center min-w-[60px] sm:min-w-[70px]">
-              <!-- Bouton favori -->
-              <button 
-                @click.stop="handleToggleFavorite(horaire)"
-                :class="[
-                  'mb-0.5 sm:mb-1 transition-colors',
-                  checkIsFavorite(horaire) 
-                    ? 'text-yellow-500 hover:text-yellow-600' 
-                    : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500'
-                ]"
-                :title="checkIsFavorite(horaire) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
-              >
-                <span class="material-icons-round text-xl sm:text-2xl">
-                  {{ checkIsFavorite(horaire) ? 'star' : 'star_border' }}
-                </span>
-              </button>
-              
-              <!-- Temps d'attente -->
-              <template v-if="formatTemps(horaire.tempsRestant)?.isClose">
-                <div class="flex items-center gap-1 sm:gap-1.5">
-                  <span class="live-dot"></span>
-                  <span class="text-base sm:text-lg font-semibold text-line-green whitespace-nowrap">
-                    {{ formatTemps(horaire.tempsRestant).text }}
-                  </span>
-                </div>
-              </template>
-              <template v-else-if="formatTemps(horaire.tempsRestant)">
-                <span class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                  {{ formatTemps(horaire.tempsRestant).text }}
-                </span>
-              </template>
-              <template v-else>
-                <span class="text-base font-medium text-gray-500">{{ horaire.temps }}</span>
-              </template>
-            </div>
+            <!-- Bouton favori unique -->
+            <button 
+              @click="handleToggleFavorite(groupe)"
+              :class="[
+                'transition-colors flex-shrink-0',
+                checkIsFavorite(groupe) 
+                  ? 'text-yellow-500 hover:text-yellow-600' 
+                  : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500'
+              ]"
+              :title="checkIsFavorite(groupe) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+            >
+              <span class="material-icons-round text-xl sm:text-2xl">
+                {{ checkIsFavorite(groupe) ? 'star' : 'star_border' }}
+              </span>
+            </button>
+          </div>
+          
+          <!-- Horaires horizontaux -->
+          <div class="flex flex-wrap gap-2 sm:gap-3">
+            <button
+              v-for="(horaire, idx) in groupe.horaires"
+              :key="idx"
+              @click="horaire.numVehicule && openVehicleModal(horaire.numVehicule)"
+              :class="[
+                'px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base transition-all',
+                horaire.numVehicule ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default',
+                formatTemps(horaire.tempsRestant)?.isClose 
+                  ? 'bg-green-100 dark:bg-green-900/30 text-line-green border border-green-200 dark:border-green-800' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+              ]"
+              :title="horaire.numVehicule ? 'Voir les infos du véhicule' : ''"
+            >
+              <div class="flex items-center gap-1.5">
+                <span v-if="formatTemps(horaire.tempsRestant)?.isClose" class="live-dot"></span>
+                <span>{{ formatTemps(horaire.tempsRestant)?.text || horaire.temps }}</span>
+              </div>
+            </button>
           </div>
         </div>
       </template>

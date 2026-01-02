@@ -165,7 +165,7 @@ const maxEtat = computed(() => {
               ETAT_CONFIG[maxEtat]?.textColor
             ]"
           >
-            <span class="material-icons-round text-xs sm:text-sm">{{ ETAT_CONFIG[maxEtat]?.icon }}</span>
+            <span class="material-icons-round text-xs sm:text-sm" aria-hidden="true">{{ ETAT_CONFIG[maxEtat]?.icon }}</span>
             {{ ETAT_CONFIG[maxEtat]?.label }}
           </span>
         </div>
@@ -201,7 +201,7 @@ const maxEtat = computed(() => {
                   ETAT_CONFIG[msg.etat]?.textColor
                 ]"
               >
-                <span class="material-icons-round text-xs sm:text-sm">{{ ETAT_CONFIG[msg.etat]?.icon }}</span>
+                <span class="material-icons-round text-xs sm:text-sm" aria-hidden="true">{{ ETAT_CONFIG[msg.etat]?.icon }}</span>
                 {{ ETAT_CONFIG[msg.etat]?.label }}
               </span>
             </div>
@@ -214,7 +214,7 @@ const maxEtat = computed(() => {
               <div v-for="(section, index) in msg.sections" :key="index" class="space-y-2.5 sm:space-y-3">
                 <!-- Titre de section -->
                 <div class="flex items-center gap-1.5 sm:gap-2">
-                  <span class="material-icons-round text-primary text-base sm:text-lg">subdirectory_arrow_right</span>
+                  <span class="material-icons-round text-primary text-base sm:text-lg" aria-hidden="true">subdirectory_arrow_right</span>
                   <h3 class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
                     {{ section.title }}
                   </h3>
@@ -245,17 +245,18 @@ const maxEtat = computed(() => {
               target="_blank"
               rel="noopener noreferrer"
               class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg sm:rounded-xl transition-colors font-medium text-xs sm:text-sm mt-3 sm:mt-4"
+              aria-label="Plus d'informations (s'ouvre dans un nouvel onglet)"
             >
               <span>Plus d'informations</span>
-              <span class="material-icons-round text-base sm:text-lg">open_in_new</span>
+              <span class="material-icons-round text-base sm:text-lg" aria-hidden="true">open_in_new</span>
             </a>
           </div>
         </div>
       </template>
       
       <!-- Aucun message -->
-      <div v-else class="text-center py-12 sm:py-16">
-        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+      <div v-else class="text-center py-12 sm:py-16" role="status">
+        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-3 sm:mb-4" aria-hidden="true">
           <span class="material-icons-round text-2xl sm:text-3xl text-green-500">check_circle</span>
         </div>
         <p class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300">Aucune perturbation</p>

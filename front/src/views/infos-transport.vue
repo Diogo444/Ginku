@@ -110,7 +110,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
       <template v-else-if="details">
         <!-- Icône véhicule -->
         <div class="flex justify-center">
-          <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 flex items-center justify-center shadow-soft">
+          <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 flex items-center justify-center shadow-soft" aria-hidden="true">
             <span class="material-icons-round text-4xl sm:text-5xl text-primary">directions_bus</span>
           </div>
         </div>
@@ -129,7 +129,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
         <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
           <!-- Énergie -->
           <div :class="['p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col items-center gap-1.5 sm:gap-2', energieConfig.bgColor]">
-            <span :class="['material-icons-round text-xl sm:text-2xl', energieConfig.color]">
+            <span :class="['material-icons-round text-xl sm:text-2xl', energieConfig.color]" aria-hidden="true">
               {{ energieConfig.icon }}
             </span>
             <span class="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Énergie</span>
@@ -138,7 +138,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
           
           <!-- Accessibilité -->
           <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-light dark:bg-surface-dark flex flex-col items-center gap-1.5 sm:gap-2 shadow-soft">
-            <span :class="['material-icons-round text-xl sm:text-2xl', accessibiliteConfig.color]">
+            <span :class="['material-icons-round text-xl sm:text-2xl', accessibiliteConfig.color]" aria-hidden="true">
               {{ accessibiliteConfig.icon }}
             </span>
             <span class="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Accessibilité</span>
@@ -147,7 +147,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
           
           <!-- Climatisation -->
           <div class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-light dark:bg-surface-dark flex flex-col items-center gap-1.5 sm:gap-2 shadow-soft">
-            <span :class="['material-icons-round text-xl sm:text-xl sm:text-2xl', climConfig.color]">
+            <span :class="['material-icons-round text-xl sm:text-xl sm:text-2xl', climConfig.color]" aria-hidden="true">
               {{ climConfig.icon }}
             </span>
             <span class="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Climatisation</span>
@@ -156,7 +156,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
           
           <!-- Longueur -->
           <div v-if="details.longueurVehicule" class="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-light dark:bg-surface-dark flex flex-col items-center gap-1.5 sm:gap-2 shadow-soft">
-            <span class="material-icons-round text-xl sm:text-2xl text-gray-600 dark:text-gray-400">straighten</span>
+            <span class="material-icons-round text-xl sm:text-2xl text-gray-600 dark:text-gray-400" aria-hidden="true">straighten</span>
             <span class="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Longueur</span>
             <span class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{{ details.longueurVehicule }}</span>
           </div>
@@ -201,9 +201,9 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
         </div>
         
         <!-- Légende accessibilité -->
-        <div v-if="details.accessibilite === 1" class="bg-green-50 dark:bg-green-900/10 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+        <div v-if="details.accessibilite === 1" class="bg-green-50 dark:bg-green-900/10 rounded-xl sm:rounded-2xl p-3 sm:p-4" role="note">
           <div class="flex items-start gap-2.5 sm:gap-3">
-            <span class="material-icons-round text-green-600 dark:text-green-400 text-lg sm:text-xl flex-shrink-0">info</span>
+            <span class="material-icons-round text-green-600 dark:text-green-400 text-lg sm:text-xl flex-shrink-0" aria-hidden="true">info</span>
             <p class="text-xs sm:text-sm text-green-800 dark:text-green-200">
               Ce véhicule est équipé d'une rampe d'accès et d'emplacements réservés aux personnes à mobilité réduite.
             </p>
@@ -212,8 +212,8 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
       </template>
       
       <!-- Véhicule non trouvé -->
-      <div v-else class="text-center py-12 sm:py-16">
-        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+      <div v-else class="text-center py-12 sm:py-16" role="status">
+        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3 sm:mb-4" aria-hidden="true">
           <span class="material-icons-round text-2xl sm:text-3xl text-gray-400">directions_bus</span>
         </div>
         <p class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300">Véhicule introuvable</p>

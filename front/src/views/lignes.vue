@@ -72,7 +72,7 @@ const groupedLignes = computed(() => {
     // Détection du type basée sur le numéro public ou la typologie
     const num = (ligne.numLignePublic || '').toUpperCase()
     
-    if (num.startsWith('T') || ligne.modeTransport === 0) {
+    if (num.startsWith('T') || ligne.modeTransport === 1) {
       groups.tramway.lignes.push(ligne)
     } else if (num.startsWith('L') || ligne.typologie === 20) {
       groups.lianes.lignes.push(ligne)
@@ -107,7 +107,7 @@ const groupedLignes = computed(() => {
       
       <!-- Barre de recherche -->
       <div class="relative mb-2">
-        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none" aria-hidden="true">
           <span class="material-icons-round text-primary/70 text-xl">search</span>
         </div>
         <input
@@ -115,6 +115,7 @@ const groupedLignes = computed(() => {
           type="text"
           placeholder="Chercher une ligne..."
           class="w-full py-3 sm:py-3.5 pl-10 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-sm sm:text-base"
+          aria-label="Rechercher une ligne"
         />
       </div>
     </header>
@@ -129,10 +130,10 @@ const groupedLignes = computed(() => {
       
       <!-- Liste des lignes groupées -->
       <template v-else-if="groupedLignes.length > 0">
-        <section v-for="group in groupedLignes" :key="group.title">
+        <section v-for="group in groupedLignes" :key="group.title" :aria-label="group.title">
           <!-- Header de section -->
           <div class="flex items-center gap-2 mb-2 sm:mb-3 px-1 pt-2">
-            <span :class="['material-icons-round text-base sm:text-lg', group.iconColor]">{{ group.icon }}</span>
+            <span :class="['material-icons-round text-base sm:text-lg', group.iconColor]" aria-hidden="true">{{ group.icon }}</span>
             <h2 class="text-xs sm:text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ group.title }}</h2>
           </div>
           
@@ -150,6 +151,7 @@ const groupedLignes = computed(() => {
                 },
               }"
               class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer block"
+              :aria-label="'Ligne ' + ligne.numLignePublic + ', ' + (ligne.libellePublic || '')"
             >
               <div class="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                 <LineBadge 
@@ -159,15 +161,15 @@ const groupedLignes = computed(() => {
                   size="md"
                 />
                 <div class="flex flex-col min-w-0">
-                  <span class="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-[15px] truncate">
+                  <span class="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-[15px] truncate" aria-hidden="true">
                     {{ ligne.libellePublic?.split('<>')[0]?.trim() || ligne.libellePublic }}
                   </span>
-                  <span class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <span class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 truncate" aria-hidden="true">
                     {{ ligne.libellePublic?.split('<>')[1]?.trim() || '' }}
                   </span>
                 </div>
               </div>
-              <span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors flex-shrink-0 ml-2">chevron_right</span>
+              <span class="material-icons-round text-gray-400 dark:text-gray-600 group-hover:text-primary transition-colors flex-shrink-0 ml-2" aria-hidden="true">chevron_right</span>
             </router-link>
           </div>
         </section>

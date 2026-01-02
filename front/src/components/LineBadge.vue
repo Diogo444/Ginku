@@ -66,7 +66,9 @@ const toHex = (color) => {
       backgroundColor: toHex(couleurFond),
       color: toHex(couleurTexte)
     }"
+    :aria-label="'Ligne ' + num"
+    role="img"
   >
-    {{ num }}
+    <span aria-hidden="true">{{ num }}</span>
   </div>
 </template>

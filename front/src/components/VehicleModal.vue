@@ -147,6 +147,9 @@ const vehicleTypeIcon = computed(() => {
         <div 
           class="relative w-full sm:w-[24rem] bg-surface-light dark:bg-surface-dark rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border-t border-white/10"
           @click.stop
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="vehicle-modal-title"
         >
           <!-- Drag handle -->
           <div class="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing sm:hidden">
@@ -156,17 +159,17 @@ const vehicleTypeIcon = computed(() => {
           <!-- Header -->
           <div class="px-6 pb-2 pt-1 flex items-start justify-between">
             <div>
-              <p class="text-xs font-bold text-primary uppercase tracking-widest mb-1">Détails</p>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+              <p class="text-xs font-bold text-primary uppercase tracking-widest mb-1" aria-hidden="true">Détails</p>
+              <h2 id="vehicle-modal-title" class="text-2xl font-bold text-gray-900 dark:text-white">
                 Véhicule n° {{ numVehicule }}
               </h2>
             </div>
             <button 
               @click="emit('close')"
               class="w-8 h-8 -mr-2 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Fermer"
+              aria-label="Fermer la fenêtre de détails du véhicule"
             >
-              <span class="material-icons-round text-2xl">close</span>
+              <span class="material-icons-round text-2xl" aria-hidden="true">close</span>
             </button>
           </div>
           
@@ -184,7 +187,7 @@ const vehicleTypeIcon = computed(() => {
             <template v-else-if="details">
               <!-- Type de véhicule -->
               <div class="mb-6 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 flex items-center gap-4 border border-gray-100 dark:border-gray-700/50">
-                <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-300 shrink-0">
+                <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-300 shrink-0" aria-hidden="true">
                   <span class="material-icons-round text-2xl">{{ vehicleTypeIcon }}</span>
                 </div>
                 <div>
@@ -204,7 +207,7 @@ const vehicleTypeIcon = computed(() => {
                   :class="{ 'opacity-60': feature.value === 'Non' || feature.value.includes('Non') }"
                 >
                   <div class="flex items-center gap-2 mb-2">
-                    <span :class="['material-icons-round text-lg', feature.color]">{{ feature.icon }}</span>
+                    <span :class="['material-icons-round text-lg', feature.color]" aria-hidden="true">{{ feature.icon }}</span>
                     <span class="text-xs font-bold text-gray-400 dark:text-gray-500">{{ feature.label }}</span>
                   </div>
                   <p class="text-sm font-bold text-gray-900 dark:text-white leading-tight">{{ feature.value }}</p>

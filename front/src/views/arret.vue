@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
       <div class="flex flex-col items-center justify-center space-y-1 pb-1 sm:pb-2">
         <h1 class="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight text-center">{{ route.params.nom }}</h1>
         <div v-if="horaires?.nomExact && horaires.nomExact !== route.params.nom" class="flex items-center justify-center gap-1.5 text-gray-500 dark:text-gray-400">
-          <span class="material-icons-round text-xs sm:text-sm">place</span>
+          <span class="material-icons-round text-xs sm:text-sm" aria-hidden="true">place</span>
           <span class="text-xs sm:text-sm">{{ horaires.nomExact }}</span>
         </div>
       </div>
@@ -245,7 +245,7 @@ onBeforeUnmount(() => {
                   {{ groupe.precisionDestination }}
                 </span>
               </span>
-              <span v-if="groupe.modeTransport === 0" class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Tramway</span>
+              <span v-if="groupe.modeTransport === 1" class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Tramway</span>
               <span v-else class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">Bus</span>
             </div>
             
@@ -259,8 +259,10 @@ onBeforeUnmount(() => {
                   : 'text-gray-400 dark:text-gray-500 hover:text-yellow-500'
               ]"
               :title="checkIsFavorite(groupe) ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+              :aria-label="checkIsFavorite(groupe) ? 'Retirer ' + groupe.destination + ' des favoris' : 'Ajouter ' + groupe.destination + ' aux favoris'"
+              :aria-pressed="checkIsFavorite(groupe)"
             >
-              <span class="material-icons-round text-xl sm:text-2xl">
+              <span class="material-icons-round text-xl sm:text-2xl" aria-hidden="true">
                 {{ checkIsFavorite(groupe) ? 'star' : 'star_border' }}
               </span>
             </button>
@@ -291,8 +293,8 @@ onBeforeUnmount(() => {
       </template>
       
       <!-- Aucun horaire -->
-      <div v-else class="text-center py-12">
-        <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
+      <div v-else class="text-center py-12" role="status">
+        <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4" aria-hidden="true">
           <span class="material-icons-round text-3xl text-gray-400">schedule</span>
         </div>
         <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Aucun passage prévu</p>

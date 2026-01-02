@@ -123,8 +123,8 @@ const loadFavoritesData = async () => {
       }
       
       if (data?.listeTemps) {
-        // Trouver le temps pour cette ligne/destination (comparaison plus souple)
-        const temps = data.listeTemps.find(t => {
+        // Trouver tous les temps pour cette ligne/destination (comparaison plus souple)
+        const tempsListe = data.listeTemps.filter(t => {
           if (t.idLigne !== fav.idLigne) return false
           // Comparaison souple des destinations
           const destNorm = normalizeText(t.destination)
@@ -132,23 +132,24 @@ const loadFavoritesData = async () => {
           return destNorm === favDestNorm || 
                  destNorm.includes(favDestNorm) || 
                  favDestNorm.includes(destNorm)
-        })
+        }).slice(0, 3) // Prendre les 3 prochains
         
         favoritesData.value.set(fav.id, {
           loading: false,
           error: null,
-          temps: temps ? {
+          horaires: tempsListe.map(temps => ({
             minutes: temps.tempsEnSeconde != null ? Math.round(temps.tempsEnSeconde / 60) : null,
             fiable: temps.fiable,
             numVehicule: temps.numVehicule,
-            tempsTexte: temps.temps
-          } : null
+            tempsTexte: temps.temps,
+            tempsRestant: temps.tempsRestant
+          }))
         })
       } else {
         favoritesData.value.set(fav.id, {
           loading: false,
           error: null,
-          temps: null
+          horaires: []
         })
       }
     } catch (e) {
@@ -156,7 +157,7 @@ const loadFavoritesData = async () => {
         favoritesData.value.set(fav.id, {
           loading: false,
           error: 'Erreur',
-          temps: null
+          horaires: []
         })
       }
     }
@@ -183,7 +184,7 @@ watch(favorites, () => {
   setTimeout(loadFavoritesData, 100)
 }, { deep: true })
 
-// Formater le temps d'attente
+// Formater le temps d'attente (ancien format)
 const formatTemps = (data) => {
   if (!data) return null
   
@@ -198,6 +199,26 @@ const formatTemps = (data) => {
   if (minutes <= 0) return { text: 'À l\'approche', isClose: true }
   if (minutes < 60) return { text: `${minutes}`, unit: 'min', isClose: minutes <= 2 }
   return { text: `${Math.floor(minutes / 60)}h${minutes % 60}`, isClose: false }
+}
+
+// Formater le temps d'attente pour les horaires multiples
+const formatTempsHoraire = (horaire) => {
+  if (!horaire) return null
+  
+  // Utiliser tempsRestant si disponible (comme dans arret.vue)
+  const tempsRestant = horaire.tempsRestant ?? horaire.minutes
+  
+  if (tempsRestant === undefined || tempsRestant === null) {
+    // Fallback sur le texte de l'API
+    if (horaire.tempsTexte) {
+      return { text: horaire.tempsTexte, isClose: false }
+    }
+    return null
+  }
+  
+  if (tempsRestant <= 0) return { text: 'À l\'approche', isClose: true }
+  if (tempsRestant < 60) return { text: `${tempsRestant} min`, isClose: tempsRestant <= 2 }
+  return { text: `${Math.floor(tempsRestant / 60)}h${tempsRestant % 60}`, isClose: false }
 }
 </script>
 
@@ -216,7 +237,7 @@ const formatTemps = (data) => {
       
       <!-- Barre de recherche -->
       <div ref="searchWrapperRef" class="relative mb-2" role="search">
-        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-30">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-30" aria-hidden="true">
           <span class="material-icons-round text-primary">search</span>
         </div>
         <input
@@ -244,18 +265,20 @@ const formatTemps = (data) => {
           id="search-results"
           class="absolute top-full left-0 w-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 border-t-0 rounded-b-2xl shadow-xl z-10 overflow-hidden"
         >
-          <ul>
+          <ul role="listbox">
             <li
               v-for="nom in filteredUniqueNomArrets"
               :key="nom"
               class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-3 border-b border-gray-50 dark:border-gray-800 last:border-0 transition-colors"
+              role="option"
             >
               <router-link
                 :to="{ name: 'ArretNomView', params: { nom } }"
                 class="flex items-center gap-3 w-full"
                 @click="showDropdown = false; searchTerm = ''"
+                :aria-label="'Aller à l\'arrêt ' + nom"
               >
-                <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0" aria-hidden="true">
                   <span class="material-icons-round text-gray-500 text-lg">place</span>
                 </div>
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ nom }}</span>
@@ -306,33 +329,38 @@ const formatTemps = (data) => {
             </div>
             
             <!-- Temps d'attente -->
-            <div class="flex flex-col items-end pr-1">
+            <div class="flex flex-col items-end gap-1.5 pr-1">
               <button 
                 @click.stop.prevent="removeFavorite(fav.id)"
-                class="text-yellow-500 hover:text-yellow-600 mb-1 transition-colors"
+                class="text-yellow-500 hover:text-yellow-600 transition-colors"
                 title="Retirer des favoris"
+                :aria-label="'Retirer ' + fav.destination + ' des favoris'"
+                aria-pressed="true"
               >
-                <span class="material-icons-round text-xl">star</span>
+                <span class="material-icons-round text-xl" aria-hidden="true">star</span>
               </button>
               
               <template v-if="favoritesData.get(fav.id)?.loading">
                 <Loader size="sm" :centered="false" />
               </template>
-              <template v-else-if="favoritesData.get(fav.id)?.temps">
-                <template v-if="formatTemps(favoritesData.get(fav.id).temps)?.isClose">
-                  <span class="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base font-semibold text-line-green bg-line-green/10 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full">
-                    <span class="live-dot"></span>
-                    {{ formatTemps(favoritesData.get(fav.id).temps).text }}
-                  </span>
-                </template>
-                <template v-else>
-                  <span class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
-                    {{ formatTemps(favoritesData.get(fav.id).temps).text }}
-                    <span v-if="formatTemps(favoritesData.get(fav.id).temps).unit" class="text-sm font-semibold text-gray-400 ml-0.5">
-                      {{ formatTemps(favoritesData.get(fav.id).temps).unit }}
+              <template v-else-if="favoritesData.get(fav.id)?.horaires?.length > 0">
+                <div class="flex flex-wrap justify-end gap-1.5">
+                  <span
+                    v-for="(horaire, idx) in favoritesData.get(fav.id).horaires"
+                    :key="idx"
+                    :class="[
+                      'px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg font-semibold text-xs sm:text-sm',
+                      formatTempsHoraire(horaire)?.isClose 
+                        ? 'bg-green-100 dark:bg-green-900/30 text-line-green border border-green-200 dark:border-green-800' 
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                    ]"
+                  >
+                    <span class="flex items-center gap-1">
+                      <span v-if="formatTempsHoraire(horaire)?.isClose" class="live-dot"></span>
+                      {{ formatTempsHoraire(horaire)?.text || horaire.tempsTexte }}
                     </span>
                   </span>
-                </template>
+                </div>
               </template>
               <template v-else>
                 <span class="text-sm text-gray-400">--</span>

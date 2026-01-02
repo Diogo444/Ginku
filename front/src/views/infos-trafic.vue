@@ -147,7 +147,7 @@ const stripHtml = (html) => {
       
       <!-- Barre de recherche -->
       <div class="relative mb-2">
-        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none" aria-hidden="true">
           <span class="material-icons-round text-primary/70 text-xl">filter_list</span>
         </div>
         <input
@@ -155,6 +155,7 @@ const stripHtml = (html) => {
           type="text"
           placeholder="Filtrer par ligne..."
           class="w-full py-3 sm:py-3.5 pl-10 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-sm sm:text-base"
+          aria-label="Filtrer les informations par ligne"
         />
       </div>
     </header>
@@ -169,8 +170,8 @@ const stripHtml = (html) => {
       
       <template v-else>
         <!-- Résumé de l'état du réseau -->
-        <div :class="['flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl border', networkSummary.bgClass]">
-          <div :class="['w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0', networkSummary.iconClass]">
+        <div :class="['flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl border', networkSummary.bgClass]" role="status" aria-live="polite">
+          <div :class="['w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0', networkSummary.iconClass]" aria-hidden="true">
             <span class="material-icons-round text-xl sm:text-2xl">{{ networkSummary.icon }}</span>
           </div>
           <div>
@@ -204,7 +205,7 @@ const stripHtml = (html) => {
                     ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.textColor
                   ]"
                 >
-                  <span class="material-icons-round text-xs sm:text-sm">
+                  <span class="material-icons-round text-xs sm:text-sm" aria-hidden="true">
                     {{ ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.icon || 'info' }}
                   </span>
                   {{ ETAT_CONFIG[msg.ligne?.etat || msg.etat]?.label || 'Info' }}
@@ -258,15 +259,15 @@ const stripHtml = (html) => {
                 {{ ETAT_CONFIG[ligne.etat]?.label || 'Information' }}
               </p>
             </div>
-            <span :class="['material-icons-round', ETAT_CONFIG[ligne.etat]?.textColor]">
+            <span :class="['material-icons-round', ETAT_CONFIG[ligne.etat]?.textColor]" aria-hidden="true">
               {{ ETAT_CONFIG[ligne.etat]?.icon || 'info' }}
             </span>
           </div>
         </div>
         
         <!-- Aucune perturbation -->
-        <div v-else class="text-center py-12">
-          <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
+        <div v-else class="text-center py-12" role="status">
+          <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4" aria-hidden="true">
             <span class="material-icons-round text-3xl text-green-500">check_circle</span>
           </div>
           <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">Tout roule !</p>

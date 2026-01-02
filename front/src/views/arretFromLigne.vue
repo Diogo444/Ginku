@@ -147,10 +147,10 @@ onBeforeUnmount(() => {
         />
         <div v-else class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-300 dark:bg-gray-700 mb-0.5 sm:mb-1"></div>
         
-        <div class="text-center min-w-0 max-w-full px-2">
+        <div v-if="currentDestination" class="text-center min-w-0 max-w-full px-2">
           <h1 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white leading-tight truncate">{{ origin }}</h1>
           <div v-if="currentDestination" class="flex items-center justify-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 text-gray-500 dark:text-gray-400">
-            <span class="material-icons-round text-xs sm:text-sm">arrow_forward</span>
+            <span class="material-icons-round text-xs sm:text-sm" aria-hidden="true">arrow_forward</span>
             <span class="text-xs sm:text-sm truncate max-w-[200px]">{{ currentDestination }}</span>
           </div>
         </div>
@@ -173,8 +173,9 @@ onBeforeUnmount(() => {
           @click="toggleDirection"
           :disabled="!variantes.length || loading"
           class="text-primary text-xs sm:text-sm font-medium flex items-center gap-1 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Inverser le sens de la ligne"
         >
-          <span class="material-icons-round text-base sm:text-lg">swap_vert</span>
+          <span class="material-icons-round text-base sm:text-lg" aria-hidden="true">swap_vert</span>
           Inverser
         </button>
       </div>
@@ -225,7 +226,7 @@ onBeforeUnmount(() => {
               >
                 {{ arret.nom }}
               </span>
-              <span class="material-icons-round text-gray-300 dark:text-gray-600 text-base sm:text-lg group-hover:text-primary transition-colors flex-shrink-0">chevron_right</span>
+              <span class="material-icons-round text-gray-300 dark:text-gray-600 text-base sm:text-lg group-hover:text-primary transition-colors flex-shrink-0" aria-hidden="true">chevron_right</span>
             </div>
           </div>
         </router-link>

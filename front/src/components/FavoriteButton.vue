@@ -57,8 +57,9 @@ const sizeClasses = {
     ]"
     :title="isInFavorites ? 'Retirer des favoris' : 'Ajouter aux favoris'"
     :aria-label="isInFavorites ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+    :aria-pressed="isInFavorites"
   >
-    <span :class="['material-icons-round font-semibold', sizeClasses[size]]">
+    <span :class="['material-icons-round font-semibold', sizeClasses[size]]" aria-hidden="true">
       {{ isInFavorites ? 'star' : 'star_border' }}
     </span>
   </button>

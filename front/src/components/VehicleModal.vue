@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { getDetailsVehicule } from '@/services/api'
 import Loader from '@/components/loader.vue'
 
@@ -15,6 +15,9 @@ const emit = defineEmits(['close'])
 const details = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const modalRef = ref(null)
+const closeButtonRef = ref(null)
+const previousActiveElement = ref(null)
 
 // Chargement des données véhicule
 const loadDetails = async () => {
@@ -35,12 +38,82 @@ const loadDetails = async () => {
 
 watch(() => props.numVehicule, loadDetails, { immediate: true })
 
-// Fermeture avec Escape
-const handleKeydown = (e) => {
-  if (e.key === 'Escape' && props.show) {
-    emit('close')
+// Gestion de l'accessibilité : masquer le contenu en arrière-plan
+const setAppAriaHidden = (hidden) => {
+  const appRoot = document.getElementById('app')
+  if (appRoot) {
+    if (hidden) {
+      appRoot.setAttribute('aria-hidden', 'true')
+      appRoot.setAttribute('inert', '')
+    } else {
+      appRoot.removeAttribute('aria-hidden')
+      appRoot.removeAttribute('inert')
+    }
   }
 }
+
+// Focus trap : obtenir tous les éléments focusables dans la modale
+const getFocusableElements = () => {
+  if (!modalRef.value) return []
+  return modalRef.value.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )
+}
+
+// Gestion du clavier : Escape pour fermer + Tab trap
+const handleKeydown = (e) => {
+  if (!props.show) return
+  
+  if (e.key === 'Escape') {
+    emit('close')
+    return
+  }
+  
+  // Focus trap avec Tab
+  if (e.key === 'Tab') {
+    const focusableElements = getFocusableElements()
+    if (focusableElements.length === 0) return
+    
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+    
+    if (e.shiftKey) {
+      // Shift + Tab : si on est sur le premier, aller au dernier
+      if (document.activeElement === firstElement) {
+        e.preventDefault()
+        lastElement.focus()
+      }
+    } else {
+      // Tab : si on est sur le dernier, aller au premier
+      if (document.activeElement === lastElement) {
+        e.preventDefault()
+        firstElement.focus()
+      }
+    }
+  }
+}
+
+// Gestion ouverture/fermeture de la modale
+watch(() => props.show, async (isOpen) => {
+  if (isOpen) {
+    // Sauvegarder l'élément actif actuel
+    previousActiveElement.value = document.activeElement
+    
+    // Masquer le contenu en arrière-plan pour les lecteurs d'écran
+    setAppAriaHidden(true)
+    
+    // Attendre le rendu puis mettre le focus sur le bouton fermer
+    await nextTick()
+    closeButtonRef.value?.focus()
+  } else {
+    // Restaurer l'accès au contenu en arrière-plan
+    setAppAriaHidden(false)
+    
+    // Restaurer le focus sur l'élément précédent
+    await nextTick()
+    previousActiveElement.value?.focus()
+  }
+})
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
@@ -48,6 +121,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown)
+  // S'assurer de restaurer l'état si le composant est démonté
+  setAppAriaHidden(false)
 })
 
 // Helpers pour le texte
@@ -145,6 +220,7 @@ const vehicleTypeIcon = computed(() => {
         class="fixed inset-x-0 bottom-0 z-[101] flex items-end justify-center sm:items-center sm:inset-0 p-0 sm:p-4"
       >
         <div 
+          ref="modalRef"
           class="relative w-full sm:w-[24rem] bg-surface-light dark:bg-surface-dark rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border-t border-white/10"
           @click.stop
           role="dialog"
@@ -152,7 +228,7 @@ const vehicleTypeIcon = computed(() => {
           aria-labelledby="vehicle-modal-title"
         >
           <!-- Drag handle -->
-          <div class="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing sm:hidden">
+          <div class="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing sm:hidden" aria-hidden="true">
             <div class="w-12 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
           </div>
           
@@ -165,6 +241,7 @@ const vehicleTypeIcon = computed(() => {
               </h2>
             </div>
             <button 
+              ref="closeButtonRef"
               @click="emit('close')"
               class="w-8 h-8 -mr-2 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Fermer la fenêtre de détails du véhicule"

@@ -184,23 +184,6 @@ watch(favorites, () => {
   setTimeout(loadFavoritesData, 100)
 }, { deep: true })
 
-// Formater le temps d'attente (ancien format)
-const formatTemps = (data) => {
-  if (!data) return null
-  
-  // Utiliser le texte de l'API si disponible
-  if (data.tempsTexte) {
-    const isClose = data.minutes != null && data.minutes <= 2
-    return { text: data.tempsTexte, isClose }
-  }
-  
-  const minutes = data.minutes
-  if (minutes === undefined || minutes === null) return null
-  if (minutes <= 0) return { text: 'À l\'approche', isClose: true }
-  if (minutes < 60) return { text: `${minutes}`, unit: 'min', isClose: minutes <= 2 }
-  return { text: `${Math.floor(minutes / 60)}h${minutes % 60}`, isClose: false }
-}
-
 // Formater le temps d'attente pour les horaires multiples
 const formatTempsHoraire = (horaire) => {
   if (!horaire) return null

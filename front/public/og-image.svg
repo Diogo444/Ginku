@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D84358;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a8324a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" rx="0"/>
+  <!-- Decorative circles -->
+  <circle cx="1050" cy="120" r="180" fill="rgba(255,255,255,0.06)"/>
+  <circle cx="1100" cy="500" r="120" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="150" cy="550" r="100" fill="rgba(255,255,255,0.04)"/>
+  <!-- Bus icon -->
+  <g transform="translate(100, 180)">
+    <rect x="0" y="0" width="80" height="100" rx="16" fill="rgba(255,255,255,0.2)"/>
+    <rect x="10" y="12" width="60" height="35" rx="6" fill="rgba(255,255,255,0.3)"/>
+    <circle cx="22" cy="85" r="10" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="58" cy="85" r="10" fill="rgba(255,255,255,0.4)"/>
+  </g>
+  <!-- Title -->
+  <text x="100" y="370" fill="white" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="800" font-size="96">Ginku</text>
+  <!-- Subtitle -->
+  <text x="100" y="430" fill="rgba(255,255,255,0.9)" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="500" font-size="32">Horaires bus &amp; tram en temps réel</text>
+  <!-- City -->
+  <text x="100" y="480" fill="rgba(255,255,255,0.7)" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="400" font-size="26">Besançon — Grand Besançon Métropole</text>
+  <!-- Author badge -->
+  <rect x="100" y="530" width="280" height="40" rx="20" fill="rgba(255,255,255,0.15)"/>
+  <text x="130" y="557" fill="rgba(255,255,255,0.8)" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="500" font-size="18">par Diogo Andrade</text>
+</svg>

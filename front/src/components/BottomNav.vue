@@ -25,11 +25,12 @@ const isActive = (item) => {
         :key="item.name"
         :to="item.route"
         :class="[
-          'flex flex-col items-center gap-1.5 group transition-colors',
+          'flex flex-col items-center gap-1.5 group transition-colors min-w-[70px] min-h-[64px] justify-center px-3 py-2 -mx-1 rounded-lg',
           isActive(item) 
             ? 'text-primary' 
             : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
         ]"
+        role="link"
         :aria-current="isActive(item) ? 'page' : undefined"
         :aria-label="item.name"
       >

@@ -6,6 +6,7 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import AdBanner from '@/components/AdBanner.vue'
 
 defineOptions({ name: 'HomePage' })
 
@@ -366,6 +367,11 @@ const formatTempsHoraire = (horaire) => {
             Parcourir les lignes
           </router-link>
         </EmptyState>
+      </section>
+
+      <!-- Publicité discrète en bas -->
+      <section class="mt-2 opacity-90">
+        <AdBanner ad-slot="8034263336" />
       </section>
     </main>
   </div>

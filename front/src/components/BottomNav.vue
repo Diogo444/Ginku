@@ -18,14 +18,14 @@ const isActive = (item) => {
 </script>
 
 <template>
-  <nav class="fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe pt-2 px-6 pb-4 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]" aria-label="Navigation principale">
-    <div class="flex justify-around items-center max-w-sm mx-auto">
+  <nav class="fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]" aria-label="Navigation principale">
+    <div class="flex w-full">
       <router-link
         v-for="item in navItems"
         :key="item.name"
         :to="item.route"
         :class="[
-          'flex flex-col items-center gap-1.5 group transition-colors min-w-[70px] min-h-[64px] justify-center px-3 py-2 -mx-1 rounded-lg',
+          'flex flex-col items-center gap-1.5 group transition-colors justify-center py-3 flex-1 basis-0 min-h-[56px]',
           isActive(item) 
             ? 'text-primary' 
             : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'

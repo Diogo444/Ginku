@@ -212,7 +212,7 @@ const formatTempsHoraire = (horaire) => {
       <!-- Titre + Toggle thème -->
       <div class="flex justify-between items-center mb-4 sm:mb-5">
         <div>
-          <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Bonjour Test,</h1>
+          <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Bonjour,</h1>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Où souhaitez-vous aller ?</p>
         </div>
         <ThemeToggle />

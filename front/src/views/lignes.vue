@@ -92,8 +92,11 @@ const groupedLignes = computed(() => {
   return Object.values(groups).filter(g => g.lignes.length > 0)
 })
 
-// Index auquel insérer la pub (au milieu des groupes)
-const adInsertIndex = computed(() => Math.floor(groupedLignes.value.length / 2))
+// Index auquel insérer la pub (entre Urbaines et Périurbaines)
+const adInsertIndex = computed(() => {
+  const idx = groupedLignes.value.findIndex(g => g.title === 'Lignes Périurbaines')
+  return idx !== -1 ? idx : Math.floor(groupedLignes.value.length / 2)
+})
 </script>
 
 <template>

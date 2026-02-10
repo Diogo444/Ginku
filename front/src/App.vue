@@ -13,7 +13,7 @@ import '@/stores/theme' // Initialise le thème au démarrage
       Aller au contenu principal
     </a>
     
-    <main id="main-content" tabindex="-1" class="flex-1 flex flex-col pb-20" role="main">
+    <main id="main-content" tabindex="-1" class="flex-1 flex flex-col pb-bottom-nav-offset" role="main">
       <router-view class="flex-1 flex flex-col" />
     </main>
     
@@ -32,3 +32,4 @@ import '@/stores/theme' // Initialise le thème au démarrage
     <BottomNav />
   </div>
 </template>
+

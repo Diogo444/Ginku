@@ -100,7 +100,7 @@ const adInsertIndex = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-full w-full pb-safe">
+  <div class="flex flex-col min-h-full w-full">
     <!-- Header sticky -->
     <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-transparent transition-colors duration-300">
       <!-- Titre + Toggle thème -->
@@ -193,3 +193,4 @@ const adInsertIndex = computed(() => {
     </main>
   </div>
 </template>
+

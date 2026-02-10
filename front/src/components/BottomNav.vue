@@ -18,19 +18,18 @@ const isActive = (item) => {
 </script>
 
 <template>
-  <nav class="fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 pb-safe z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]" aria-label="Navigation principale">
-    <div class="flex w-full">
+  <nav class="bottom-nav fixed bottom-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]" aria-label="Navigation principale">
+    <div class="flex w-full h-full">
       <router-link
         v-for="item in navItems"
         :key="item.name"
         :to="item.route"
         :class="[
-          'flex flex-col items-center gap-1.5 group transition-colors justify-center py-3 flex-1 basis-0 min-h-[56px]',
+          'bottom-nav-item flex flex-col items-center gap-1.5 group transition-colors justify-center flex-1 basis-0',
           isActive(item) 
             ? 'text-primary' 
             : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
         ]"
-        role="link"
         :aria-current="isActive(item) ? 'page' : undefined"
         :aria-label="item.name"
       >

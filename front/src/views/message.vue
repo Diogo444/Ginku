@@ -135,7 +135,7 @@ const maxEtat = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-full w-full pb-safe">
+  <div class="flex flex-col min-h-full w-full">
     <!-- Header sticky -->
     <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
       <div class="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
@@ -265,3 +265,4 @@ const maxEtat = computed(() => {
     </main>
   </div>
 </template>
+

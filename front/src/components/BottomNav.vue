@@ -29,12 +29,13 @@ const isActive = (item) => {
           ? 'text-primary' 
           : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
       ]"
+      :aria-label="`Aller à ${item.name}`"
       :aria-current="isActive(item) ? 'page' : undefined"
     >
       <span class="material-icons-round text-2xl group-hover:scale-110 transition-transform" aria-hidden="true">
         {{ isActive(item) ? item.icon : item.iconInactive }}
       </span>
-      <span :class="['text-[10px] leading-none', isActive(item) ? 'font-bold' : 'font-medium']">
+      <span :class="['text-[10px] leading-none', isActive(item) ? 'font-bold' : 'font-medium']" aria-hidden="true">
         {{ item.name }}
       </span>
     </router-link>

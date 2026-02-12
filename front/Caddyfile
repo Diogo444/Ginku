@@ -11,11 +11,30 @@
   header {
     Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     X-Content-Type-Options "nosniff"
-    Referrer-Policy "no-referrer-when-downgrade"
+    Referrer-Policy "strict-origin-when-cross-origin"
     X-Robots-Tag "index, follow"
+    X-Frame-Options "SAMEORIGIN"
+    Permissions-Policy "geolocation=(), microphone=(), camera=()"
   }
 
-  # Forcer le bon Content-Type pour le sitemap
+  # Cache pour les assets statiques
+  @assets path *.js *.css *.woff2 *.woff *.ttf *.png *.jpg *.jpeg *.webp *.svg *.ico
+  header @assets Cache-Control "public, max-age=31536000, immutable"
+
+  # Cache court pour le HTML (pour permettre les mises à jour)
+  @html path *.html /
+  header @html Cache-Control "public, max-age=3600, must-revalidate"
+
+  # Forcer le bon Content-Type pour les fichiers importants
   @sitemap path /sitemap.xml
   header @sitemap Content-Type "application/xml; charset=utf-8"
+  header @sitemap Cache-Control "public, max-age=86400"
+
+  @robots path /robots.txt
+  header @robots Content-Type "text/plain; charset=utf-8"
+  header @robots Cache-Control "public, max-age=86400"
+
+  @manifest path /manifest.json
+  header @manifest Content-Type "application/manifest+json; charset=utf-8"
+  header @manifest Cache-Control "public, max-age=86400"
 }

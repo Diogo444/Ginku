@@ -165,3 +165,9 @@
 .backdrop-leave-to {
   opacity: 0;
 }
+
+/* Masquer globalement les widgets tiers */
+.ft-reg-bubble,
+.ft-styless-button {
+  display: none !important;
+}

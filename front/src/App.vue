@@ -32,4 +32,3 @@ import '@/stores/theme' // Initialise le thème au démarrage
     <BottomNav />
   </div>
 </template>
-

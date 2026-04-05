@@ -4,7 +4,6 @@ import { getArretsProches, getTempsArret } from '@/services/api'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
-import EmptyState from '@/components/EmptyState.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import AdBanner from '@/components/AdBanner.vue'
 
@@ -24,7 +23,6 @@ const userPosition = ref(null)
 const permissionState = ref('pending')
 const statusMessage = ref('Recherche de votre position…')
 const liveAnnouncement = ref('Recherche de votre position…')
-const autoRefreshEnabled = ref(true)
 const isPageVisible = ref(typeof document === 'undefined' ? true : document.visibilityState === 'visible')
 const lastUpdatedAt = ref(null)
 
@@ -120,7 +118,7 @@ function createTimesController() {
 }
 
 function startRefreshTimer() {
-  if (refreshTimerId || !autoRefreshEnabled.value || !isPageVisible.value) return
+  if (refreshTimerId || !isPageVisible.value) return
 
   refreshTimerId = window.setInterval(() => {
     refreshStopTimes({ silent: true })
@@ -382,6 +380,7 @@ function handlePositionError(geoError) {
 
   if (geoError?.code === 1) {
     permissionState.value = 'denied'
+    error.value = null
     statusMessage.value = 'Accès à la géolocalisation refusé'
     announce(statusMessage.value)
     return
@@ -423,7 +422,7 @@ function requestCurrentPosition() {
 }
 
 function syncLiveProcesses() {
-  if (autoRefreshEnabled.value && isPageVisible.value) {
+  if (isPageVisible.value) {
     startLocationTracking()
     startRefreshTimer()
     return
@@ -441,11 +440,10 @@ function handleManualRefresh() {
 
   loading.value = true
   error.value = null
+  permissionState.value = 'pending'
+  statusMessage.value = 'Recherche de votre position…'
   requestCurrentPosition()
-
-  if (autoRefreshEnabled.value) {
-    syncLiveProcesses()
-  }
+  syncLiveProcesses()
 }
 
 function handleVisibilityChange() {
@@ -470,24 +468,10 @@ const locationSummary = computed(() => {
 
 const lastUpdatedLabel = computed(() => formatLastUpdated(lastUpdatedAt.value))
 
-watch(autoRefreshEnabled, async (enabled) => {
-  syncLiveProcesses()
-
-  if (enabled) {
-    announce('Mises à jour automatiques réactivées.')
-    if (userPosition.value) {
-      await fetchNearbyStops(userPosition.value, { silent: true })
-    }
-    return
-  }
-
-  announce('Mises à jour automatiques suspendues.')
-})
-
 watch(isPageVisible, (visible) => {
   syncLiveProcesses()
 
-  if (visible && autoRefreshEnabled.value && userPosition.value) {
+  if (visible && userPosition.value) {
     refreshStopTimes({ silent: true })
   }
 })
@@ -535,76 +519,33 @@ onBeforeUnmount(() => {
         <ThemeToggle />
       </div>
 
-      <div class="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-        <div class="rounded-3xl border border-primary/10 bg-gradient-to-br from-primary-soft via-white to-white p-4 shadow-soft dark:border-primary/20 dark:from-primary/10 dark:via-surface-dark dark:to-surface-dark">
-          <div class="flex items-start gap-3">
-            <div class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-primary shadow-sm dark:bg-gray-900/70">
-              <span class="material-icons-round text-xl" aria-hidden="true">my_location</span>
-            </div>
-
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {{ statusMessage }}
-                </p>
-                <span
-                  v-if="refreshingStops"
-                  class="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-gray-600 shadow-sm dark:bg-gray-900/60 dark:text-gray-300"
-                >
-                  <span class="material-icons-round animate-spin text-sm" aria-hidden="true">sync</span>
-                  Actualisation
-                </span>
-                <span
-                  v-if="autoRefreshEnabled"
-                  class="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-green-700 shadow-sm dark:bg-green-950/50 dark:text-green-300"
-                >
-                  <span class="live-dot" aria-hidden="true"></span>
-                  Temps réel actif
-                </span>
-              </div>
-
-              <p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
-                {{ locationSummary }}
-              </p>
-
-              <p
-                v-if="lastUpdatedLabel"
-                class="mt-2 text-[11px] font-medium text-gray-500 dark:text-gray-400"
-              >
-                Dernière mise à jour à {{ lastUpdatedLabel }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:w-[17rem]">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-gray-700 dark:bg-surface-dark dark:text-gray-100 dark:hover:border-primary dark:hover:text-primary"
-            @click="handleManualRefresh"
-          >
-            <span class="material-icons-round text-lg" aria-hidden="true">refresh</span>
-            Actualiser
-          </button>
-
-          <button
-            type="button"
-            :class="[
-              'inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors',
-              autoRefreshEnabled
-                ? 'bg-primary text-white hover:bg-primary/90'
-                : 'border border-gray-200 bg-white text-gray-800 hover:border-primary hover:text-primary dark:border-gray-700 dark:bg-surface-dark dark:text-gray-100 dark:hover:border-primary dark:hover:text-primary'
-            ]"
-            :aria-pressed="autoRefreshEnabled"
-            @click="autoRefreshEnabled = !autoRefreshEnabled"
-          >
-            <span class="material-icons-round text-lg" aria-hidden="true">
-              {{ autoRefreshEnabled ? 'pause_circle' : 'play_circle' }}
-            </span>
-            {{ autoRefreshEnabled ? 'Pause auto' : 'Reprendre auto' }}
-          </button>
-        </div>
+      <div class="mt-4 flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <span class="font-medium text-gray-900 dark:text-gray-100">{{ statusMessage }}</span>
+        <span
+          v-if="refreshingStops"
+          class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+        >
+          <span class="material-icons-round animate-spin text-sm" aria-hidden="true">sync</span>
+          Actualisation
+        </span>
+        <span
+          v-else-if="permissionState === 'ready'"
+          class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-950/40 dark:text-green-300"
+        >
+          <span class="live-dot" aria-hidden="true"></span>
+          Temps réel actif
+        </span>
+        <span
+          v-if="lastUpdatedLabel"
+          class="text-[11px] font-medium text-gray-500 dark:text-gray-400"
+        >
+          Mise à jour {{ lastUpdatedLabel }}
+        </span>
       </div>
+
+      <p class="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 dark:text-gray-300 sm:text-sm">
+        {{ locationSummary }}
+      </p>
 
       <p class="sr-only" aria-live="polite">{{ liveAnnouncement }}</p>
     </header>
@@ -618,27 +559,67 @@ onBeforeUnmount(() => {
         @retry="handleManualRefresh"
       />
 
-      <EmptyState
+      <section
         v-else-if="permissionState === 'unsupported'"
-        icon="location_off"
-        title="Géolocalisation indisponible"
-        message="Votre appareil ou votre navigateur ne permet pas d’utiliser cette fonctionnalité."
+        class="rounded-3xl border border-gray-200 bg-surface-light p-4 shadow-soft dark:border-gray-800 dark:bg-surface-dark dark:shadow-none"
       >
-        <router-link
-          to="/"
-          class="mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
-        >
-          Revenir à la recherche
-        </router-link>
-      </EmptyState>
+        <div class="flex items-start gap-3">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <span class="material-icons-round text-xl" aria-hidden="true">location_off</span>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Géolocalisation indisponible</h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Votre appareil ou votre navigateur ne permet pas d’utiliser cette fonctionnalité.
+            </p>
+          </div>
+        </div>
+      </section>
 
-      <EmptyState
+      <section
         v-else-if="permissionState === 'denied' && !nearbyStops.length"
-        icon="location_disabled"
-        title="Autorisation nécessaire"
-        message="Activez la géolocalisation pour afficher les arrêts autour de vous."
+        class="rounded-3xl border border-primary/15 bg-surface-light p-4 shadow-soft dark:border-primary/20 dark:bg-surface-dark dark:shadow-none"
       >
-        <div class="mt-4 flex flex-wrap justify-center gap-3">
+        <div class="flex items-start gap-3">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary dark:bg-primary/15 dark:text-primary">
+            <span class="material-icons-round text-xl" aria-hidden="true">location_disabled</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Localisation non autorisée</h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Autorise la localisation pour afficher les arrêts autour de toi.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+            @click="handleManualRefresh"
+          >
+            Autoriser la localisation
+          </button>
+        </div>
+      </section>
+
+      <section
+        v-else-if="!loading && !nearbyStops.length"
+        class="rounded-3xl border border-dashed border-gray-200 bg-surface-light p-4 dark:border-gray-700 dark:bg-surface-dark"
+      >
+        <div class="flex items-start gap-3">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <span class="material-icons-round text-xl" aria-hidden="true">explore_off</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Aucun arrêt trouvé</h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Aucun arrêt n’a été trouvé juste autour de vous pour le moment.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4">
           <button
             type="button"
             class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
@@ -646,37 +627,8 @@ onBeforeUnmount(() => {
           >
             Réessayer
           </button>
-          <router-link
-            to="/"
-            class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:border-primary hover:text-primary dark:border-gray-700 dark:bg-surface-dark dark:text-gray-100"
-          >
-            Rechercher un arrêt
-          </router-link>
         </div>
-      </EmptyState>
-
-      <EmptyState
-        v-else-if="!loading && !nearbyStops.length"
-        icon="explore_off"
-        title="Aucun arrêt trouvé"
-        message="Aucun arrêt n’a été trouvé à proximité immédiate. Vous pouvez réessayer ou utiliser la recherche classique."
-      >
-        <div class="mt-4 flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
-            @click="handleManualRefresh"
-          >
-            Actualiser
-          </button>
-          <router-link
-            to="/"
-            class="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:border-primary hover:text-primary dark:border-gray-700 dark:bg-surface-dark dark:text-gray-100"
-          >
-            Rechercher un arrêt
-          </router-link>
-        </div>
-      </EmptyState>
+      </section>
 
       <section v-else class="space-y-4">
         <article

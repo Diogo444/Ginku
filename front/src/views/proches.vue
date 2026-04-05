@@ -354,6 +354,7 @@ function handlePositionSuccess(position) {
   const previousPosition = userPosition.value
   userPosition.value = nextPosition
   permissionState.value = 'ready'
+  syncLiveProcesses()
 
   if (previousPosition) {
     syncStopDistances(nextPosition)
@@ -394,6 +395,7 @@ function handlePositionError(geoError) {
 
 function startLocationTracking() {
   if (!navigator.geolocation || geolocationWatchId.value != null) return
+  if (permissionState.value !== 'ready') return
 
   if (!userPosition.value) {
     permissionState.value = 'pending'
@@ -422,7 +424,7 @@ function requestCurrentPosition() {
 }
 
 function syncLiveProcesses() {
-  if (isPageVisible.value) {
+  if (isPageVisible.value && permissionState.value === 'ready') {
     startLocationTracking()
     startRefreshTimer()
     return
@@ -443,7 +445,6 @@ function handleManualRefresh() {
   permissionState.value = 'pending'
   statusMessage.value = 'Recherche de votre position…'
   requestCurrentPosition()
-  syncLiveProcesses()
 }
 
 function handleVisibilityChange() {
@@ -486,7 +487,7 @@ onMounted(() => {
   }
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
-  syncLiveProcesses()
+  requestCurrentPosition()
 })
 
 onBeforeUnmount(() => {

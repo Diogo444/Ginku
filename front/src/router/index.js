@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { nextTick } from 'vue'
 
 const Home = () => import('@/views/home.vue')
+const Proches = () => import('@/views/proches.vue')
 const Lignes = () => import('@/views/lignes.vue')
 const Arret = () => import('@/views/arret.vue')
 const ArretFromLigne = () => import('@/views/arretFromLigne.vue')
@@ -22,6 +23,15 @@ const router = createRouter({
       meta: { 
         title: 'Ginku — Horaires bus et tram en temps réel à Besançon',
         description: 'Consultez les horaires de bus et tramway Ginko en temps réel à Besançon et dans le Grand Besançon. Lignes, arrêts, favoris et infos trafic, tout en un clic.'
+      },
+    },
+    {
+      path: '/proches',
+      name: 'proches',
+      component: Proches,
+      meta: {
+        title: 'Arrêts proches — Ginku',
+        description: 'Trouvez les arrêts de bus et tram Ginko autour de vous, consultez les prochains passages et ouvrez un itinéraire rapide vers l’arrêt choisi.'
       },
     },
     {

@@ -10,6 +10,9 @@ configDotenv()
 const app = express()
 const PORT = process.env.PORT || 3000
 const APIKEY = process.env.APIKEY
+const DEFAULT_TTL = 60 * 1000
+const REALTIME_TTL = 15 * 1000
+const NEARBY_TTL = 30 * 1000
 
 const api = axios.create({
   baseURL: 'https://api.ginko.voyage',
@@ -20,16 +23,40 @@ const api = axios.create({
 app.use(cors())
 
 const cache = new Map()
-const TTL = 60 * 1000 // 60 seconds
+const inflight = new Map()
 
-async function fetchWithCache(key, fetcher) {
+async function fetchWithCache(key, fetcher, ttl = DEFAULT_TTL) {
   const cached = cache.get(key)
-  if (cached && Date.now() - cached.timestamp < TTL) {
+  if (cached && Date.now() - cached.timestamp < ttl) {
     return cached.data
   }
-  const data = await fetcher()
-  cache.set(key, { data, timestamp: Date.now() })
-  return data
+
+  if (inflight.has(key)) {
+    return inflight.get(key)
+  }
+
+  const request = Promise.resolve()
+    .then(fetcher)
+    .then((data) => {
+      cache.set(key, { data, timestamp: Date.now() })
+      return data
+    })
+    .finally(() => {
+      inflight.delete(key)
+    })
+
+  inflight.set(key, request)
+
+  return request
+}
+
+function parseCoordinate(value) {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function roundedCoordinateKey(latitude, longitude, precision = 3) {
+  return `${latitude.toFixed(precision)}:${longitude.toFixed(precision)}`
 }
 
 app.get('/api/search', async (req, res) => {
@@ -114,10 +141,57 @@ app.get('/api/getTempsLieu/:nom', async (req, res) => {
         params: { apiKey: APIKEY, nom, nb: 3 },
       })
       return response.data.objets
-    })
+    }, REALTIME_TTL)
     res.json(data)
   } catch (error) {
     res.status(500).send('Error fetching data')
+  }
+})
+
+app.get('/api/getTempsArret/:idArret', async (req, res) => {
+  const idArret = String(req.params.idArret || '').trim()
+
+  if (!idArret) {
+    return res.status(400).json({ error: 'Paramètre idArret requis' })
+  }
+
+  try {
+    const data = await fetchWithCache(`getTempsArret-${idArret}`, async () => {
+      const response = await api.get('/TR/getTempsLieu.do', {
+        params: { apiKey: APIKEY, idArret, nb: 3 },
+      })
+      return response?.data?.objets ?? null
+    }, REALTIME_TTL)
+
+    return res.json(data)
+  } catch (error) {
+    console.error(`[/api/getTempsArret/${idArret}] error:`, error?.response?.data || error)
+    return res.status(502).json({ error: 'Error fetching data' })
+  }
+})
+
+app.get('/api/getArretsProches', async (req, res) => {
+  const latitude = parseCoordinate(req.query.latitude)
+  const longitude = parseCoordinate(req.query.longitude)
+
+  if (latitude == null || longitude == null) {
+    return res.status(400).json({ error: 'Paramètres latitude et longitude requis' })
+  }
+
+  const cacheKey = `getArretsProches-${roundedCoordinateKey(latitude, longitude)}`
+
+  try {
+    const data = await fetchWithCache(cacheKey, async () => {
+      const response = await api.get('/DR/getArretsProches.do', {
+        params: { apiKey: APIKEY, latitude, longitude },
+      })
+      return Array.isArray(response?.data?.objets) ? response.data.objets : []
+    }, NEARBY_TTL)
+
+    return res.json(data)
+  } catch (error) {
+    console.error('[/api/getArretsProches] error:', error?.response?.data || error)
+    return res.status(502).json({ error: 'Error fetching data' })
   }
 })
 

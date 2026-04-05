@@ -140,6 +140,29 @@ export async function getTempsLieu(nomArret, signal) {
 }
 
 /**
+ * Récupère les temps d'attente d'un arrêt exact via son identifiant
+ */
+export async function getTempsArret(idArret, signal) {
+  const response = await get(`/getTempsArret/${encodeURIComponent(idArret)}`, {
+    signal,
+    ttl: 15 * 1000
+  })
+  return response.data ?? null
+}
+
+/**
+ * Récupère les arrêts proches d'une position GPS
+ */
+export async function getArretsProches(latitude, longitude, signal) {
+  const response = await get('/getArretsProches', {
+    signal,
+    params: { latitude, longitude },
+    ttl: 30 * 1000
+  })
+  return response.data ?? []
+}
+
+/**
  * Récupère l'état de toutes les lignes (perturbations)
  */
 export async function getEtatLignes(signal) {
@@ -166,6 +189,8 @@ export default {
   getVariantesDesservantArret,
   getDetailsVehicule,
   getTempsLieu,
+  getTempsArret,
+  getArretsProches,
   getEtatLignes,
   getMessages
 }

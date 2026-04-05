@@ -7,6 +7,7 @@ const route = useRoute()
 
 const navItems = [
   { name: 'Favoris', icon: 'star', iconInactive: 'star_border', route: '/' },
+  { name: 'Proches', icon: 'near_me', iconInactive: 'near_me', route: '/proches' },
   { name: 'Lignes', icon: 'directions_bus', iconInactive: 'directions_bus', route: '/lignes' },
   { name: 'Infos', icon: 'info', iconInactive: 'info', route: '/infos' },
 ]

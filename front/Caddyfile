@@ -14,7 +14,7 @@
     Referrer-Policy "strict-origin-when-cross-origin"
     X-Robots-Tag "index, follow"
     X-Frame-Options "SAMEORIGIN"
-    Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Permissions-Policy "geolocation=(self), microphone=(), camera=()"
   }
 
   # Cache pour les assets statiques

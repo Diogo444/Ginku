@@ -3,11 +3,11 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # pnpm + outils
-RUN npm install -g pnpm
+RUN corepack enable
 RUN apk add --no-cache curl
 
 # Copier les fichiers de workspace pour le cache
-COPY pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY front/package.json ./front/
 
 # Install des deps du front uniquement

@@ -19,5 +19,5 @@ jobs:
           script: |
             cd /home/vps/Ginku
             git pull origin main
-            docker compose pull
-            docker compose up -d --build
+            docker compose build --pull
+            docker compose up -d --remove-orphans

@@ -2,11 +2,11 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Installer pnpm
-RUN npm install -g pnpm
+# Activer corepack pour utiliser la version de pnpm declaree dans package.json
+RUN corepack enable
 
-# Copier workspace + lockfile
-COPY pnpm-workspace.yaml pnpm-lock.yaml ./
+# Copier workspace + lockfile + config pnpm racine
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY backend/package.json ./backend/
 
 # Install des deps backend uniquement

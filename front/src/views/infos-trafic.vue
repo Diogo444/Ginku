@@ -5,7 +5,6 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-import AdBanner from '@/components/AdBanner.vue'
 
 defineOptions({ name: 'InfosTraficView' })
 
@@ -170,8 +169,7 @@ const stripHtml = (html) => {
       <ErrorState v-else-if="error" :message="error" @retry="loadData" />
       
       <template v-else>
-        <!-- Bannière pub en haut -->
-        <AdBanner ad-slot="9275300614" compact class="opacity-90" />
+        <!-- Bannière pub supprimée -->
 
         <!-- Résumé de l'état du réseau -->
         <div :class="['flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl border', networkSummary.bgClass]" role="status" aria-live="polite">
@@ -278,8 +276,7 @@ const stripHtml = (html) => {
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Aucune perturbation signalée sur le réseau</p>
         </div>
 
-        <!-- Bannière pub en bas -->
-        <AdBanner ad-slot="9275300614" compact class="opacity-90" />
+        <!-- Bannière pub supprimée -->
       </template>
     </main>
   </div>

@@ -5,7 +5,6 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-import AdBanner from '@/components/AdBanner.vue'
 
 defineOptions({ name: 'LignesView' })
 
@@ -138,8 +137,7 @@ const adInsertIndex = computed(() => {
       <!-- Liste des lignes groupées -->
       <template v-else-if="groupedLignes.length > 0">
         <template v-for="(group, index) in groupedLignes" :key="group.title">
-        <!-- Publicité intégrée entre les groupes -->
-        <AdBanner v-if="index === adInsertIndex" ad-slot="4302175533" />
+        <!-- Publicité supprimée -->
         <section :aria-label="group.title">
           <!-- Header de section -->
           <div class="flex items-center gap-2 mb-2 sm:mb-3 px-1 pt-2">

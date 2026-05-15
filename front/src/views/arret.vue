@@ -9,7 +9,6 @@ import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import VehicleModal from '@/components/VehicleModal.vue'
-import AdBanner from '@/components/AdBanner.vue'
 
 defineOptions({ name: 'ArretPage' })
 
@@ -302,10 +301,7 @@ onBeforeUnmount(() => {
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pas de véhicule prévu prochainement à cet arrêt</p>
       </div>
 
-      <!-- Publicité discrète en bas -->
-      <section v-if="!loading" class="mt-4 opacity-90">
-        <AdBanner ad-slot="5527627294" />
-      </section>
+      <!-- Publicité supprimée -->
     </main>
     
     <!-- Modal Véhicule -->

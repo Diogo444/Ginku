@@ -6,7 +6,6 @@ import BackButton from '@/components/BackButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-import AdBanner from '@/components/AdBanner.vue'
 
 defineOptions({ name: 'ArretFromLigneView' })
 
@@ -238,10 +237,7 @@ onBeforeUnmount(() => {
         Aucun arrêt trouvé pour {{ numLigne }}.
       </div>
 
-      <!-- Publicité en bas de la liste -->
-      <section v-if="!loading" class="mt-4 opacity-90">
-        <AdBanner ad-slot="4628634704" />
-      </section>
+      <!-- Publicité supprimée -->
     </main>
   </div>
 </template>

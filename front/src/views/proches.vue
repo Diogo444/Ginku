@@ -5,7 +5,6 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-
 defineOptions({ name: 'NearbyStopsPage' })
 
 const MAX_VISIBLE_STOPS = 5
@@ -924,8 +923,6 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </section>
-
-      <!-- Publicité supprimée -->
     </main>
   </div>
 </template>

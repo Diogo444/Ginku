@@ -6,7 +6,6 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import EmptyState from '@/components/EmptyState.vue'
-
 defineOptions({ name: 'HomePage' })
 
 // ========== SEARCH ==========
@@ -368,8 +367,6 @@ const formatTempsHoraire = (horaire) => {
         </EmptyState>
       </section>
 
-      <!-- Publicité supprimée -->
     </main>
   </div>
 </template>
-

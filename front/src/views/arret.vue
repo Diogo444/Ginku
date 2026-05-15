@@ -9,7 +9,6 @@ import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import VehicleModal from '@/components/VehicleModal.vue'
-
 defineOptions({ name: 'ArretPage' })
 
 const route = useRoute()
@@ -301,7 +300,6 @@ onBeforeUnmount(() => {
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pas de véhicule prévu prochainement à cet arrêt</p>
       </div>
 
-      <!-- Publicité supprimée -->
     </main>
     
     <!-- Modal Véhicule -->
@@ -312,4 +310,3 @@ onBeforeUnmount(() => {
     />
   </div>
 </template>
-

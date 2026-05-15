@@ -6,7 +6,6 @@ import BackButton from '@/components/BackButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-
 defineOptions({ name: 'ArretFromLigneView' })
 
 const props = defineProps({
@@ -237,8 +236,6 @@ onBeforeUnmount(() => {
         Aucun arrêt trouvé pour {{ numLigne }}.
       </div>
 
-      <!-- Publicité supprimée -->
     </main>
   </div>
 </template>
-

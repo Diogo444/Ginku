@@ -236,8 +236,6 @@ onBeforeUnmount(() => {
         Aucun arrêt trouvé pour {{ numLigne }}.
       </div>
 
-
     </main>
   </div>
 </template>
-

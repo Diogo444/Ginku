@@ -367,8 +367,6 @@ const formatTempsHoraire = (horaire) => {
         </EmptyState>
       </section>
 
-
     </main>
   </div>
 </template>
-

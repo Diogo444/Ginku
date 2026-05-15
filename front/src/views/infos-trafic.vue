@@ -276,4 +276,3 @@ const stripHtml = (html) => {
     </main>
   </div>
 </template>
-

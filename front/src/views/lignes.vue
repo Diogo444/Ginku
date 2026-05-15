@@ -131,7 +131,7 @@ const groupedLignes = computed(() => {
       
       <!-- Liste des lignes groupées -->
       <template v-else-if="groupedLignes.length > 0">
-        <template v-for="(group, index) in groupedLignes" :key="group.title">
+        <template v-for="group in groupedLignes" :key="group.title">
         <section :aria-label="group.title">
           <!-- Header de section -->
           <div class="flex items-center gap-2 mb-2 sm:mb-3 px-1 pt-2">
@@ -185,4 +185,3 @@ const groupedLignes = computed(() => {
     </main>
   </div>
 </template>
-

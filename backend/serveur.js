@@ -13,6 +13,7 @@ const APIKEY = process.env.APIKEY
 const DEFAULT_TTL = 60 * 1000
 const REALTIME_TTL = 15 * 1000
 const NEARBY_TTL = 30 * 1000
+const VEHICLE_DETAILS_TTL = 24 * 60 * 60 * 1000
 
 const api = axios.create({
   baseURL: 'https://api.ginko.voyage',
@@ -80,8 +81,8 @@ app.get('/api/detailsVehicule/:num', async (req, res) => {
       const response = await api.get('/DR/getDetailsVehicule.do', {
         params: { apiKey: APIKEY, num },
       })
-      return response.data.objets
-    })
+      return response?.data?.objets ?? null
+    }, VEHICLE_DETAILS_TTL)
     res.json(data)
   } catch (error) {
     res.status(500).send('Error fetching data')

@@ -10,7 +10,6 @@ defineOptions({ name: 'LignesView' })
 const lignes = ref([])
 const loading = ref(true)
 const error = ref(null)
-const searchTerm = ref('')
 const abortController = ref(null)
 
 const loadLignes = async () => {
@@ -38,24 +37,6 @@ onBeforeUnmount(() => {
   abortController.value?.abort()
 })
 
-// Normalisation pour la recherche
-const normalize = (str) => {
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-}
-
-// Filtrer les lignes par recherche
-const filteredLignes = computed(() => {
-  if (!searchTerm.value.trim()) return lignes.value
-  const term = normalize(searchTerm.value.trim())
-  return lignes.value.filter(ligne => 
-    normalize(ligne.numLignePublic).includes(term) ||
-    normalize(ligne.libellePublic || '').includes(term)
-  )
-})
-
 // Regrouper les lignes par catégorie (typologie)
 const groupedLignes = computed(() => {
   const groups = {
@@ -67,7 +48,7 @@ const groupedLignes = computed(() => {
     autres: { title: 'Autres lignes', icon: 'more_horiz', iconColor: 'text-gray-400', lignes: [] }
   }
   
-  filteredLignes.value.forEach(ligne => {
+  lignes.value.forEach(ligne => {
     // Détection du type basée sur le numéro public ou la typologie
     const num = (ligne.numLignePublic || '').toUpperCase()
     
@@ -104,20 +85,6 @@ const groupedLignes = computed(() => {
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Explorez toutes les lignes</p>
         </div>
         <ThemeToggle />
-      </div>
-      
-      <!-- Barre de recherche -->
-      <div class="relative mb-2">
-        <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none" aria-hidden="true">
-          <span class="material-icons-round text-primary/70 text-xl">search</span>
-        </div>
-        <input
-          v-model="searchTerm"
-          type="text"
-          placeholder="Chercher une ligne..."
-          class="w-full py-3 sm:py-3.5 pl-10 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none shadow-sm transition-all text-sm sm:text-base"
-          aria-label="Rechercher une ligne"
-        />
       </div>
     </header>
     

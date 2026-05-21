@@ -9,6 +9,7 @@ const ArretFromLigne = () => import('@/views/arretFromLigne.vue')
 const InfosTrafic = () => import('@/views/infos-trafic.vue')
 const InfosTransport = () => import('@/views/infos-transport.vue')
 const Message = () => import('@/views/message.vue')
+const Vehicule = () => import('@/views/vehicule.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -81,6 +82,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/vehicules/:num',
+      name: 'VehiculePage',
+      component: Vehicule,
+      meta: {
+        title: 'Véhicule — Ginku',
+        description: 'Consultez les équipements et informations d\'un véhicule urbain bus ou tram du réseau Ginko.'
+      },
+    },
+    {
       path: '/message/:idLigne',
       name: 'MessagePage',
       component: Message,
@@ -121,6 +131,10 @@ router.beforeEach((to) => {
   if (to.name === 'ArretFromLigneView' && to.params.numLigne) {
     title = `Ligne ${to.params.numLigne} — Arrêts — Ginku`
     description = `Liste des arrêts et horaires de la ligne ${to.params.numLigne} du réseau Ginko à Besançon.`
+  }
+  if (to.name === 'VehiculePage' && to.params.num) {
+    title = `Véhicule ${to.params.num} — Ginku`
+    description = `Informations et équipements du véhicule ${to.params.num} du réseau urbain Ginko.`
   }
 
   // Mettre à jour le titre de la page

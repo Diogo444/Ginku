@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { getArrets, getTempsLieu } from '@/services/api'
+import { getArrets, getLignes, getTempsLieu } from '@/services/api'
 import { favorites, removeFavorite } from '@/stores/favorites'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
@@ -10,6 +10,7 @@ defineOptions({ name: 'HomePage' })
 
 // ========== SEARCH ==========
 const arrets = ref([])
+const lignes = ref([])
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const searchWrapperRef = ref(null)
@@ -28,11 +29,28 @@ onMounted(async () => {
 
   abortController.value = new AbortController()
   try {
-    const data = await getArrets(abortController.value.signal)
-    arrets.value = data.filter((obj) => obj && typeof obj.nom === 'string' && obj.id)
+    const [arretsResult, lignesResult] = await Promise.allSettled([
+      getArrets(abortController.value.signal),
+      getLignes(abortController.value.signal)
+    ])
+
+    if (arretsResult.status === 'fulfilled') {
+      arrets.value = arretsResult.value.filter((obj) => obj && typeof obj.nom === 'string' && obj.id)
+    } else {
+      console.error('Erreur lors du chargement des arrêts:', arretsResult.reason)
+      arrets.value = []
+    }
+
+    if (lignesResult.status === 'fulfilled') {
+      lignes.value = lignesResult.value.filter((ligne) => ligne && ligne.id && ligne.numLignePublic)
+    } else {
+      console.error('Erreur lors du chargement des lignes:', lignesResult.reason)
+      lignes.value = []
+    }
   } catch (error) {
     console.error('Erreur lors de la requête:', error)
     arrets.value = []
+    lignes.value = []
   } finally {
     searchLoading.value = false
   }
@@ -52,12 +70,40 @@ function normalize(str) {
     .toLowerCase()
 }
 
-// Liste filtrée unique
-const filteredUniqueNomArrets = computed(() => {
+const searchResults = computed(() => {
   const term = normalize(searchTerm.value.trim())
   if (!term) return []
+
+  const results = []
+
+  const lineMatches = lignes.value
+    .filter((ligne) => {
+      const num = normalize(ligne.numLignePublic || '')
+      const label = normalize(ligne.libellePublic || '')
+      return num.includes(term) || label.includes(term)
+    })
+    .slice(0, 4)
+    .map((ligne) => ({
+      type: 'line',
+      key: `line-${ligne.id}`,
+      title: `Ligne ${ligne.numLignePublic}`,
+      subtitle: (ligne.libellePublic || '').replace('<>', ' - '),
+      badge: 'Ligne',
+      icon: (ligne.numLignePublic || '').toUpperCase().startsWith('T') || ligne.modeTransport === 1 ? 'tram' : 'directions_bus',
+      to: {
+        name: 'ArretFromLigneView',
+        params: {
+          idLigne: ligne.id,
+          idVariante: ligne.variantes?.[0]?.id,
+          numLigne: ligne.numLignePublic,
+        },
+      },
+      ligne
+    }))
+
+  results.push(...lineMatches)
+
   const seen = new Set()
-  const uniqueNoms = []
 
   arrets.value.forEach((arret) => {
     if (!arret || typeof arret.nom !== 'string') return
@@ -65,14 +111,35 @@ const filteredUniqueNomArrets = computed(() => {
     const nom = normalize(nomOriginal)
     if (!nom.includes(term) || seen.has(nom)) return
     seen.add(nom)
-    uniqueNoms.push(nomOriginal)
+    results.push({
+      type: 'stop',
+      key: `stop-${nom}`,
+      title: nomOriginal,
+      subtitle: 'Voir les prochains passages',
+      badge: 'Arrêt',
+      icon: 'place',
+      to: { name: 'ArretNomView', params: { nom: nomOriginal } }
+    })
   })
 
-  return uniqueNoms.slice(0, 10) // Limite à 10 résultats
+  const trimmed = searchTerm.value.trim()
+  if (/^\d{3,5}$/.test(trimmed)) {
+    results.unshift({
+      type: 'vehicle',
+      key: `vehicle-${trimmed}`,
+      title: `Véhicule ${trimmed}`,
+      subtitle: 'Voir les informations du véhicule',
+      badge: 'Véhicule',
+      icon: 'directions_bus',
+      to: { name: 'VehiculePage', params: { num: trimmed } }
+    })
+  }
+
+  return results.slice(0, 10)
 })
 
 watch(searchTerm, () => {
-  showDropdown.value = searchTerm.value.trim().length > 0 && filteredUniqueNomArrets.value.length > 0
+  showDropdown.value = searchTerm.value.trim().length > 0 && searchResults.value.length > 0
 })
 
 // ========== FAVORIS ==========
@@ -224,46 +291,72 @@ const formatTempsHoraire = (horaire) => {
         </div>
         <input
           v-model="searchTerm"
-          @focus="showDropdown = filteredUniqueNomArrets.length > 0"
+          @focus="showDropdown = searchResults.length > 0"
           @keydown.escape="showDropdown = false"
           type="text"
-          :placeholder="searchLoading ? 'Chargement...' : 'Rechercher une ligne, un arrêt...'"
+          :placeholder="searchLoading ? 'Chargement...' : 'Rechercher une ligne, un arrêt, un véhicule...'"
           :disabled="searchLoading"
           :class="[
             'relative z-20 w-full py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm transition-all text-sm sm:text-base font-normal focus:outline-none',
-            showDropdown && filteredUniqueNomArrets.length > 0
+            showDropdown && searchResults.length > 0
               ? 'rounded-t-2xl rounded-b-none border-b-0 focus:border-gray-200 dark:focus:border-gray-700'
               : 'rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary'
           ]"
           autocomplete="off"
-          aria-label="Rechercher un arrêt"
+          aria-label="Rechercher une ligne, un arrêt ou un véhicule"
           :aria-expanded="showDropdown"
           aria-controls="search-results"
         />
         
         <!-- Dropdown résultats -->
         <div 
-          v-show="showDropdown && filteredUniqueNomArrets.length > 0"
+          v-show="showDropdown && searchResults.length > 0"
           id="search-results"
           class="absolute top-full left-0 w-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 border-t-0 rounded-b-2xl shadow-xl z-10 overflow-hidden"
         >
           <ul role="listbox">
             <li
-              v-for="nom in filteredUniqueNomArrets"
-              :key="nom"
-              class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer flex items-center gap-3 border-b border-gray-50 dark:border-gray-800 last:border-0 transition-colors"
+              v-for="result in searchResults"
+              :key="result.key"
+              class="border-b border-gray-50 dark:border-gray-800 last:border-0"
               role="option"
             >
               <router-link
-                :to="{ name: 'ArretNomView', params: { nom } }"
-                class="flex items-center gap-3 w-full"
+                :to="result.to"
+                class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 focus:bg-gray-50 dark:focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30 cursor-pointer flex items-center gap-3 w-full transition-colors"
                 @click="showDropdown = false; searchTerm = ''"
-                :aria-label="'Aller à l\'arrêt ' + nom"
+                :aria-label="result.type === 'vehicle' ? 'Voir les informations du ' + result.title.toLowerCase() : 'Aller à ' + result.title"
               >
-                <div class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0" aria-hidden="true">
-                  <span class="material-icons-round text-gray-500 text-lg">place</span>
+                <LineBadge
+                  v-if="result.type === 'line'"
+                  :num="result.ligne.numLignePublic"
+                  :couleur-fond="result.ligne.couleurFond"
+                  :couleur-texte="result.ligne.couleurTexte"
+                  size="sm"
+                  class="shrink-0"
+                />
+                <div
+                  v-else
+                  :class="[
+                    'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                    result.type === 'vehicle'
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                  ]"
+                  aria-hidden="true"
+                >
+                  <span class="material-icons-round text-lg">{{ result.icon }}</span>
                 </div>
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ nom }}</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{{ result.title }}</span>
+                    <span class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {{ result.badge }}
+                    </span>
+                  </div>
+                  <span class="block text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{{ result.subtitle }}</span>
+                </div>
+                <span class="material-icons-round text-gray-400 dark:text-gray-600 text-lg shrink-0" aria-hidden="true">chevron_right</span>
               </router-link>
             </li>
           </ul>

@@ -120,7 +120,13 @@ export async function getVariantesDesservantArret(idArret, signal) {
  * Récupère les détails d'un véhicule
  */
 export async function getDetailsVehicule(numVehicule, signal) {
-  const response = await get(`/detailsVehicule/${numVehicule}`, { signal })
+  const response = await get(`/detailsVehicule/${encodeURIComponent(numVehicule)}`, {
+    signal,
+    ttl: 24 * 60 * 60 * 1000
+  })
+  if (response.error) {
+    throw new Error(response.message || 'Impossible de charger les informations du véhicule')
+  }
   return response.data ?? null
 }
 

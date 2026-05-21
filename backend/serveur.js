@@ -89,6 +89,21 @@ app.get('/api/detailsVehicule/:num', async (req, res) => {
   }
 })
 
+app.get('/api/detailsVehiculeTempsReel/:num', async (req, res) => {
+  const { num } = req.params
+  try {
+    const data = await fetchWithCache(`detailsVehiculeTempsReel-${num}`, async () => {
+      const response = await api.get('/TR/getDetailsVehicule.do', {
+        params: { apiKey: APIKEY, num },
+      })
+      return response?.data?.objets ?? null
+    }, REALTIME_TTL)
+    res.json(data)
+  } catch (error) {
+    res.status(500).send('Error fetching data')
+  }
+})
+
 app.get('/api/getLingnes', async (req, res) => {
   try {
     const data = await fetchWithCache('getLingnes', async () => {

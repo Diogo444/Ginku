@@ -135,6 +135,20 @@ export async function getDetailsVehicule(numVehicule, signal) {
 // ============================================
 
 /**
+ * Récupère les informations temps réel d'un véhicule
+ */
+export async function getDetailsVehiculeTempsReel(numVehicule, signal) {
+  const response = await get(`/detailsVehiculeTempsReel/${encodeURIComponent(numVehicule)}`, {
+    signal,
+    ttl: 15 * 1000
+  })
+  if (response.error) {
+    throw new Error(response.message || 'Impossible de charger les informations temps réel du véhicule')
+  }
+  return response.data ?? null
+}
+
+/**
  * Récupère les temps d'attente pour un lieu/arrêt
  */
 export async function getTempsLieu(nomArret, signal) {
@@ -194,6 +208,7 @@ export default {
   getArretsFromLigne,
   getVariantesDesservantArret,
   getDetailsVehicule,
+  getDetailsVehiculeTempsReel,
   getTempsLieu,
   getTempsArret,
   getArretsProches,

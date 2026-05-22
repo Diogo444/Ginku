@@ -123,7 +123,7 @@ const searchResults = computed(() => {
   })
 
   const trimmed = searchTerm.value.trim()
-  if (/^\d{3,5}$/.test(trimmed)) {
+  if (/^\d{2,3}$/.test(trimmed)) {
     results.unshift({
       type: 'vehicle',
       key: `vehicle-${trimmed}`,
@@ -162,32 +162,32 @@ const normalizeText = (str) => {
 const loadFavoritesData = async () => {
   // Copier la liste actuelle des favoris pour éviter les problèmes de réactivité
   const currentFavorites = [...favorites.value]
-  
+
   for (const fav of currentFavorites) {
     if (!fav.nomArret) continue
-    
+
     // Vérifier que le favori existe toujours
     if (!favorites.value.some(f => f.id === fav.id)) continue
-    
+
     // Ne pas écraser si déjà en cours de chargement
     const existing = favoritesData.value.get(fav.id)
     if (existing?.loading) continue
-    
+
     // Marquer comme loading
-    favoritesData.value.set(fav.id, { 
+    favoritesData.value.set(fav.id, {
       ...existing,
-      loading: true 
+      loading: true
     })
-    
+
     try {
       const data = await getTempsLieu(fav.nomArret)
-      
+
       // Re-vérifier que le favori existe toujours après l'appel API
       if (!favorites.value.some(f => f.id === fav.id)) {
         favoritesData.value.delete(fav.id)
         continue
       }
-      
+
       if (data?.listeTemps) {
         // Trouver tous les temps pour cette ligne/destination (comparaison plus souple)
         const tempsListe = data.listeTemps.filter(t => {
@@ -195,11 +195,11 @@ const loadFavoritesData = async () => {
           // Comparaison souple des destinations
           const destNorm = normalizeText(t.destination)
           const favDestNorm = normalizeText(fav.destination)
-          return destNorm === favDestNorm || 
-                 destNorm.includes(favDestNorm) || 
+          return destNorm === favDestNorm ||
+                 destNorm.includes(favDestNorm) ||
                  favDestNorm.includes(destNorm)
         }).slice(0, 3) // Prendre les 3 prochains
-        
+
         favoritesData.value.set(fav.id, {
           loading: false,
           error: null,
@@ -228,7 +228,7 @@ const loadFavoritesData = async () => {
       }
     }
   }
-  
+
   // Nettoyer les entrées pour les favoris supprimés
   const currentIds = new Set(favorites.value.map(f => f.id))
   for (const [id] of favoritesData.value) {
@@ -253,10 +253,10 @@ watch(favorites, () => {
 // Formater le temps d'attente pour les horaires multiples
 const formatTempsHoraire = (horaire) => {
   if (!horaire) return null
-  
+
   // Utiliser tempsRestant si disponible (comme dans arret.vue)
   const tempsRestant = horaire.tempsRestant ?? horaire.minutes
-  
+
   if (tempsRestant === undefined || tempsRestant === null) {
     // Fallback sur le texte de l'API
     if (horaire.tempsTexte) {
@@ -264,7 +264,7 @@ const formatTempsHoraire = (horaire) => {
     }
     return null
   }
-  
+
   if (tempsRestant <= 0) return { text: 'À l\'approche', isClose: true }
   if (tempsRestant < 60) return { text: `${tempsRestant} min`, isClose: tempsRestant <= 2 }
   return { text: `${Math.floor(tempsRestant / 60)}h${tempsRestant % 60}`, isClose: false }
@@ -283,7 +283,7 @@ const formatTempsHoraire = (horaire) => {
         </div>
         <ThemeToggle />
       </div>
-      
+
       <!-- Barre de recherche -->
       <div ref="searchWrapperRef" class="relative mb-2" role="search">
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-30" aria-hidden="true">
@@ -307,9 +307,9 @@ const formatTempsHoraire = (horaire) => {
           :aria-expanded="showDropdown"
           aria-controls="search-results"
         />
-        
+
         <!-- Dropdown résultats -->
-        <div 
+        <div
           v-show="showDropdown && searchResults.length > 0"
           id="search-results"
           class="absolute top-full left-0 w-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 border-t-0 rounded-b-2xl shadow-xl z-10 overflow-hidden"
@@ -363,7 +363,7 @@ const formatTempsHoraire = (horaire) => {
         </div>
       </div>
     </header>
-    
+
     <!-- Contenu principal -->
     <main class="flex-grow px-4 sm:px-6 pb-8 space-y-6 sm:space-y-8 pt-3 sm:pt-4">
       <!-- Section Favoris -->
@@ -371,7 +371,7 @@ const formatTempsHoraire = (horaire) => {
         <div class="flex justify-between items-end mb-3 sm:mb-4">
           <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Mes Favoris</h2>
         </div>
-        
+
         <!-- Liste des favoris -->
         <div v-if="favorites.length > 0" class="space-y-3 sm:space-y-4">
           <router-link
@@ -381,16 +381,16 @@ const formatTempsHoraire = (horaire) => {
             class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden block"
           >
             <!-- Barre de couleur gauche -->
-            <div 
+            <div
               class="absolute top-0 left-0 w-1 h-full"
               :style="{ backgroundColor: '#' + (fav.couleurFond || '666666') }"
             ></div>
-            
+
             <div class="flex items-center gap-3 sm:gap-4 pl-2 min-w-0 flex-1">
               <div class="relative flex-shrink-0">
-                <LineBadge 
-                  :num="fav.numLigne" 
-                  :couleur-fond="fav.couleurFond" 
+                <LineBadge
+                  :num="fav.numLigne"
+                  :couleur-fond="fav.couleurFond"
                   :couleur-texte="fav.couleurTexte"
                   size="md"
                 />
@@ -402,10 +402,10 @@ const formatTempsHoraire = (horaire) => {
                 </span>
               </div>
             </div>
-            
+
             <!-- Temps d'attente -->
             <div class="flex flex-col items-end gap-1.5 pr-1">
-              <button 
+              <button
                 @click.stop.prevent="removeFavorite(fav.id)"
                 class="text-yellow-500 hover:text-yellow-600 transition-colors"
                 title="Retirer des favoris"
@@ -414,7 +414,7 @@ const formatTempsHoraire = (horaire) => {
               >
                 <span class="material-icons-round text-xl" aria-hidden="true">star</span>
               </button>
-              
+
               <template v-if="favoritesData.get(fav.id)?.loading">
                 <Loader size="sm" :centered="false" />
               </template>
@@ -425,8 +425,8 @@ const formatTempsHoraire = (horaire) => {
                     :key="idx"
                     :class="[
                       'px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg font-semibold text-xs sm:text-sm',
-                      formatTempsHoraire(horaire)?.isClose 
-                        ? 'bg-green-100 dark:bg-green-900/30 text-line-green border border-green-200 dark:border-green-800' 
+                      formatTempsHoraire(horaire)?.isClose
+                        ? 'bg-green-100 dark:bg-green-900/30 text-line-green border border-green-200 dark:border-green-800'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
                     ]"
                   >
@@ -443,7 +443,7 @@ const formatTempsHoraire = (horaire) => {
             </div>
           </router-link>
         </div>
-        
+
         <!-- État vide -->
         <EmptyState
           v-else
@@ -451,7 +451,7 @@ const formatTempsHoraire = (horaire) => {
           title="Pas de favoris"
           message="Ajoutez des arrêts à vos favoris pour les retrouver ici"
         >
-          <router-link 
+          <router-link
             to="/lignes"
             class="mt-4 px-4 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
           >

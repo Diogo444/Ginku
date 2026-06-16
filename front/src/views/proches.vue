@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getArretsProches, getTempsArret } from '@/services/api'
+import { useGeolocation } from '@/composables/useGeolocation'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
@@ -18,19 +19,27 @@ const loading = ref(true)
 const refreshingStops = ref(false)
 const error = ref(null)
 const nearbyStops = ref([])
-const userPosition = ref(null)
-const permissionState = ref('pending')
 const statusMessage = ref('Recherche de votre position…')
 const liveAnnouncement = ref('Recherche de votre position…')
 const isPageVisible = ref(typeof document === 'undefined' ? true : document.visibilityState === 'visible')
 const lastUpdatedAt = ref(null)
 
-const geolocationWatchId = ref(null)
 const nearbyAbortController = ref(null)
+const pendingNearbyPosition = ref(null)
 let timesBatchId = 0
 let refreshTimerId = null
 let announcementTimerId = null
 const activeTimesControllers = new Set()
+const {
+  position: userPosition,
+  status: geolocationStatus,
+  error: geolocationError,
+  isRequesting: isRequestingLocation,
+  requestPosition,
+  startWatching,
+  stopWatching,
+  resetError: resetGeolocationError,
+} = useGeolocation()
 
 const timeFormatter = new Intl.DateTimeFormat('fr-FR', {
   hour: '2-digit',
@@ -124,13 +133,6 @@ function aggregateStopAccessibility(sourceStops) {
   }
 
   return 0
-}
-
-function stopLocationTracking() {
-  if (geolocationWatchId.value != null && navigator.geolocation) {
-    navigator.geolocation.clearWatch(geolocationWatchId.value)
-    geolocationWatchId.value = null
-  }
 }
 
 function stopRefreshTimer() {
@@ -293,6 +295,19 @@ function syncStopDistances(position) {
   }))
 }
 
+function hasMovedEnough(firstPosition, secondPosition) {
+  if (!firstPosition || !secondPosition) return true
+
+  return (
+    calculateDistanceMeters(
+      firstPosition.latitude,
+      firstPosition.longitude,
+      secondPosition.latitude,
+      secondPosition.longitude,
+    ) >= MOVEMENT_THRESHOLD_METERS
+  )
+}
+
 async function refreshStopTimes({ silent = false } = {}) {
   if (!nearbyStops.value.length) return
 
@@ -444,12 +459,16 @@ function buildStopsList(rawStops, position) {
 
 async function fetchNearbyStops(position, { silent = false } = {}) {
   if (!position) return
+  if (nearbyAbortController.value && !hasMovedEnough(pendingNearbyPosition.value, position)) {
+    return
+  }
 
   nearbyAbortController.value?.abort()
   abortTimesRequests()
 
   const controller = new AbortController()
   nearbyAbortController.value = controller
+  pendingNearbyPosition.value = position
 
   if (!nearbyStops.value.length) {
     loading.value = true
@@ -484,6 +503,7 @@ async function fetchNearbyStops(position, { silent = false } = {}) {
   } finally {
     if (nearbyAbortController.value === controller) {
       nearbyAbortController.value = null
+      pendingNearbyPosition.value = null
     }
 
     loading.value = false
@@ -491,107 +511,29 @@ async function fetchNearbyStops(position, { silent = false } = {}) {
   }
 }
 
-function handlePositionSuccess(position) {
-  const nextPosition = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-    accuracy: position.coords.accuracy,
-  }
-
-  const previousPosition = userPosition.value
-  userPosition.value = nextPosition
-  permissionState.value = 'ready'
-  syncLiveProcesses()
-
-  if (previousPosition) {
-    syncStopDistances(nextPosition)
-  }
-
-  const movedEnough =
-    !previousPosition ||
-    calculateDistanceMeters(
-      previousPosition.latitude,
-      previousPosition.longitude,
-      nextPosition.latitude,
-      nextPosition.longitude,
-    ) >= MOVEMENT_THRESHOLD_METERS
-
-  if (movedEnough || !nearbyStops.value.length) {
-    fetchNearbyStops(nextPosition, { silent: Boolean(previousPosition) })
-  }
-}
-
-function handlePositionError(geoError) {
-  loading.value = false
-  stopLocationTracking()
-  stopRefreshTimer()
-
-  if (geoError?.code === 1) {
-    permissionState.value = 'denied'
-    error.value = null
-    statusMessage.value = 'Accès à la géolocalisation refusé'
-    announce(statusMessage.value)
-    return
-  }
-
-  permissionState.value = 'error'
-  error.value = 'Impossible de récupérer votre position.'
-  statusMessage.value = error.value
-  announce(error.value)
-}
-
-function startLocationTracking() {
-  if (!navigator.geolocation || geolocationWatchId.value != null) return
-  if (permissionState.value !== 'ready') return
-
-  if (!userPosition.value) {
-    permissionState.value = 'pending'
-    statusMessage.value = 'Recherche de votre position…'
-  }
-
-  geolocationWatchId.value = navigator.geolocation.watchPosition(
-    handlePositionSuccess,
-    handlePositionError,
-    {
-      enableHighAccuracy: false,
-      maximumAge: 30 * 1000,
-      timeout: 10 * 1000,
-    },
-  )
-}
-
-function requestCurrentPosition() {
-  if (!navigator.geolocation) return
-
-  navigator.geolocation.getCurrentPosition(handlePositionSuccess, handlePositionError, {
-    enableHighAccuracy: false,
-    maximumAge: 15 * 1000,
-    timeout: 10 * 1000,
-  })
-}
-
 function syncLiveProcesses() {
-  if (isPageVisible.value && permissionState.value === 'ready') {
-    startLocationTracking()
+  if (isPageVisible.value && geolocationStatus.value === 'ready') {
+    startWatching()
     startRefreshTimer()
     return
   }
 
-  stopLocationTracking()
+  stopWatching()
   stopRefreshTimer()
 }
 
 function handleManualRefresh() {
   if (userPosition.value) {
+    resetGeolocationError()
     fetchNearbyStops(userPosition.value)
+    startWatching()
     return
   }
 
   loading.value = true
   error.value = null
-  permissionState.value = 'pending'
   statusMessage.value = 'Recherche de votre position…'
-  requestCurrentPosition()
+  requestPosition()
 }
 
 function handleVisibilityChange() {
@@ -599,31 +541,95 @@ function handleVisibilityChange() {
 }
 
 const lastUpdatedLabel = computed(() => formatLastUpdated(lastUpdatedAt.value))
-
-watch(isPageVisible, (visible) => {
-  syncLiveProcesses()
-
-  if (visible && userPosition.value) {
-    refreshStopTimes({ silent: true })
-  }
+const hasBlockingGeolocationIssue = computed(
+  () =>
+    ['denied', 'timeout', 'unavailable', 'unsupported'].includes(geolocationStatus.value) &&
+    !nearbyStops.value.length,
+)
+const locationNotice = computed(() => {
+  if (!nearbyStops.value.length) return null
+  if (!['timeout', 'unavailable'].includes(geolocationStatus.value)) return null
+  return geolocationError.value
 })
 
-onMounted(() => {
-  if (!navigator.geolocation) {
-    permissionState.value = 'unsupported'
+function handlePositionUpdate(nextPosition, previousPosition) {
+  if (!nextPosition) return
+
+  error.value = null
+  syncLiveProcesses()
+
+  if (previousPosition) {
+    syncStopDistances(nextPosition)
+  }
+
+  const movedEnough =
+    !previousPosition || hasMovedEnough(previousPosition, nextPosition)
+
+  if (movedEnough || !nearbyStops.value.length) {
+    fetchNearbyStops(nextPosition, { silent: Boolean(previousPosition) })
+  }
+}
+
+function syncGeolocationStatus() {
+  if (geolocationStatus.value === 'ready') {
+    syncLiveProcesses()
+    return
+  }
+
+  if (geolocationStatus.value === 'pending') {
+    statusMessage.value = 'Recherche de votre position…'
+    return
+  }
+
+  if (geolocationStatus.value === 'unsupported') {
     loading.value = false
     statusMessage.value = 'La géolocalisation n’est pas disponible sur cet appareil.'
     announce(statusMessage.value)
     return
   }
 
+  if (['denied', 'timeout', 'unavailable'].includes(geolocationStatus.value)) {
+    loading.value = false
+    statusMessage.value = geolocationError.value || 'Position temporairement indisponible.'
+    announce(statusMessage.value)
+  }
+}
+
+watch(isPageVisible, (visible) => {
+  syncLiveProcesses()
+
+  if (visible && userPosition.value) {
+    if (geolocationStatus.value !== 'denied') {
+      resetGeolocationError()
+      startWatching()
+    }
+
+    refreshStopTimes({ silent: true })
+  } else if (visible && geolocationStatus.value !== 'denied') {
+    requestPosition()
+  }
+})
+
+watch(userPosition, handlePositionUpdate)
+watch(geolocationStatus, syncGeolocationStatus)
+watch(geolocationError, () => {
+  if (geolocationError.value) {
+    syncGeolocationStatus()
+  }
+})
+
+onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
-  requestCurrentPosition()
+  syncGeolocationStatus()
+
+  if (geolocationStatus.value !== 'unsupported') {
+    requestPosition()
+  }
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
-  stopLocationTracking()
+  stopWatching()
   stopRefreshTimer()
   cleanupPendingRequests()
 
@@ -674,14 +680,8 @@ onBeforeUnmount(() => {
     <main class="flex-grow space-y-4 px-4 pb-8 pt-4 sm:px-6 sm:pt-6">
       <Loader v-if="loading && !nearbyStops.length" />
 
-      <ErrorState
-        v-else-if="error && !nearbyStops.length"
-        :message="error"
-        @retry="handleManualRefresh"
-      />
-
       <section
-        v-else-if="permissionState === 'unsupported'"
+        v-else-if="geolocationStatus === 'unsupported'"
         class="rounded-3xl border border-gray-200 bg-surface-light p-4 shadow-soft dark:border-gray-800 dark:bg-surface-dark dark:shadow-none"
       >
         <div class="flex items-start gap-3">
@@ -698,7 +698,7 @@ onBeforeUnmount(() => {
       </section>
 
       <section
-        v-else-if="permissionState === 'denied' && !nearbyStops.length"
+        v-else-if="geolocationStatus === 'denied' && !nearbyStops.length"
         class="rounded-3xl border border-primary/15 bg-surface-light p-4 shadow-soft dark:border-primary/20 dark:bg-surface-dark dark:shadow-none"
       >
         <div class="flex items-start gap-3">
@@ -708,7 +708,7 @@ onBeforeUnmount(() => {
           <div class="min-w-0 flex-1">
             <h2 class="text-base font-semibold text-gray-900 dark:text-white">Localisation non autorisée</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Autorise la localisation pour afficher les arrêts autour de toi.
+              Autorise la localisation dans ton navigateur pour afficher les arrêts proches.
             </p>
           </div>
         </div>
@@ -725,7 +725,41 @@ onBeforeUnmount(() => {
       </section>
 
       <section
-        v-else-if="!loading && !nearbyStops.length"
+        v-else-if="['timeout', 'unavailable'].includes(geolocationStatus) && !nearbyStops.length"
+        class="rounded-3xl border border-amber-200 bg-amber-50/80 p-4 shadow-soft dark:border-amber-900/50 dark:bg-amber-950/20 dark:shadow-none"
+      >
+        <div class="flex items-start gap-3">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            <span class="material-icons-round text-xl" aria-hidden="true">my_location</span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">Position à relancer</h2>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              {{ geolocationError }}
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <button
+            type="button"
+            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+            :disabled="isRequestingLocation"
+            @click="handleManualRefresh"
+          >
+            {{ isRequestingLocation ? 'Recherche…' : 'Réessayer' }}
+          </button>
+        </div>
+      </section>
+
+      <ErrorState
+        v-else-if="error && !nearbyStops.length"
+        :message="error"
+        @retry="handleManualRefresh"
+      />
+
+      <section
+        v-else-if="!loading && !nearbyStops.length && !hasBlockingGeolocationIssue"
         class="rounded-3xl border border-dashed border-gray-200 bg-surface-light p-4 dark:border-gray-700 dark:bg-surface-dark"
       >
         <div class="flex items-start gap-3">
@@ -752,6 +786,25 @@ onBeforeUnmount(() => {
       </section>
 
       <section v-else class="space-y-3">
+        <div
+          v-if="locationNotice"
+          class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+          role="status"
+        >
+          <span class="inline-flex min-w-0 items-center gap-2">
+            <span class="material-icons-round text-lg" aria-hidden="true">my_location</span>
+            <span>{{ locationNotice }}</span>
+          </span>
+          <button
+            type="button"
+            class="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+            :disabled="isRequestingLocation"
+            @click="handleManualRefresh"
+          >
+            {{ isRequestingLocation ? 'Recherche…' : 'Réessayer' }}
+          </button>
+        </div>
+
         <article
           v-for="stop in nearbyStops"
           :key="stop.mergeKey"

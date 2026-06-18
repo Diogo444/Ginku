@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getTempsLieu, getVariantesDesservantArret } from '@/services/api'
 import { generateFavoriteId, isFavorite, toggleFavorite } from '@/stores/favorites'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -12,6 +12,7 @@ import VehicleModal from '@/components/VehicleModal.vue'
 defineOptions({ name: 'ArretPage' })
 
 const route = useRoute()
+const router = useRouter()
 
 const horaires = ref(null)
 const variantesMap = ref({})
@@ -80,14 +81,34 @@ async function loadVariantes(idArrets) {
         if (!lignes) return
 
         for (const ligne of lignes) {
-          if (!map[ligne.id]) map[ligne.id] = {}
+          if (!map[ligne.id]) {
+            map[ligne.id] = {
+              firstVarianteId: null,
+              byDestination: {},
+              byDirection: {}
+            }
+          }
+
           for (const variante of ligne.variantes || []) {
+            if (!map[ligne.id].firstVarianteId) {
+              map[ligne.id].firstVarianteId = variante.id
+            }
+
             const fullDest = variante.precisionDestination
               ? `${variante.destination} ${variante.precisionDestination}`
               : variante.destination
-            const destNorm = normalize(fullDest)
-            if (!map[ligne.id][variante.sensAller]) map[ligne.id][variante.sensAller] = {}
-            map[ligne.id][variante.sensAller][destNorm] = variante.id
+            const destinations = [fullDest, variante.destination].filter(Boolean)
+            const directionKey = String(variante.sensAller)
+
+            if (!map[ligne.id].byDirection[directionKey]) {
+              map[ligne.id].byDirection[directionKey] = {}
+            }
+
+            for (const destination of destinations) {
+              const destNorm = normalize(destination)
+              map[ligne.id].byDestination[destNorm] = variante.id
+              map[ligne.id].byDirection[directionKey][destNorm] = variante.id
+            }
           }
         }
       } catch (err) {
@@ -105,8 +126,8 @@ const groupedHoraires = computed(() => {
   const groupMap = {}
 
   for (const t of src) {
-    // Clé unique: ligne + destination + précision
-    const destKey = `${t.numLignePublic}_${t.destination}_${t.precisionDestination || ''}`
+    // Clé unique: ligne + destination + précision + sens
+    const destKey = `${t.numLignePublic}_${t.destination}_${t.precisionDestination || ''}_${t.sensAller ? '1' : '0'}`
     
     if (!groupMap[destKey]) {
       groupMap[destKey] = {
@@ -116,6 +137,7 @@ const groupedHoraires = computed(() => {
         idLigne: t.idLigne,
         destination: t.destination,
         precisionDestination: t.precisionDestination,
+        sensAller: t.sensAller,
         modeTransport: t.modeTransport,
         idArret: t.idArret,
         horaires: []
@@ -132,6 +154,48 @@ const groupedHoraires = computed(() => {
 
   return Object.values(groupMap)
 })
+
+// Route vers la liste des arrêts de la ligne sélectionnée
+const getLineStopsRoute = (groupe) => {
+  if (!groupe?.idLigne) return null
+
+  const lineVariants = variantesMap.value[groupe.idLigne]
+  if (!lineVariants) return null
+
+  const fullDestination = groupe.precisionDestination
+    ? `${groupe.destination} ${groupe.precisionDestination}`
+    : groupe.destination
+  const destinationKeys = [fullDestination, groupe.destination]
+    .filter(Boolean)
+    .map((destination) => normalize(destination))
+
+  const directionKey = String(groupe.sensAller)
+  const directionVariants = lineVariants.byDirection?.[directionKey]
+  let idVariante = null
+
+  for (const destinationKey of destinationKeys) {
+    idVariante = directionVariants?.[destinationKey] || lineVariants.byDestination?.[destinationKey]
+    if (idVariante) break
+  }
+
+  idVariante = idVariante || lineVariants.firstVarianteId
+
+  if (!idVariante) return null
+
+  return {
+    name: 'ArretFromLigneView',
+    params: {
+      idLigne: groupe.idLigne,
+      idVariante,
+      numLigne: groupe.numLignePublic
+    }
+  }
+}
+
+const openLineStops = (groupe) => {
+  const target = getLineStopsRoute(groupe)
+  if (target) router.push(target)
+}
 
 // Formater le temps d'attente
 const formatTemps = (tempsRestant) => {
@@ -222,19 +286,27 @@ onBeforeUnmount(() => {
       <template v-else-if="groupedHoraires.length > 0">
         <div 
           v-for="groupe in groupedHoraires" 
-          :key="`${groupe.numLignePublic}_${groupe.destination}`"
+          :key="`${groupe.idLigne}_${groupe.destination}_${groupe.precisionDestination || ''}_${groupe.sensAller ? '1' : '0'}`"
           class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-800 overflow-hidden p-3 sm:p-4"
         >
           <!-- En-tête: Ligne + Destination + Favori -->
           <div class="flex items-center gap-3 sm:gap-4 mb-3">
             <!-- Badge ligne -->
-            <LineBadge 
-              :num="groupe.numLignePublic" 
-              :couleur-fond="groupe.couleurFond" 
-              :couleur-texte="groupe.couleurTexte"
-              size="md"
-              class="rounded-[1rem] flex-shrink-0"
-            />
+            <button
+              type="button"
+              @click="openLineStops(groupe)"
+              :disabled="!getLineStopsRoute(groupe)"
+              class="rounded-[1rem] flex-shrink-0 transition-transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-default"
+              :aria-label="'Voir la liste des arrêts de la ligne ' + groupe.numLignePublic"
+            >
+              <LineBadge 
+                :num="groupe.numLignePublic" 
+                :couleur-fond="groupe.couleurFond" 
+                :couleur-texte="groupe.couleurTexte"
+                size="md"
+                class="rounded-[1rem]"
+              />
+            </button>
             
             <!-- Destination -->
             <div class="flex-grow min-w-0 flex flex-col justify-center">

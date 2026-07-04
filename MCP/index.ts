@@ -14,21 +14,7 @@ function createServer() {
     name: 'ginku-mcp',
     version: '1.0.0',
   })
-
-  server.registerTool(
-    'hello',
-    {
-      title: 'Dire bonjour',
-      description: 'Renvoie un message de bienvenue avec le nom fourni.',
-      inputSchema: {
-        name: z.string().min(1).describe('Nom de la personne à saluer'),
-      },
-    },
-    async ({ name }) => ({
-      content: [{ type: 'text', text: `Bonjour ${name} !` }],
-    }),
-  )
-
+  // Récupérer toutes les lignes
   server.registerTool(
     'lignes',
     {
@@ -37,16 +23,7 @@ function createServer() {
       inputSchema: {},
     },
     async () => {
-      if (!api) {
-        throw new Error('API_URL est manquant dans le fichier .env')
-      }
-
-      const apiResponse = await fetch(`${api}/getLingnes`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const apiResponse = await fetch(`${api}/getLingnes`)
 
       if (!apiResponse.ok) {
         throw new Error(
@@ -65,8 +42,82 @@ function createServer() {
         ],
       }
     },
-  ),
-  
+  )
+  // Récupérer les arrêts depuis une ligne
+  server.registerTool(
+    'arrets_from_ligne',
+    {
+      title: 'Arrêts depuis une ligne',
+      description: 'Récupère la liste des arrêts pour une ligne et une variante données.',
+      inputSchema: {
+        idLigne: z.string().min(1).describe('Identifiant de la ligne'),
+        idVariante: z.string().min(1).describe('Identifiant de la variante'),
+      },
+    },
+    async ({ idLigne, idVariante }) => {
+      const apiResponse = await fetch(`${api}/getArretFromLigne/${idLigne}/${idVariante}`)
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la récupération des arrêts : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const arrets = await apiResponse.json()
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(arrets, null, 2),
+          },
+        ],
+      }
+    },
+  )
+
+  // Récupérer quelle ligne et déservie à un arrêt
+  server.registerTool(
+    'ligne_from_arret',
+    {
+      title: 'Récupérer la ligne depuis un arrêt',
+      description: 'Récupère la ligne et la variante qui dessert un arrêt donné.',
+      inputSchema: {
+        idArret: z.string().min(1).describe("Identifiant de l'arrêt"),
+      },
+    },
+    async ({ idArret }) => {
+      const MODE_TRANSPORT = {
+        0: 'Bus',
+        1: 'Tramway',
+      } as const
+
+      const apiResponse = await fetch(`${api}/getVariantesDesservantArret/${idArret}`)
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la récupération de la ligne : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const ligne = (await apiResponse.json()).map((ligne: any) => ({
+        ...ligne,
+        modeTransport: {
+          code: ligne.modeTransport,
+          libelle: MODE_TRANSPORT[ligne.modeTransport as keyof typeof MODE_TRANSPORT] ?? 'Inconnu',
+        },
+      }))
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(ligne, null, 2),
+          },
+        ],
+      }
+    },
+  )
 
   return server
 }

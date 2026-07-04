@@ -5,6 +5,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
+import { id } from 'zod/locales'
 
 const port = Number(process.env.PORT ?? 3001)
 const api = String(process.env.API_URL ?? 'http://localhost:3000')
@@ -200,12 +201,12 @@ function createServer() {
     async () => {
       const etat = {
         0: "Aucune couleur ni aucun pictogramme : aucune information sur l'état, par exemple pour les lignes TAD",
-        1: "Vert (pictogramme de validation) : la ligne fonctionne normalement, sans perturbation en cours ni prévue",
+        1: 'Vert (pictogramme de validation) : la ligne fonctionne normalement, sans perturbation en cours ni prévue',
         2: "Bleu (pictogramme d'information) : une information concerne la ligne, comme une nouveauté ou une évolution",
-        3: "Gris (pictogramme en forme de croix) : la ligne ne fonctionne pas actuellement, selon sa période de fonctionnement",
+        3: 'Gris (pictogramme en forme de croix) : la ligne ne fonctionne pas actuellement, selon sa période de fonctionnement',
         4: "Gris (pictogramme d'attention) : une perturbation est prévue",
         5: "Orange (pictogramme d'attention) : une perturbation est en cours",
-        6: "Rouge (pictogramme en forme de croix) : la circulation de la ligne est totalement interrompue",
+        6: 'Rouge (pictogramme en forme de croix) : la circulation de la ligne est totalement interrompue',
       } as const
       const apiResponse = await fetch(`${api}/etatLignes`)
 
@@ -227,7 +228,53 @@ function createServer() {
                 etatLignes,
               },
               null,
-              2
+              2,
+            ),
+          },
+        ],
+      }
+    },
+  )
+
+  // Récupérer les messages d'info trafic
+  server.registerTool(
+    'info_trafic',
+    {
+      title: 'Récupérer les messages d info trafic',
+      description: 'Récupère les messages d info trafic.',
+      inputSchema: {
+        idLigne: z.string().min(1).describe('Identifiant de la ligne'),
+      },
+    },
+    async ({ idLigne }) => {
+      const etat = {
+        1: 'Aucune perturbation',
+        2: 'Information concernant la (ou les) ligne(s) (nouveauté, évolution)',
+        4: 'Une perturbation est prévue dans le futur',
+        5: 'Une perturbation est en cours',
+      } as const
+
+      const apiResponse = await fetch(`${api}/messages/${idLigne}`)
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la récupération des messages d info trafic : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const infoTrafic = await apiResponse.json()
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                etat,
+                infoTrafic,
+              },
+              null,
+              2,
             ),
           },
         ],

@@ -119,6 +119,78 @@ function createServer() {
     },
   )
 
+  // Liste de temps d'attente d'un arrêt
+  server.registerTool(
+    'temps_attente_arret',
+    {
+      title: "Liste de temps d'attente d'un arrêt",
+      description: "Récupère la liste des temps d'attente pour un arrêt donné.",
+      inputSchema: {
+        nomArret: z.string().min(1).describe("Nom de l'arrêt"),
+      },
+    },
+    async ({ nomArret }) => {
+      const TypeDeTemp = {
+        0: "temps avant l'arrivée du véhicule, ex. '2 mn'",
+        1: "horaire d'arrivée, ex. '17:30' (généralement si le temps d'attente dépasse 59 mn)",
+        2: "court texte de remplacement, ex. 'travaux', 'déviation' ou 'bus complet'",
+      } as const
+
+      const AccessibiliteArret = {
+        0: 'aucune information disponible',
+        1: 'arrêt accessible aux personnes à mobilité réduite',
+        2: 'arrêt difficilement accessible ou non accessible',
+      } as const
+
+      const AccessibiliteVehicule = {
+        0: 'aucune information disponible',
+        1: 'véhicule accessible aux personnes à mobilité réduite',
+        2: 'véhicule non accessible aux personnes à mobilité réduite',
+      } as const
+
+      const Affluence = {
+        [-2]: "accès aux informations d'affluence non autorisé",
+        [-1]: "prévision d'affluence indisponible",
+        0: 'affluence faible : peu de voyageurs à bord',
+        1: 'affluence modérée : quelques voyageurs à bord, des places assises devraient rester disponibles',
+        2: 'affluence forte : beaucoup de voyageurs à bord, probablement plus de places assises',
+      } as const
+
+      const apiResponse = await fetch(`${api}/getTempsLieu/${nomArret}`)
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la récupération des temps d'attente : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const tempsAttente = await apiResponse.json()
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                legende: {
+                  typeDeTemps: TypeDeTemp,
+                  accessibiliteArret: AccessibiliteArret,
+                  accessibiliteVehicule: AccessibiliteVehicule,
+                  affluence: Affluence,
+                },
+                tempsAttente,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      }
+    },
+  )
+
+  
+
   return server
 }
 

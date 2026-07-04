@@ -189,8 +189,51 @@ function createServer() {
     },
   )
 
-  
+  // Récupérer les état des lignes
+  server.registerTool(
+    'etat_lignes',
+    {
+      title: 'Récupérer l’état des lignes',
+      description: 'Récupère l’état des lignes de transport en commun.',
+      inputSchema: {},
+    },
+    async () => {
+      const etat = {
+        0: "Aucune couleur ni aucun pictogramme : aucune information sur l'état, par exemple pour les lignes TAD",
+        1: "Vert (pictogramme de validation) : la ligne fonctionne normalement, sans perturbation en cours ni prévue",
+        2: "Bleu (pictogramme d'information) : une information concerne la ligne, comme une nouveauté ou une évolution",
+        3: "Gris (pictogramme en forme de croix) : la ligne ne fonctionne pas actuellement, selon sa période de fonctionnement",
+        4: "Gris (pictogramme d'attention) : une perturbation est prévue",
+        5: "Orange (pictogramme d'attention) : une perturbation est en cours",
+        6: "Rouge (pictogramme en forme de croix) : la circulation de la ligne est totalement interrompue",
+      } as const
+      const apiResponse = await fetch(`${api}/etatLignes`)
 
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la récupération de l'état des lignes : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const etatLignes = await apiResponse.json()
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                etat,
+                etatLignes,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      }
+    },
+  )
   return server
 }
 

@@ -82,6 +82,12 @@ Le MCP lit `API_URL` :
 
 Le fichier `MCP/.env` peut rester utilisé pour des réglages locaux non versionnés. Docker Compose fournit directement les variables de production et ne copie aucun fichier `.env` dans l’image.
 
+Le MCP fournit notamment :
+
+- `rechercher_arrets` : recherche fiable d’un arrêt et de ses lignes ;
+- `rechercher_arrets_proches` : arrêts à moins de 500 mètres de coordonnées ;
+- `calculer_itineraire` : trajets directs ou avec une correspondance, vérifiés selon l’ordre réel des arrêts dans les variantes du jour.
+
 ## Commandes utiles
 
 À la racine :

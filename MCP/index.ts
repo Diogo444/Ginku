@@ -4,13 +4,19 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { config } from 'dotenv'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { id } from 'zod/locales'
+
 
 const environment = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 config({ path: [`.env.${environment}`, '.env'] })
 
 const port = Number(process.env.PORT ?? 3001)
 const api = String(process.env.API_URL ?? 'http://localhost:3000')
+const allowedHosts = String(
+  process.env.MCP_ALLOWED_HOSTS ?? 'localhost,127.0.0.1,[::1]',
+)
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean)
 
 function createServer() {
   const server = new McpServer({
@@ -286,7 +292,10 @@ function createServer() {
   return server
 }
 
-const app = createMcpExpressApp()
+const app = createMcpExpressApp({
+  host: '0.0.0.0',
+  allowedHosts,
+})
 
 app.get('/health', (_request: Request, response: Response) => {
   response.status(200).json({ status: 'ok' })

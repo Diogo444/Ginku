@@ -18,6 +18,24 @@ const allowedHosts = String(
   .map((host) => host.trim())
   .filter(Boolean)
 
+const readOnlyAnnotations = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: true,
+} as const
+
+function toolResult(structuredContent: Record<string, unknown>) {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify(structuredContent, null, 2),
+      },
+    ],
+    structuredContent,
+  }
+}
+
 function createServer() {
   const server = new McpServer({
     name: 'ginku-mcp',
@@ -30,6 +48,10 @@ function createServer() {
       title: 'Récupérer toutes les lignes',
       description: 'Récupère la liste de toutes les lignes disponibles.',
       inputSchema: {},
+      outputSchema: {
+        lignes: z.array(z.unknown()).describe('Lignes Ginko disponibles'),
+      },
+      annotations: readOnlyAnnotations,
     },
     async () => {
       const apiResponse = await fetch(`${api}/getLingnes`)
@@ -42,14 +64,7 @@ function createServer() {
 
       const lines = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(lines, null, 2),
-          },
-        ],
-      }
+      return toolResult({ lignes: lines })
     },
   )
   // Récupérer les arrêts depuis une ligne
@@ -62,6 +77,10 @@ function createServer() {
         idLigne: z.string().min(1).describe('Identifiant de la ligne'),
         idVariante: z.string().min(1).describe('Identifiant de la variante'),
       },
+      outputSchema: {
+        arrets: z.array(z.unknown()).describe('Arrêts desservis dans leur ordre de passage'),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ idLigne, idVariante }) => {
       const apiResponse = await fetch(`${api}/getArretFromLigne/${idLigne}/${idVariante}`)
@@ -74,14 +93,7 @@ function createServer() {
 
       const arrets = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(arrets, null, 2),
-          },
-        ],
-      }
+      return toolResult({ arrets })
     },
   )
 
@@ -94,6 +106,10 @@ function createServer() {
       inputSchema: {
         idArret: z.string().min(1).describe("Identifiant de l'arrêt"),
       },
+      outputSchema: {
+        lignes: z.array(z.unknown()).describe("Lignes et variantes desservant l'arrêt"),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ idArret }) => {
       const MODE_TRANSPORT = {
@@ -117,14 +133,7 @@ function createServer() {
         },
       }))
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(ligne, null, 2),
-          },
-        ],
-      }
+      return toolResult({ lignes: ligne })
     },
   )
 
@@ -140,6 +149,10 @@ function createServer() {
           .min(2)
           .describe("Nom complet ou partiel de l'arrêt, par exemple 'Lavoisier'"),
       },
+      outputSchema: {
+        resultats: z.array(z.unknown()).describe('Arrêts correspondant à la recherche'),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ recherche }) => {
       const url = new URL(`${api}/rechercherArrets`)
@@ -154,15 +167,7 @@ function createServer() {
 
       const result = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-        structuredContent: result,
-      }
+      return toolResult({ resultats: result })
     },
   )
 
@@ -184,6 +189,13 @@ function createServer() {
           .max(180)
           .describe('Longitude en degrés décimaux'),
       },
+      outputSchema: {
+        latitude: z.number(),
+        longitude: z.number(),
+        rayonMaximumMetres: z.number(),
+        arrets: z.array(z.unknown()).describe('Arrêts triés par distance croissante'),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ latitude, longitude }) => {
       const url = new URL(`${api}/getArretsProches`)
@@ -204,15 +216,7 @@ function createServer() {
         arrets: await apiResponse.json(),
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-        structuredContent: result,
-      }
+      return toolResult(result)
     },
   )
 
@@ -232,6 +236,10 @@ function createServer() {
           .min(2)
           .describe("Nom de l'arrêt d'arrivée, par exemple 'Lavoisier'"),
       },
+      outputSchema: {
+        itineraire: z.unknown().describe('Itinéraire vérifié retourné par le moteur Ginko'),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ depart, arrivee }) => {
       const url = new URL(`${api}/itineraire`)
@@ -248,15 +256,7 @@ function createServer() {
 
       const result = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-        structuredContent: result,
-      }
+      return toolResult({ itineraire: result })
     },
   )
 
@@ -269,6 +269,11 @@ function createServer() {
       inputSchema: {
         nomArret: z.string().min(1).describe("Nom de l'arrêt"),
       },
+      outputSchema: {
+        legende: z.record(z.string(), z.unknown()).describe('Signification des codes retournés'),
+        tempsAttente: z.unknown().describe("Prochains passages à l'arrêt"),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ nomArret }) => {
       const TypeDeTemp = {
@@ -307,26 +312,15 @@ function createServer() {
 
       const tempsAttente = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                legende: {
-                  typeDeTemps: TypeDeTemp,
-                  accessibiliteArret: AccessibiliteArret,
-                  accessibiliteVehicule: AccessibiliteVehicule,
-                  affluence: Affluence,
-                },
-                tempsAttente,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      }
+      return toolResult({
+        legende: {
+          typeDeTemps: TypeDeTemp,
+          accessibiliteArret: AccessibiliteArret,
+          accessibiliteVehicule: AccessibiliteVehicule,
+          affluence: Affluence,
+        },
+        tempsAttente,
+      })
     },
   )
 
@@ -337,6 +331,11 @@ function createServer() {
       title: 'Récupérer l’état des lignes',
       description: 'Récupère l’état des lignes de transport en commun.',
       inputSchema: {},
+      outputSchema: {
+        legendeEtats: z.record(z.string(), z.string()),
+        lignes: z.array(z.unknown()).describe('État courant des lignes'),
+      },
+      annotations: readOnlyAnnotations,
     },
     async () => {
       const etat = {
@@ -358,21 +357,7 @@ function createServer() {
 
       const etatLignes = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                etat,
-                etatLignes,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      }
+      return toolResult({ legendeEtats: etat, lignes: etatLignes })
     },
   )
 
@@ -385,6 +370,11 @@ function createServer() {
       inputSchema: {
         idLigne: z.string().min(1).describe('Identifiant de la ligne'),
       },
+      outputSchema: {
+        legendeEtats: z.record(z.string(), z.string()),
+        messages: z.array(z.unknown()).describe("Messages d'information trafic de la ligne"),
+      },
+      annotations: readOnlyAnnotations,
     },
     async ({ idLigne }) => {
       const etat = {
@@ -404,21 +394,7 @@ function createServer() {
 
       const infoTrafic = await apiResponse.json()
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                etat,
-                infoTrafic,
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      }
+      return toolResult({ legendeEtats: etat, messages: infoTrafic })
     },
   )
   return server

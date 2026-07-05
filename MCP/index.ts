@@ -1,11 +1,13 @@
-import 'dotenv/config'
-
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { config } from 'dotenv'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { id } from 'zod/locales'
+
+const environment = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+config({ path: [`.env.${environment}`, '.env'] })
 
 const port = Number(process.env.PORT ?? 3001)
 const api = String(process.env.API_URL ?? 'http://localhost:3000')
@@ -285,6 +287,10 @@ function createServer() {
 }
 
 const app = createMcpExpressApp()
+
+app.get('/health', (_request: Request, response: Response) => {
+  response.status(200).json({ status: 'ok' })
+})
 
 app.post('/mcp', async (request: Request, response: Response) => {
   const server = createServer()

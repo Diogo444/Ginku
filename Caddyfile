@@ -1,4 +1,9 @@
 :80 {
+  @mcp path /mcp
+  handle @mcp {
+    reverse_proxy mcp:3001
+  }
+
   @api path /api* /health
   handle @api {
     reverse_proxy backend:3000

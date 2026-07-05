@@ -10,6 +10,8 @@ const InfosTrafic = () => import('@/views/infos-trafic.vue')
 const InfosTransport = () => import('@/views/infos-transport.vue')
 const Message = () => import('@/views/message.vue')
 const Vehicule = () => import('@/views/vehicule.vue')
+const ConditionsUtilisation = () => import('@/views/conditions-utilisation.vue')
+const PolitiqueConfidentialite = () => import('@/views/politique-confidentialite.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -99,7 +101,25 @@ const router = createRouter({
         title: 'Messages ligne — Ginku',
         description: 'Messages et informations spécifiques à cette ligne Ginko.'
       },
-    }
+    },
+    {
+      path: '/conditions-utilisation',
+      name: 'ConditionsUtilisation',
+      component: ConditionsUtilisation,
+      meta: {
+        title: 'Conditions d’utilisation — Ginku',
+        description: 'Consultez les conditions d’utilisation du service Ginku.',
+      },
+    },
+    {
+      path: '/politique-confidentialite',
+      name: 'PolitiqueConfidentialite',
+      component: PolitiqueConfidentialite,
+      meta: {
+        title: 'Politique de confidentialité — Ginku',
+        description: 'Découvrez comment Ginku protège votre vie privée et utilise les données nécessaires à son fonctionnement.',
+      },
+    },
   ],
 })
 

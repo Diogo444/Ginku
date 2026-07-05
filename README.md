@@ -78,6 +78,8 @@ Le MCP lit `API_URL` :
 - `MCP/.env.development` (dev) : `http://localhost:3000/api`
 - en production Docker : `http://backend:3000/api`, l’adresse interne équivalente à `/api`
 
+`MCP_ALLOWED_HOSTS` contient les noms d’hôte autorisés par la protection DNS-rebinding du SDK MCP. En production, la liste inclut `ginku.diogo-andrade.org` ainsi que les hôtes nécessaires aux healthchecks et au réseau Docker.
+
 Le fichier `MCP/.env` peut rester utilisé pour des réglages locaux non versionnés. Docker Compose fournit directement les variables de production et ne copie aucun fichier `.env` dans l’image.
 
 ## Commandes utiles

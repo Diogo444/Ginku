@@ -76,7 +76,7 @@ Le frontend lit `VITE_API_BASE_URL` :
 Le MCP lit `API_URL` :
 
 - `MCP/.env.development` (dev) : `http://localhost:3000/api`
-- en production Docker : `http://backend:3000/api`, l’adresse interne équivalente à `/api`
+- en production Docker : `http://Ginku_backen:3000/api`, l’adresse interne unique équivalente à `/api` (le nom générique `backend` est évité pour ne pas entrer en collision avec d’autres stacks du réseau Caddy)
 
 `MCP_ALLOWED_HOSTS` contient les noms d’hôte autorisés par la protection DNS-rebinding du SDK MCP. En production, la liste inclut `ginku.diogo-andrade.org` ainsi que les hôtes nécessaires aux healthchecks et au réseau Docker.
 

@@ -39,7 +39,9 @@ services:
       dockerfile: MCP/Dockerfile
     environment:
       - PORT=3001
-      - API_URL=http://backend:3000/api
+      # Nom de conteneur unique pour éviter une collision avec un autre
+      # service nommé "backend" présent sur le réseau externe caddy_net.
+      - API_URL=http://Ginku_backen:3000/api
       - MCP_ALLOWED_HOSTS=ginku.diogo-andrade.org,localhost,127.0.0.1,mcp
     depends_on:
       backend:

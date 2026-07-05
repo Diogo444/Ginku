@@ -128,6 +128,138 @@ function createServer() {
     },
   )
 
+  server.registerTool(
+    'rechercher_arrets',
+    {
+      title: 'Rechercher un arrêt Ginko',
+      description:
+        "Recherche un arrêt par son nom, sans tenir compte des accents ni de la casse. Utilise toujours cet outil avant de conclure qu'un arrêt n'existe pas ou avant d'appeler un outil qui exige un idArret. Le résultat contient les identifiants physiques, les coordonnées, les lignes et leurs directions.",
+      inputSchema: {
+        recherche: z
+          .string()
+          .min(2)
+          .describe("Nom complet ou partiel de l'arrêt, par exemple 'Lavoisier'"),
+      },
+    },
+    async ({ recherche }) => {
+      const url = new URL(`${api}/rechercherArrets`)
+      url.searchParams.set('recherche', recherche)
+      const apiResponse = await fetch(url)
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la recherche des arrêts : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const result = await apiResponse.json()
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        structuredContent: result,
+      }
+    },
+  )
+
+  server.registerTool(
+    'rechercher_arrets_proches',
+    {
+      title: 'Rechercher les arrêts proches de coordonnées',
+      description:
+        "Retourne les arrêts Ginko situés à moins de 500 mètres de coordonnées GPS, triés du plus proche au plus éloigné. Utilise cet outil lorsqu'une origine ou une destination est une adresse, une entreprise ou un lieu plutôt qu'un nom d'arrêt. Les coordonnées doivent d'abord être obtenues avec une source de géocodage fiable.",
+      inputSchema: {
+        latitude: z
+          .number()
+          .min(-90)
+          .max(90)
+          .describe('Latitude en degrés décimaux'),
+        longitude: z
+          .number()
+          .min(-180)
+          .max(180)
+          .describe('Longitude en degrés décimaux'),
+      },
+    },
+    async ({ latitude, longitude }) => {
+      const url = new URL(`${api}/getArretsProches`)
+      url.searchParams.set('latitude', String(latitude))
+      url.searchParams.set('longitude', String(longitude))
+      const apiResponse = await fetch(url)
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `Erreur lors de la recherche des arrêts proches : ${apiResponse.status} ${apiResponse.statusText}`,
+        )
+      }
+
+      const result = {
+        latitude,
+        longitude,
+        rayonMaximumMetres: 500,
+        arrets: await apiResponse.json(),
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        structuredContent: result,
+      }
+    },
+  )
+
+  server.registerTool(
+    'calculer_itineraire',
+    {
+      title: 'Calculer un itinéraire Ginko',
+      description:
+        "Calcule et vérifie un trajet entre deux arrêts Ginko, direct ou avec une correspondance. Utilise cet outil pour toute demande d'itinéraire au lieu de déduire un trajet à partir des seules lignes ou des temps d'attente. Si le départ ou l'arrivée est une adresse ou une entreprise, résous d'abord ses coordonnées puis appelle rechercher_arrets_proches. Chaque étape indique la ligne, la direction exacte, l'arrêt de montée et l'arrêt de descente. Ne propose jamais une desserte absente des options retournées.",
+      inputSchema: {
+        depart: z
+          .string()
+          .min(2)
+          .describe("Nom de l'arrêt de départ, par exemple '8 Septembre'"),
+        arrivee: z
+          .string()
+          .min(2)
+          .describe("Nom de l'arrêt d'arrivée, par exemple 'Lavoisier'"),
+      },
+    },
+    async ({ depart, arrivee }) => {
+      const url = new URL(`${api}/itineraire`)
+      url.searchParams.set('depart', depart)
+      url.searchParams.set('arrivee', arrivee)
+      const apiResponse = await fetch(url)
+
+      if (!apiResponse.ok) {
+        const details = await apiResponse.text()
+        throw new Error(
+          `Erreur lors du calcul de l'itinéraire : ${apiResponse.status} ${details}`,
+        )
+      }
+
+      const result = await apiResponse.json()
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        structuredContent: result,
+      }
+    },
+  )
+
   // Liste de temps d'attente d'un arrêt
   server.registerTool(
     'temps_attente_arret',

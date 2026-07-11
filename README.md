@@ -1,11 +1,12 @@
 # Ginku
 
-Application web (frontend Vue + backend Node) qui consomme l’API `api.ginko.voyage` via un backend “proxy” (ajout de la clé API + cache).
+Application web (frontend Vue + backend Node) avec un serveur MCP, qui consomme l’API `api.ginko.voyage` via un backend “proxy” (ajout de la clé API + cache).
 
 ## Stack technique
 
 - Frontend : Vue 3, Vite, Vue Router, Tailwind CSS, Axios
 - Backend : Node.js, Express, Axios, dotenv, cors
+- MCP : TypeScript, SDK Model Context Protocol, transport HTTP
 - Tooling : pnpm workspaces, ESLint, Prettier
 - Déploiement : Docker (multi-stage), Caddy (serveur statique + reverse proxy)
 
@@ -16,14 +17,16 @@ Application web (frontend Vue + backend Node) qui consomme l’API `api.ginko.vo
 - `backend/` est un serveur Express qui expose des routes REST sous `/api/*`.
   - Il appelle l’API amont `https://api.ginko.voyage` en ajoutant `APIKEY`.
   - Il met en cache certaines réponses (TTL ~ 60s) pour limiter les appels.
+- `MCP/` expose le serveur MCP sur `/mcp` et consomme les mêmes routes `/api/*`.
 - En production (Docker), le frontend est buildé puis servi en statique par Caddy.
   - Un reverse proxy Caddy (voir `Caddyfile` à la racine) route :
     - `/api*` et `/health` → `backend:3000`
+    - `/mcp` → `mcp:3001`
     - le reste (`/`) → `frontend:5173`
 
 ## Prérequis
 
-- Node.js 20+
+- Node.js 22.13+
 - pnpm (recommandé via Corepack) : `corepack enable`
 - (Optionnel) Docker + Docker Compose pour le déploiement conteneurisé
 
@@ -52,6 +55,7 @@ Application web (frontend Vue + backend Node) qui consomme l’API `api.ginko.vo
 4. Accès :
    - Front : `http://localhost:5173`
    - Back : `http://localhost:3000/health`
+   - MCP : `http://localhost:3001/mcp`
 
 ## Variables d’environnement
 
@@ -66,6 +70,23 @@ Le frontend lit `VITE_API_BASE_URL` :
 
 - `front/.env.development` (dev) : `http://localhost:3000/api`
 - `front/.env.production` (build) : `/api` (prévu pour fonctionner derrière le reverse proxy Caddy)
+
+### MCP
+
+Le MCP lit `API_URL` :
+
+- `MCP/.env.development` (dev) : `http://localhost:3000/api`
+- en production Docker : `http://Ginku_backen:3000/api`, l’adresse interne unique équivalente à `/api` (le nom générique `backend` est évité pour ne pas entrer en collision avec d’autres stacks du réseau Caddy)
+
+`MCP_ALLOWED_HOSTS` contient les noms d’hôte autorisés par la protection DNS-rebinding du SDK MCP. En production, la liste inclut `ginku.diogo-andrade.org` ainsi que les hôtes nécessaires aux healthchecks et au réseau Docker.
+
+Le fichier `MCP/.env` peut rester utilisé pour des réglages locaux non versionnés. Docker Compose fournit directement les variables de production et ne copie aucun fichier `.env` dans l’image.
+
+Le MCP fournit notamment :
+
+- `rechercher_arrets` : recherche fiable d’un arrêt et de ses lignes ;
+- `rechercher_arrets_proches` : arrêts à moins de 500 mètres de coordonnées ;
+- `calculer_itineraire` : trajets directs ou avec une correspondance, vérifiés selon l’ordre réel des arrêts dans les variantes du jour.
 
 ## Commandes utiles
 
@@ -104,5 +125,6 @@ Le frontend lit `VITE_API_BASE_URL` :
 
 - `front/` : SPA Vue 3 (Vite + Tailwind)
 - `backend/` : API Express (proxy `api.ginko.voyage`)
-- `docker-compose.yml` : services `frontend` + `backend` (réseau `caddy_net` externe)
+- `MCP/` : serveur MCP HTTP
+- `docker-compose.yml` : services `frontend` + `backend` + `mcp` (réseau `caddy_net` externe)
 - `Caddyfile` : reverse proxy (entrée HTTP :80) vers `frontend`/`backend`

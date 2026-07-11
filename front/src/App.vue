@@ -26,6 +26,14 @@ import '@/stores/theme' // Initialise le thème au démarrage
         <p class="text-[10px] sm:text-[11px] text-gray-300 dark:text-gray-600 mt-2">
           Fait avec ♥ par <a href="https://diogo-andrade.org" target="_blank" rel="noopener" class="underline hover:text-gray-500 dark:hover:text-gray-400 transition-colors">Diogo Andrade</a> — © {{ new Date().getFullYear() }} Ginku
         </p>
+        <nav class="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-2 text-[10px] sm:text-[11px]" aria-label="Informations légales">
+          <router-link to="/conditions-utilisation" class="text-gray-400 dark:text-gray-500 underline underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            Conditions d’utilisation
+          </router-link>
+          <router-link to="/politique-confidentialite" class="text-gray-400 dark:text-gray-500 underline underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            Politique de confidentialité
+          </router-link>
+        </nav>
       </div>
     </footer>
 

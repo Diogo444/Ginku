@@ -1,5 +1,5 @@
 # === STAGE 1 : build Vite ===
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 
 # pnpm + outils

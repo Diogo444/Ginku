@@ -1,6 +1,9 @@
-import { ref, watch, computed } from 'vue'
+import { computed, ref } from 'vue'
+import { Preferences } from '@capacitor/preferences'
 
 const STORAGE_KEY = 'ginku-favorites'
+let initializationPromise = null
+let persistenceQueue = Promise.resolve()
 
 /**
  * Structure d'un favori :
@@ -17,34 +20,94 @@ const STORAGE_KEY = 'ginku-favorites'
  * }
  */
 
-// Charge les favoris depuis localStorage
-const loadFavorites = () => {
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) return parsed
-      }
-    } catch (e) {
-      console.warn('Erreur lors du chargement des favoris:', e)
-    }
+const deserializeFavorites = (serializedFavorites) => {
+  const parsedFavorites = JSON.parse(serializedFavorites)
+
+  if (!Array.isArray(parsedFavorites)) {
+    throw new TypeError('Le format des favoris sauvegardés est invalide')
   }
-  return []
+
+  return parsedFavorites.filter((favorite) => (
+    favorite &&
+    typeof favorite.id === 'string' &&
+    typeof favorite.nomArret === 'string' &&
+    typeof favorite.idLigne === 'string' &&
+    typeof favorite.destination === 'string'
+  ))
 }
 
 // État réactif des favoris
-export const favorites = ref(loadFavorites())
+export const favorites = ref([])
 
 // Computed pour vérification rapide
 export const favoritesIds = computed(() => new Set(favorites.value.map(f => f.id)))
 
-// Sauvegarde automatique
-watch(favorites, (newFavorites) => {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newFavorites))
-  }
-}, { deep: true })
+const persistFavorites = () => {
+  const serializedFavorites = JSON.stringify(favorites.value)
+
+  // Les écritures sont mises en file afin qu'une action rapide ne puisse pas
+  // terminer avant une sauvegarde plus ancienne et restaurer un état obsolète.
+  persistenceQueue = persistenceQueue
+    .catch(() => undefined)
+    .then(() => Preferences.set({
+      key: STORAGE_KEY,
+      value: serializedFavorites
+    }))
+    .catch((error) => {
+      console.warn('Erreur lors de la sauvegarde des favoris:', error)
+    })
+}
+
+const loadLegacyFavorites = () => {
+  if (typeof localStorage === 'undefined') return null
+
+  const serializedFavorites = localStorage.getItem(STORAGE_KEY)
+  if (serializedFavorites === null) return null
+
+  return deserializeFavorites(serializedFavorites)
+}
+
+/**
+ * Charge les favoris natifs avant le montage de l'application et migre, si
+ * nécessaire, ceux sauvegardés par les anciennes versions dans localStorage.
+ */
+export const initializeFavorites = () => {
+  if (initializationPromise) return initializationPromise
+
+  initializationPromise = (async () => {
+    try {
+      const { value } = await Preferences.get({ key: STORAGE_KEY })
+
+      if (value !== null) {
+        favorites.value = deserializeFavorites(value)
+        return
+      }
+
+      const legacyFavorites = loadLegacyFavorites()
+      if (legacyFavorites === null) return
+
+      favorites.value = legacyFavorites
+      await Preferences.set({
+        key: STORAGE_KEY,
+        value: JSON.stringify(legacyFavorites)
+      })
+
+      // L'ancienne copie n'est supprimée qu'une fois l'écriture native réussie.
+      localStorage.removeItem(STORAGE_KEY)
+    } catch (error) {
+      console.warn('Erreur lors du chargement des favoris:', error)
+
+      try {
+        const legacyFavorites = loadLegacyFavorites()
+        if (legacyFavorites !== null) favorites.value = legacyFavorites
+      } catch (legacyError) {
+        console.warn('Erreur lors du chargement des anciens favoris:', legacyError)
+      }
+    }
+  })()
+
+  return initializationPromise
+}
 
 /**
  * Génère un ID unique pour un favori
@@ -69,6 +132,7 @@ export const addFavorite = (favorite) => {
       ...favorite,
       createdAt: Date.now()
     })
+    persistFavorites()
   }
 }
 
@@ -79,6 +143,7 @@ export const removeFavorite = (id) => {
   const index = favorites.value.findIndex(f => f.id === id)
   if (index !== -1) {
     favorites.value.splice(index, 1)
+    persistFavorites()
   }
 }
 
@@ -100,4 +165,5 @@ export const toggleFavorite = (favorite) => {
  */
 export const clearFavorites = () => {
   favorites.value = []
+  persistFavorites()
 }

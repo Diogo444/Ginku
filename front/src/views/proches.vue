@@ -708,7 +708,7 @@ onBeforeUnmount(() => {
           <div class="min-w-0 flex-1">
             <h2 class="text-base font-semibold text-gray-900 dark:text-white">Localisation non autorisée</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Autorise la localisation dans ton navigateur pour afficher les arrêts proches.
+              Autorise la localisation dans les paramètres de ton appareil pour afficher les arrêts proches.
             </p>
           </div>
         </div>

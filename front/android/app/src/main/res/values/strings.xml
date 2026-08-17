@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ginku</string>
+    <string name="title_activity_main">Ginku</string>
+    <string name="package_name">org.diogoandrade.ginku</string>
+    <string name="custom_url_scheme">org.diogoandrade.ginku</string>
+</resources>

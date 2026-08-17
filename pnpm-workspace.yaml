@@ -5,6 +5,10 @@ packages:
 allowBuilds:
   '@tailwindcss/oxide': true
   esbuild: true
+  sharp: true
+
+publicHoistPattern:
+  - '@ionic/cli-framework-output'
 
 ignoredBuiltDependencies:
   - '@tailwindcss/oxide'

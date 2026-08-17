@@ -173,12 +173,22 @@ export async function getTempsArret(idArret, signal) {
 /**
  * Récupère les arrêts proches d'une position GPS
  */
-export async function getArretsProches(latitude, longitude, signal) {
+export async function getArretsProches(
+  latitude,
+  longitude,
+  signal,
+  { forceRefresh = false } = {},
+) {
   const response = await get('/getArretsProches', {
     signal,
     params: { latitude, longitude },
-    ttl: 30 * 1000
+    ttl: forceRefresh ? 0 : 30 * 1000
   })
+
+  if (response.error) {
+    throw new Error(response.message || 'Impossible de récupérer les arrêts proches')
+  }
+
   return response.data ?? []
 }
 

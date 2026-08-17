@@ -2,12 +2,19 @@ import './style.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import { initializeFavorites } from '@/stores/favorites'
+import { initializeTheme } from '@/stores/theme'
 
-// Initialiser le store de thème (applique le thème sauvegardé au démarrage)
-import '@/stores/theme'
+const startApp = async () => {
+  await Promise.all([
+    initializeFavorites(),
+    initializeTheme()
+  ])
 
-const app = createApp(App)
+  const app = createApp(App)
 
-app.use(router)
+  app.use(router)
+  app.mount('#app')
+}
 
-app.mount('#app')
+startApp()

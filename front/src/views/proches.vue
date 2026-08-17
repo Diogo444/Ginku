@@ -17,6 +17,7 @@ const DEDUPE_STOP_DISTANCE_METERS = 60
 
 const loading = ref(true)
 const refreshingStops = ref(false)
+const isManualRefreshing = ref(false)
 const error = ref(null)
 const nearbyStops = ref([])
 const statusMessage = ref('Recherche de votre position…')
@@ -34,7 +35,6 @@ const {
   position: userPosition,
   status: geolocationStatus,
   error: geolocationError,
-  isRequesting: isRequestingLocation,
   requestPosition,
   startWatching,
   stopWatching,
@@ -457,7 +457,7 @@ function buildStopsList(rawStops, position) {
     })
 }
 
-async function fetchNearbyStops(position, { silent = false } = {}) {
+async function fetchNearbyStops(position, { silent = false, forceRefresh = false } = {}) {
   if (!position) return
   if (nearbyAbortController.value && !hasMovedEnough(pendingNearbyPosition.value, position)) {
     return
@@ -480,7 +480,9 @@ async function fetchNearbyStops(position, { silent = false } = {}) {
   statusMessage.value = 'Recherche des arrêts proches…'
 
   try {
-    const data = await getArretsProches(position.latitude, position.longitude, controller.signal)
+    const data = await getArretsProches(position.latitude, position.longitude, controller.signal, {
+      forceRefresh,
+    })
     const nextStops = buildStopsList(Array.isArray(data) ? data : [], position)
 
     nearbyStops.value = nextStops
@@ -522,18 +524,32 @@ function syncLiveProcesses() {
   stopRefreshTimer()
 }
 
-function handleManualRefresh() {
-  if (userPosition.value) {
-    resetGeolocationError()
-    fetchNearbyStops(userPosition.value)
-    startWatching()
-    return
+async function handleManualRefresh() {
+  if (isManualRefreshing.value) return
+
+  isManualRefreshing.value = true
+  const lastKnownPosition = userPosition.value
+
+  if (!nearbyStops.value.length) {
+    loading.value = true
   }
 
-  loading.value = true
   error.value = null
-  statusMessage.value = 'Recherche de votre position…'
-  requestPosition()
+  statusMessage.value = 'Actualisation de votre position…'
+  resetGeolocationError()
+
+  try {
+    const refreshedPosition = await requestPosition()
+    const positionToUse = refreshedPosition || lastKnownPosition
+
+    // Même si la permission reste refusée, une dernière position connue permet
+    // encore de retenter réellement l'appel des arrêts sans reprendre le cache.
+    if (positionToUse) {
+      await fetchNearbyStops(positionToUse, { forceRefresh: true })
+    }
+  } finally {
+    isManualRefreshing.value = false
+  }
 }
 
 function handleVisibilityChange() {
@@ -561,6 +577,10 @@ function handlePositionUpdate(nextPosition, previousPosition) {
   if (previousPosition) {
     syncStopDistances(nextPosition)
   }
+
+  // Une actualisation manuelle enchaîne elle-même position et arrêts afin de
+  // garantir que le second appel ignore le cache de l'API.
+  if (isManualRefreshing.value) return
 
   const movedEnough =
     !previousPosition || hasMovedEnough(previousPosition, nextPosition)
@@ -716,10 +736,11 @@ onBeforeUnmount(() => {
         <div class="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
-            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+            :disabled="isManualRefreshing"
             @click="handleManualRefresh"
           >
-            Autoriser la localisation
+            {{ isManualRefreshing ? 'Demande en cours…' : 'Autoriser la localisation' }}
           </button>
         </div>
       </section>
@@ -744,10 +765,10 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
-            :disabled="isRequestingLocation"
+            :disabled="isManualRefreshing"
             @click="handleManualRefresh"
           >
-            {{ isRequestingLocation ? 'Recherche…' : 'Réessayer' }}
+            {{ isManualRefreshing ? 'Actualisation…' : 'Réessayer' }}
           </button>
         </div>
       </section>
@@ -777,10 +798,11 @@ onBeforeUnmount(() => {
         <div class="mt-4">
           <button
             type="button"
-            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+            :disabled="isManualRefreshing"
             @click="handleManualRefresh"
           >
-            Réessayer
+            {{ isManualRefreshing ? 'Actualisation…' : 'Réessayer' }}
           </button>
         </div>
       </section>
@@ -798,10 +820,10 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
-            :disabled="isRequestingLocation"
+            :disabled="isManualRefreshing"
             @click="handleManualRefresh"
           >
-            {{ isRequestingLocation ? 'Recherche…' : 'Réessayer' }}
+            {{ isManualRefreshing ? 'Actualisation…' : 'Réessayer' }}
           </button>
         </div>
 

@@ -5,7 +5,6 @@ updates:
     directories:
       - '/backend'
       - '/front'
-      - '/MCP'
     schedule:
       interval: 'weekly'
       day: 'monday'

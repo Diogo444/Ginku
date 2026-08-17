@@ -3,7 +3,7 @@ FROM node:26-alpine AS build
 WORKDIR /app
 
 # pnpm + outils
-RUN corepack enable
+RUN npm install --global pnpm@11.9.0
 RUN apk add --no-cache curl
 
 # Copier les fichiers de workspace pour le cache

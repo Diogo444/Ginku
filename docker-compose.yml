@@ -32,30 +32,6 @@ services:
       timeout: 3s
       retries: 10
 
-  mcp:
-    container_name: Ginku_mcp
-    build:
-      context: .
-      dockerfile: MCP/Dockerfile
-    environment:
-      - PORT=3001
-      # Nom de conteneur unique pour éviter une collision avec un autre
-      # service nommé "backend" présent sur le réseau externe caddy_net.
-      - API_URL=http://Ginku_backen:3000/api
-      - MCP_ALLOWED_HOSTS=ginku.diogo-andrade.org,localhost,127.0.0.1,mcp
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks: [ginku, caddy_net]
-    expose:
-      - '3001'
-    restart: always
-    healthcheck:
-      test: ['CMD', 'curl', '-fsS', 'http://localhost:3001/health']
-      interval: 10s
-      timeout: 3s
-      retries: 10
-
 networks:
   ginku:
     driver: bridge

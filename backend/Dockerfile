@@ -2,8 +2,8 @@
 FROM node:26-alpine AS build
 WORKDIR /app
 
-# Activer corepack pour utiliser la version de pnpm declaree dans package.json
-RUN corepack enable
+# Installer la version de pnpm declaree dans package.json
+RUN npm install --global pnpm@11.9.0
 
 # Copier workspace + lockfile + config pnpm racine
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

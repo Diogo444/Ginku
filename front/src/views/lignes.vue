@@ -39,14 +39,7 @@ onBeforeUnmount(() => {
 
 // Regrouper les lignes par catégorie (typologie)
 const groupedLignes = computed(() => {
-  const replacementLineNumbers = new Set(['B1', 'B2'])
   const groups = {
-    remplacement: {
-      title: 'Lignes de remplacement T1 & T2',
-      icon: 'construction',
-      iconColor: 'text-primary',
-      lignes: []
-    },
     tramway: { title: 'Tramway', icon: 'tram', iconColor: 'text-line-teal', lignes: [] },
     lianes: { title: 'Lianes', icon: 'directions_bus', iconColor: 'text-line-red', lignes: [] },
     urbaines: { title: 'Lignes Urbaines', icon: 'directions_bus_filled', iconColor: 'text-gray-500', lignes: [] },
@@ -59,9 +52,7 @@ const groupedLignes = computed(() => {
     // Détection du type basée sur le numéro public ou la typologie
     const num = (ligne.numLignePublic || '').toUpperCase()
     
-    if (replacementLineNumbers.has(num)) {
-      groups.remplacement.lignes.push(ligne)
-    } else if (num.startsWith('T') || ligne.modeTransport === 1) {
+    if (num.startsWith('T') || ligne.modeTransport === 1) {
       groups.tramway.lignes.push(ligne)
     } else if (num.startsWith('L') || ligne.typologie === 20) {
       groups.lianes.lignes.push(ligne)

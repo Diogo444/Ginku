@@ -1,0 +1,143 @@
+name: Build Android release APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-android:
+    name: Build and publish signed APK
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Validate release tag
+        id: version
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Le tag doit respecter le format vX.Y.Z (exemple : v1.2.3)." >&2
+            exit 1
+          fi
+
+          major=$((10#${BASH_REMATCH[1]}))
+          minor=$((10#${BASH_REMATCH[2]}))
+          patch=$((10#${BASH_REMATCH[3]}))
+          if (( major > 2099 || minor > 999 || patch > 999 )); then
+            echo "Les limites de version sont major <= 2099, minor <= 999 et patch <= 999." >&2
+            exit 1
+          fi
+
+          version="$major.$minor.$patch"
+          version_code=$((major * 1000000 + minor * 1000 + patch))
+          if (( version_code < 1 )); then
+            echo "La version v0.0.0 n'est pas publiable." >&2
+            exit 1
+          fi
+
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$version_code" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2
+        with:
+          runtime: node@22
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Java
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build frontend
+        env:
+          VITE_APP_VERSION: ${{ steps.version.outputs.name }}
+        run: pnpm -C front run build
+
+      - name: Sync Capacitor with Android
+        run: pnpm -C front exec cap sync android
+
+      - name: Restore release keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "Un ou plusieurs secrets de signature Android sont absents." >&2
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ginku-release.keystore"
+
+      - name: Build signed release APK
+        working-directory: front/android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/ginku-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: >-
+          ./gradlew --no-daemon assembleRelease
+          -PginkuVersionName=${{ steps.version.outputs.name }}
+          -PginkuVersionCode=${{ steps.version.outputs.code }}
+          -PrequireReleaseSigning=true
+
+      - name: Verify and prepare APK
+        shell: bash
+        run: |
+          apk_source="front/android/app/build/outputs/apk/release/app-release.apk"
+          apksigner_path="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [[ ! -f "$apk_source" || -z "$apksigner_path" ]]; then
+            echo "APK release ou outil apksigner introuvable." >&2
+            exit 1
+          fi
+          "$apksigner_path" verify --verbose --print-certs "$apk_source"
+          mkdir -p release
+          cp "$apk_source" release/Ginku.apk
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Ginku-${{ github.ref_name }}
+          path: release/Ginku.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create or update GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/Ginku.apk --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release/Ginku.apk \
+              --verify-tag \
+              --generate-notes \
+              --title "Ginku ${{ steps.version.outputs.name }}"
+          fi
+
+      - name: Remove release keystore
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/ginku-release.keystore"

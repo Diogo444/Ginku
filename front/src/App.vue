@@ -6,7 +6,7 @@ import BottomNav from '@/components/BottomNav.vue'
 import UpdatePopup from '@/components/UpdatePopup.vue'
 import '@/stores/theme' // Initialise le thème au démarrage
 
-const APP_VERSION = '1.0.2'
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.0.2'
 const latestVersion = ref('')
 const apkDownloadUrl = ref('')
 const showUpdatePopup = ref(false)

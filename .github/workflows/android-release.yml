@@ -75,6 +75,9 @@ jobs:
       - name: Sync Capacitor with Android
         run: pnpm -C front exec cap sync android
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x front/android/gradlew
+
       - name: Restore release keystore
         shell: bash
         env:

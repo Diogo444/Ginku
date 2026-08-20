@@ -1,5 +1,6 @@
 <script setup>
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import GinkuUpdater from '@/plugins/ginkuUpdater'
 
 defineOptions({ name: 'UpdatePopup' })
 
@@ -18,11 +19,47 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['close', 'update'])
+const emit = defineEmits(['close'])
 
 const popupRef = ref(null)
 const updateButtonRef = ref(null)
 const previousActiveElement = ref(null)
+const isUpdating = ref(false)
+const updateStatus = ref('')
+const updateError = ref('')
+
+const updateApp = async () => {
+  updateStatus.value = ''
+  updateError.value = ''
+
+  if (!props.urlApk) {
+    updateError.value = "Le fichier d'installation de cette version est indisponible."
+    return
+  }
+
+  isUpdating.value = true
+
+  try {
+    const { allowed } = await GinkuUpdater.canInstallPackages()
+
+    if (!allowed) {
+      await GinkuUpdater.openInstallPermission()
+      updateStatus.value =
+        'Autorisez Ginku à installer des applications, puis revenez ici et appuyez de nouveau sur « Mettre à jour ». '
+      return
+    }
+
+    const { alreadyRunning } = await GinkuUpdater.downloadAndInstall({ url: props.urlApk })
+    updateStatus.value = alreadyRunning
+      ? "Le téléchargement est déjà en cours. L'installation s'ouvrira automatiquement lorsqu'il sera terminé."
+      : "Le téléchargement a démarré. L'installation s'ouvrira automatiquement lorsqu'il sera terminé."
+  } catch (error) {
+    console.error('Impossible de démarrer la mise à jour Android :', error)
+    updateError.value = 'Impossible de démarrer la mise à jour. Vérifiez votre connexion puis réessayez.'
+  } finally {
+    isUpdating.value = false
+  }
+}
 
 const getFocusableElements = () => {
   if (!popupRef.value) return []
@@ -174,12 +211,32 @@ onBeforeUnmount(() => {
             <button
               ref="updateButtonRef"
               type="button"
-              class="mt-7 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-base font-bold text-white shadow-glow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:bg-primary/80 dark:focus-visible:ring-offset-surface-dark"
-              @click="emit('update')"
+              class="mt-7 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-base font-bold text-white shadow-glow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 active:bg-primary/80 disabled:cursor-wait disabled:opacity-65 dark:focus-visible:ring-offset-surface-dark"
+              :disabled="isUpdating"
+              :aria-busy="isUpdating"
+              @click="updateApp"
             >
-              <span class="material-icons-round text-xl" aria-hidden="true">download</span>
-              Mettre à jour
+              <span class="material-icons-round text-xl" aria-hidden="true">
+                {{ isUpdating ? 'hourglass_top' : 'download' }}
+              </span>
+              {{ isUpdating ? 'Préparation…' : 'Mettre à jour' }}
             </button>
+
+            <p
+              v-if="updateStatus"
+              class="mt-4 text-sm leading-5 text-gray-600 dark:text-gray-300"
+              role="status"
+              aria-live="polite"
+            >
+              {{ updateStatus }}
+            </p>
+            <p
+              v-if="updateError"
+              class="mt-4 text-sm font-semibold leading-5 text-red-700 dark:text-red-300"
+              role="alert"
+            >
+              {{ updateError }}
+            </p>
           </div>
         </section>
       </div>

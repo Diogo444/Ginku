@@ -6,3 +6,6 @@ dist/
 .vscode
 .env
 backend/.env
+
+# Certificats Android locaux (ne jamais versionner)
+.secrets-local/

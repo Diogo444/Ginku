@@ -8,6 +8,7 @@ import '@/stores/theme' // Initialise le thème au démarrage
 
 const APP_VERSION = '1.0.2'
 const latestVersion = ref('')
+const apkDownloadUrl = ref('')
 const showUpdatePopup = ref(false)
 
 const isNewerVersion = (latest, current) => {
@@ -47,7 +48,15 @@ const loadLatestVersion = async () => {
 
         if (typeof response.data?.tag_name !== 'string') return
 
+        const apkAsset = response.data.assets?.find(
+            (asset) =>
+                asset?.content_type === 'application/vnd.android.package-archive' ||
+                asset?.name?.toLowerCase().endsWith('.apk'),
+        )
+
         latestVersion.value = response.data.tag_name
+        apkDownloadUrl.value =
+            typeof apkAsset?.browser_download_url === 'string' ? apkAsset.browser_download_url : ''
         showUpdatePopup.value = isNewerVersion(latestVersion.value, APP_VERSION)
     } catch (error) {
         console.error('Impossible de récupérer la dernière version Android :', error)
@@ -105,6 +114,7 @@ onMounted(() => {
 
         <BottomNav />
 
-        <UpdatePopup :show="showUpdatePopup" :version="latestVersion" @close="showUpdatePopup = false" />
+        <UpdatePopup :show="showUpdatePopup" :version="latestVersion" :url-apk="apkDownloadUrl"
+            @close="showUpdatePopup = false" />
     </div>
 </template>

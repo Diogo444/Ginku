@@ -12,6 +12,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  urlApk: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits(['close', 'update'])

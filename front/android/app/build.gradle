@@ -1,5 +1,26 @@
 apply plugin: 'com.android.application'
 
+def ginkuVersionName = (project.findProperty('ginkuVersionName') ?: '1.0.2').toString()
+def ginkuVersionCode = (project.findProperty('ginkuVersionCode') ?: '1000002').toString().toInteger()
+
+def releaseStoreFile = System.getenv('ANDROID_KEYSTORE_PATH')
+def releaseStorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('ANDROID_KEY_PASSWORD')
+def releaseSigningValues = [
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+]
+def hasReleaseSigning = releaseSigningValues.every { it != null && !it.trim().isEmpty() }
+def hasPartialReleaseSigning = releaseSigningValues.any { it != null && !it.trim().isEmpty() } && !hasReleaseSigning
+def requireReleaseSigning = (project.findProperty('requireReleaseSigning') ?: 'false').toString().toBoolean()
+
+if (hasPartialReleaseSigning || (requireReleaseSigning && !hasReleaseSigning)) {
+    throw new GradleException('La signature release exige ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS et ANDROID_KEY_PASSWORD.')
+}
+
 android {
     namespace = "org.diogoandrade.ginku"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +28,8 @@ android {
         applicationId "org.diogoandrade.ginku"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode ginkuVersionCode
+        versionName ginkuVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +37,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

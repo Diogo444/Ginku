@@ -236,7 +236,7 @@ const checkIsFavorite = (groupe) => {
 // Lifecycle
 onMounted(async () => {
   await fetchHoraires()
-  refreshTimer.value = setInterval(fetchHoraires, 30000) // Refresh toutes les 30s
+  refreshTimer.value = setInterval(fetchHoraires, 15000) // Refresh toutes les 15s
 })
 
 watch(() => route.params.nom, fetchHoraires)

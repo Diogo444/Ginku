@@ -16,6 +16,7 @@ let persistenceQueue = Promise.resolve()
  *   destination: string,  // Destination de la ligne
  *   couleurFond: string,  // Couleur de fond de la ligne
  *   couleurTexte: string, // Couleur du texte de la ligne
+ *   notifyEnabled: boolean, // Surveillance native Android + notifications de proximité (défaut false)
  *   createdAt: number     // Timestamp de création
  * }
  */
@@ -27,13 +28,19 @@ const deserializeFavorites = (serializedFavorites) => {
     throw new TypeError('Le format des favoris sauvegardés est invalide')
   }
 
-  return parsedFavorites.filter((favorite) => (
-    favorite &&
-    typeof favorite.id === 'string' &&
-    typeof favorite.nomArret === 'string' &&
-    typeof favorite.idLigne === 'string' &&
-    typeof favorite.destination === 'string'
-  ))
+  return parsedFavorites
+    .filter((favorite) => (
+      favorite &&
+      typeof favorite.id === 'string' &&
+      typeof favorite.nomArret === 'string' &&
+      typeof favorite.idLigne === 'string' &&
+      typeof favorite.destination === 'string'
+    ))
+    .map((favorite) => ({
+      ...favorite,
+      // Les favoris sauvegardés avant l'ajout de cette fonctionnalité n'ont pas ce champ.
+      notifyEnabled: favorite.notifyEnabled === true
+    }))
 }
 
 // État réactif des favoris
@@ -129,6 +136,7 @@ export const isFavorite = (id) => {
 export const addFavorite = (favorite) => {
   if (!isFavorite(favorite.id)) {
     favorites.value.push({
+      notifyEnabled: false,
       ...favorite,
       createdAt: Date.now()
     })
@@ -158,6 +166,17 @@ export const toggleFavorite = (favorite) => {
     addFavorite(favorite)
     return true
   }
+}
+
+/**
+ * Active ou désactive la surveillance native (notifications de proximité) d'un favori
+ */
+export const setNotifyEnabled = (id, enabled) => {
+  const favorite = favorites.value.find(f => f.id === id)
+  if (!favorite || favorite.notifyEnabled === enabled) return
+
+  favorite.notifyEnabled = enabled
+  persistFavorites()
 }
 
 /**

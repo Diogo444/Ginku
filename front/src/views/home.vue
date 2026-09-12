@@ -1,12 +1,17 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { Capacitor } from '@capacitor/core'
 import { getArrets, getLignes, getTempsLieu } from '@/services/api'
 import { favorites, removeFavorite } from '@/stores/favorites'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import NotificationToggle from '@/components/NotificationToggle.vue'
 defineOptions({ name: 'HomePage' })
+
+// Fonctionnalité de notifications de proximité réservée à Android pour le moment.
+const isAndroid = Capacitor.getPlatform() === 'android'
 
 // ========== SEARCH ==========
 const arrets = ref([])
@@ -207,8 +212,7 @@ const loadFavoritesData = async () => {
             minutes: temps.tempsEnSeconde != null ? Math.round(temps.tempsEnSeconde / 60) : null,
             fiable: temps.fiable,
             numVehicule: temps.numVehicule,
-            tempsTexte: temps.temps,
-            tempsRestant: temps.tempsRestant
+            tempsTexte: temps.temps
           }))
         })
       } else {
@@ -254,8 +258,7 @@ watch(favorites, () => {
 const formatTempsHoraire = (horaire) => {
   if (!horaire) return null
 
-  // Utiliser tempsRestant si disponible (comme dans arret.vue)
-  const tempsRestant = horaire.tempsRestant ?? horaire.minutes
+  const tempsRestant = horaire.minutes
 
   if (tempsRestant === undefined || tempsRestant === null) {
     // Fallback sur le texte de l'API
@@ -405,15 +408,19 @@ const formatTempsHoraire = (horaire) => {
 
             <!-- Temps d'attente -->
             <div class="flex flex-col items-end gap-1.5 pr-1">
-              <button
-                @click.stop.prevent="removeFavorite(fav.id)"
-                class="text-yellow-500 hover:text-yellow-600 transition-colors"
-                title="Retirer des favoris"
-                :aria-label="'Retirer ' + fav.destination + ' des favoris'"
-                aria-pressed="true"
-              >
-                <span class="material-icons-round text-xl" aria-hidden="true">star</span>
-              </button>
+              <div class="flex items-center gap-2">
+                <NotificationToggle v-if="isAndroid" :favorite="fav" size="sm" />
+
+                <button
+                  @click.stop.prevent="removeFavorite(fav.id)"
+                  class="text-yellow-500 hover:text-yellow-600 transition-colors"
+                  title="Retirer des favoris"
+                  :aria-label="'Retirer ' + fav.destination + ' des favoris'"
+                  aria-pressed="true"
+                >
+                  <span class="material-icons-round text-xl" aria-hidden="true">star</span>
+                </button>
+              </div>
 
               <template v-if="favoritesData.get(fav.id)?.loading">
                 <Loader size="sm" :centered="false" />

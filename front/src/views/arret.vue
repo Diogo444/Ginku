@@ -146,7 +146,7 @@ const groupedHoraires = computed(() => {
 
     // Ajouter l'horaire avec ses infos véhicule
     groupMap[destKey].horaires.push({
-      tempsRestant: t.tempsRestant,
+      tempsRestant: t.tempsEnSeconde != null ? Math.round(t.tempsEnSeconde / 60) : null,
       temps: t.temps,
       numVehicule: t.numVehicule
     })

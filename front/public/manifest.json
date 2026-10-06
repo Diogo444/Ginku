@@ -1,6 +1,7 @@
 {
   "name": "Ginku — Horaires Ginko en temps réel",
   "short_name": "Ginku",
+  "id": "/",
   "description": "Consultez les horaires de bus et tramway Ginko en temps réel à Besançon et dans le Grand Besançon",
   "start_url": "/",
   "display": "standalone",
@@ -21,13 +22,13 @@
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

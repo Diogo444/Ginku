@@ -16,7 +16,7 @@ let persistenceQueue = Promise.resolve()
  *   destination: string,  // Destination de la ligne
  *   couleurFond: string,  // Couleur de fond de la ligne
  *   couleurTexte: string, // Couleur du texte de la ligne
- *   notifyEnabled: boolean, // Surveillance native Android + notifications de proximité (défaut false)
+ *   notifyEnabled: boolean, // Notifications d'arrivée Android ou Web Push (défaut false)
  *   createdAt: number     // Timestamp de création
  * }
  */
@@ -169,7 +169,7 @@ export const toggleFavorite = (favorite) => {
 }
 
 /**
- * Active ou désactive la surveillance native (notifications de proximité) d'un favori
+ * Active ou désactive les notifications d'arrivée d'un favori
  */
 export const setNotifyEnabled = (id, enabled) => {
   const favorite = favorites.value.find(f => f.id === id)

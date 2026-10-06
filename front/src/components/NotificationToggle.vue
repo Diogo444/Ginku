@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { requestNotificationAccess } from '@/composables/useStopNotifications'
-import { setNotifyEnabled } from '@/stores/favorites'
+import { Capacitor } from '@capacitor/core'
+import { changeNotificationEnabled } from '@/composables/useStopNotifications'
+import { notificationErrorMessage } from '@/services/webStopNotifications'
 
 defineOptions({ name: 'NotificationToggle' })
 
@@ -18,7 +19,8 @@ const props = defineProps({
 })
 
 const isPending = ref(false)
-const isDenied = ref(false)
+const errorMessage = ref('')
+const statusMessage = ref('')
 
 const isEnabled = computed(() => props.favorite.notifyEnabled === true)
 
@@ -30,26 +32,22 @@ const label = computed(() => {
 const handleToggle = async () => {
   if (isPending.value) return
 
-  // Désactivation : aucune permission à vérifier.
-  if (isEnabled.value) {
-    setNotifyEnabled(props.favorite.id, false)
-    isDenied.value = false
-    return
-  }
-
   isPending.value = true
-  isDenied.value = false
+  errorMessage.value = ''
+  statusMessage.value = ''
 
   try {
-    const granted = await requestNotificationAccess()
+    const enabled = !isEnabled.value
+    const granted = await changeNotificationEnabled(props.favorite, enabled)
     if (granted) {
-      setNotifyEnabled(props.favorite.id, true)
+      statusMessage.value = enabled ? 'Notifications activées.' : 'Notifications désactivées.'
     } else {
-      isDenied.value = true
+      errorMessage.value = Capacitor.getPlatform() === 'android'
+        ? 'Notifications refusées. Active-les dans les réglages Android.'
+        : 'Notifications refusées. Active-les dans les réglages du navigateur.'
     }
   } catch (error) {
-    console.warn('Erreur lors de la demande de permission de notification:', error)
-    isDenied.value = true
+    errorMessage.value = notificationErrorMessage(error)
   } finally {
     isPending.value = false
   }
@@ -71,12 +69,13 @@ const sizeClasses = {
       :aria-label="label"
       :title="label"
       :disabled="isPending"
+      :aria-busy="isPending"
       @click.stop.prevent="handleToggle"
       :class="[
-        'transition-colors disabled:opacity-50',
+        'min-w-11 min-h-11 inline-flex items-center justify-center rounded-lg motion-safe:transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
         isEnabled
           ? 'text-primary hover:text-primary/80'
-          : 'text-gray-400 dark:text-gray-500 hover:text-primary'
+          : 'text-gray-600 dark:text-gray-300 hover:text-primary'
       ]"
     >
       <span :class="['material-icons-round font-semibold', sizeClasses[size]]" aria-hidden="true">
@@ -84,11 +83,12 @@ const sizeClasses = {
       </span>
     </button>
     <p
-      v-if="isDenied"
+      v-if="errorMessage"
       role="alert"
-      class="text-[10px] leading-tight text-red-500 dark:text-red-400 text-right max-w-[120px]"
+      class="text-xs leading-tight text-red-700 dark:text-red-300 text-right max-w-[200px]"
     >
-      Notifications refusées. Active-les dans les réglages Android.
+      {{ errorMessage }}
     </p>
+    <p role="status" class="sr-only">{{ isPending ? 'Synchronisation des notifications…' : statusMessage }}</p>
   </div>
 </template>

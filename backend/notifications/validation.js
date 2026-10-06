@@ -1,3 +1,5 @@
+import { ECDH } from 'node:crypto'
+
 const PUSH_HOSTS = new Set([
   'fcm.googleapis.com',
   'updates.push.services.mozilla.com',
@@ -38,6 +40,11 @@ export function validateSubscription(value) {
         Buffer.from(encoded, 'base64url').length !== length) {
       throw new NotificationError(400, 'Clés push invalides')
     }
+  }
+  try {
+    ECDH.convertKey(Buffer.from(value.keys.p256dh, 'base64url'), 'prime256v1')
+  } catch {
+    throw new NotificationError(400, 'Clé publique push invalide')
   }
   return { endpoint: url.href, keys: { p256dh: value.keys.p256dh, auth: value.keys.auth } }
 }

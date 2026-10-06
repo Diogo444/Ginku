@@ -5,6 +5,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createECDH } from 'node:crypto'
 import express from 'express'
+import webPush from 'web-push'
+import { spawn } from 'node:child_process'
+import { createServer } from 'node:net'
+import { fileURLToPath } from 'node:url'
 import { evaluateArrival } from './arrivals.js'
 import { createSubscriptionStore } from './store.js'
 import { createPushWatcher } from './watcher.js'
@@ -62,6 +66,7 @@ test('refuse endpoints privés, HTTP, fournisseurs inconnus et clés incorrectes
     assert.throws(() => validateSubscription({ ...subscription(), endpoint }), { status: 400 })
   }
   assert.throws(() => validateSubscription({ ...subscription(), keys: { auth: 'x', p256dh: 'x' } }), { status: 400 })
+  assert.throws(() => validateSubscription({ ...subscription(), keys: { ...subscription().keys, p256dh: Buffer.alloc(65).toString('base64url') } }), { status: 400 })
   assert.equal(validateSubscription(subscription()).endpoint, subscription().endpoint)
 })
 
@@ -180,4 +185,44 @@ test('API HTTP désactivée sans configuration VAPID : refus explicite', async (
   const base = `http://127.0.0.1:${server.address().port}`
   assert.deepEqual(await (await fetch(`${base}/config`)).json(), { enabled: false, publicKey: null })
   assert.equal((await fetch(`${base}/subscriptions`, { method: 'PUT' })).status, 503)
+})
+
+test('backend réel configuré avec VAPID : démarrage et gestion HTTP des abonnements', async (t) => {
+  const { path } = await fixture(t)
+  const portReservation = createServer()
+  await new Promise((resolve) => portReservation.listen(0, '127.0.0.1', resolve))
+  const port = portReservation.address().port
+  await new Promise((resolve) => portReservation.close(resolve))
+  const keys = webPush.generateVAPIDKeys()
+  const child = spawn(process.execPath, ['serveur.js'], {
+    cwd: fileURLToPath(new URL('..', import.meta.url)),
+    env: { ...process.env, PORT: String(port), VAPID_PUBLIC_KEY: keys.publicKey, VAPID_PRIVATE_KEY: keys.privateKey,
+      VAPID_SUBJECT: 'mailto:test@example.com', WEB_PUSH_STORE_PATH: path, WEB_PUSH_ORIGINS: 'http://localhost:5173' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  })
+  t.after(async () => {
+    if (child.exitCode === null) {
+      const exited = new Promise((resolve) => child.once('exit', resolve))
+      child.kill()
+      await exited
+    }
+  })
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Démarrage backend trop long')), 10000)
+    child.stdout.on('data', (chunk) => {
+      if (chunk.toString().includes('Server is running')) { clearTimeout(timeout); resolve() }
+    })
+    child.once('exit', () => { clearTimeout(timeout); reject(new Error('Backend arrêté avant le démarrage')) })
+  })
+  const base = `http://127.0.0.1:${port}/api/notifications`
+  const config = await (await fetch(`${base}/config`)).json()
+  assert.equal(config.enabled, true)
+  assert.equal(config.publicKey, keys.publicKey)
+  const headers = { Origin: 'http://localhost:5173', 'Content-Type': 'application/json' }
+  // Aucun arrêt surveillé dans cet essai : pas d'envoi vers un véritable fournisseur.
+  const response = await fetch(`${base}/subscriptions`, { method: 'PUT', headers, body: JSON.stringify({ subscription: subscription(), stops: [] }) })
+  assert.equal(response.status, 200)
+  const credentials = await response.json()
+  assert.equal((await fetch(`${base}/subscriptions/${credentials.id}`, { method: 'DELETE', headers: { ...headers, Authorization: `Bearer ${credentials.token}` } })).status, 204)
 })

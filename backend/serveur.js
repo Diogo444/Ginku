@@ -4,6 +4,7 @@ import axios from 'axios'
 import cors from 'cors'
 import http from 'http'
 import https from 'https'
+import { initializeWebPush } from './notifications/index.js'
 
 configDotenv()
 
@@ -25,6 +26,18 @@ app.use(cors())
 
 const cache = new Map()
 const inflight = new Map()
+
+const webNotifications = await initializeWebPush(async (nom) => {
+  const data = await fetchWithCache(`getTempsLieu-${nom}`, async () => {
+    const response = await api.get('/TR/getTempsLieu.do', {
+      params: { apiKey: APIKEY, nom, nb: 3 },
+      timeout: 8000,
+    })
+    return response.data.objets
+  }, REALTIME_TTL)
+  return data?.listeTemps
+})
+app.use('/api/notifications', webNotifications.router)
 
 async function fetchWithCache(key, fetcher, ttl = DEFAULT_TTL) {
   const cached = cache.get(key)
@@ -568,6 +581,7 @@ app.get('/api/getTempsLieu/:nom', async (req, res) => {
     const data = await fetchWithCache(`getTempsLieu-${nom}`, async () => {
       const response = await api.get('/TR/getTempsLieu.do', {
         params: { apiKey: APIKEY, nom, nb: 3 },
+        timeout: 8000,
       })
       return response.data.objets
     }, REALTIME_TTL)
@@ -678,6 +692,16 @@ app.get('/api/messages/:idLigne', async (req, res) => {
 // backend/serveur.js
 app.get('/health', (_req, res) => res.send('ok'))
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)
+  webNotifications.watcher?.start()
 })
+
+function shutdown() {
+  webNotifications.watcher?.stop()
+  server.close()
+  // Ne pas laisser une requête externe bloquer indéfiniment l'arrêt du conteneur.
+  setTimeout(() => process.exit(0), 10000).unref()
+}
+process.once('SIGTERM', shutdown)
+process.once('SIGINT', shutdown)

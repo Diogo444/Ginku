@@ -6,6 +6,10 @@ dist/
 .vscode
 .env
 backend/.env
+data/
+backend/data/
+front/test-results/
+front/playwright-report/
 
 # Certificats Android locaux (ne jamais versionner)
 .secrets-local/

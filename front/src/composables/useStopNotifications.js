@@ -1,16 +1,18 @@
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import GinkuStopWatcher from '@/plugins/ginkuStopWatcher'
-import { favorites } from '@/stores/favorites'
+import { favorites, setNotifyEnabled } from '@/stores/favorites'
+import { isWebPushSupported, requestWebNotificationAccess, syncWebWatchedStops, notificationErrorMessage } from '@/services/webStopNotifications'
 
 const SYNC_DEBOUNCE_MS = 300
 
 let started = false
 let syncTimeoutId = null
+export const notificationSyncError = ref('')
 
 function isSupported() {
-  return Capacitor.getPlatform() === 'android'
+  return Capacitor.getPlatform() === 'android' || isWebPushSupported()
 }
 
 function toWatchedStop(favorite) {
@@ -23,13 +25,20 @@ function toWatchedStop(favorite) {
   }
 }
 
-async function syncWatchedStops() {
+export async function syncWatchedStops() {
   const stops = favorites.value.filter(f => f.notifyEnabled === true).map(toWatchedStop)
 
   try {
-    await GinkuStopWatcher.sync({ stops })
+    if (Capacitor.getPlatform() === 'android') {
+      await GinkuStopWatcher.sync({ stops })
+    } else {
+      await syncWebWatchedStops(stops)
+    }
+    notificationSyncError.value = ''
   } catch (error) {
-    console.warn('Erreur lors de la synchronisation de la surveillance des arrêts favoris:', error)
+    notificationSyncError.value = notificationErrorMessage(error)
+    console.warn('Erreur lors de la synchronisation des notifications:', notificationSyncError.value)
+    throw error
   }
 }
 
@@ -37,13 +46,13 @@ function scheduleSync() {
   if (syncTimeoutId !== null) clearTimeout(syncTimeoutId)
   syncTimeoutId = setTimeout(() => {
     syncTimeoutId = null
-    syncWatchedStops()
+    syncWatchedStops().catch(() => undefined)
   }, SYNC_DEBOUNCE_MS)
 }
 
 /**
  * Démarre la synchronisation continue entre le store des favoris et le
- * foreground service Android chargé de surveiller les arrêts en arrière-plan.
+ * service Android ou le serveur chargé de surveiller les arrêts en arrière-plan.
  * À appeler une seule fois au démarrage de l'app (voir App.vue).
  */
 export function startStopNotificationsSync() {
@@ -51,7 +60,14 @@ export function startStopNotificationsSync() {
   started = true
 
   watch(favorites, scheduleSync, { deep: true })
-  syncWatchedStops()
+  syncWatchedStops().catch(() => undefined)
+  if (Capacitor.getPlatform() === 'web') {
+    // Réessayer après reconnexion et renouveler la durée de conservation au retour.
+    window.addEventListener('online', scheduleSync)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') scheduleSync()
+    })
+  }
 }
 
 /**
@@ -60,6 +76,7 @@ export function startStopNotificationsSync() {
  */
 export async function requestNotificationAccess() {
   if (!isSupported()) return false
+  if (Capacitor.getPlatform() === 'web') return requestWebNotificationAccess()
 
   const current = await LocalNotifications.checkPermissions()
   if (current.display === 'granted') return true
@@ -70,4 +87,17 @@ export async function requestNotificationAccess() {
 
 export function isStopNotificationsSupported() {
   return isSupported()
+}
+
+export async function changeNotificationEnabled(favorite, enabled) {
+  if (enabled && !await requestNotificationAccess()) return false
+  const previous = favorite.notifyEnabled === true
+  setNotifyEnabled(favorite.id, enabled)
+  try {
+    await syncWatchedStops()
+  } catch (error) {
+    setNotifyEnabled(favorite.id, previous)
+    throw error
+  }
+  return true
 }

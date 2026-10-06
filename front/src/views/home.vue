@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { Capacitor } from '@capacitor/core'
+import { isStopNotificationsSupported } from '@/composables/useStopNotifications'
+import PwaStatus from '@/components/PwaStatus.vue'
 import { getArrets, getLignes, getTempsLieu } from '@/services/api'
 import { favorites, removeFavorite } from '@/stores/favorites'
 import ThemeToggle from '@/components/ThemeToggle.vue'
@@ -10,8 +11,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import NotificationToggle from '@/components/NotificationToggle.vue'
 defineOptions({ name: 'HomePage' })
 
-// Fonctionnalité de notifications de proximité réservée à Android pour le moment.
-const isAndroid = Capacitor.getPlatform() === 'android'
+const notificationsSupported = isStopNotificationsSupported()
 
 // ========== SEARCH ==========
 const arrets = ref([])
@@ -370,6 +370,7 @@ const formatTempsHoraire = (horaire) => {
     <!-- Contenu principal -->
     <main class="flex-grow px-4 sm:px-6 pb-8 space-y-6 sm:space-y-8 pt-3 sm:pt-4">
       <!-- Section Favoris -->
+      <PwaStatus />
       <section>
         <div class="flex justify-between items-end mb-3 sm:mb-4">
           <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">Mes Favoris</h2>
@@ -377,11 +378,10 @@ const formatTempsHoraire = (horaire) => {
 
         <!-- Liste des favoris -->
         <div v-if="favorites.length > 0" class="space-y-3 sm:space-y-4">
-          <router-link
+          <div
             v-for="fav in favorites"
             :key="fav.id"
-            :to="{ name: 'ArretNomView', params: { nom: fav.nomArret } }"
-            class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group active:scale-[0.98] transition-transform duration-150 cursor-pointer relative overflow-hidden block"
+            class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group relative overflow-hidden"
           >
             <!-- Barre de couleur gauche -->
             <div
@@ -389,7 +389,10 @@ const formatTempsHoraire = (horaire) => {
               :style="{ backgroundColor: '#' + (fav.couleurFond || '666666') }"
             ></div>
 
-            <div class="flex items-center gap-3 sm:gap-4 pl-2 min-w-0 flex-1">
+            <router-link
+              :to="{ name: 'ArretNomView', params: { nom: fav.nomArret } }"
+              class="flex items-center gap-3 sm:gap-4 pl-2 min-w-0 flex-1 min-h-11 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
               <div class="relative flex-shrink-0">
                 <LineBadge
                   :num="fav.numLigne"
@@ -404,16 +407,17 @@ const formatTempsHoraire = (horaire) => {
                   {{ fav.nomArret }}
                 </span>
               </div>
-            </div>
+            </router-link>
 
             <!-- Temps d'attente -->
             <div class="flex flex-col items-end gap-1.5 pr-1">
               <div class="flex items-center gap-2">
-                <NotificationToggle v-if="isAndroid" :favorite="fav" size="sm" />
+                <NotificationToggle v-if="notificationsSupported" :favorite="fav" size="sm" />
 
                 <button
+                  type="button"
                   @click.stop.prevent="removeFavorite(fav.id)"
-                  class="text-yellow-500 hover:text-yellow-600 transition-colors"
+                  class="min-w-11 min-h-11 inline-flex items-center justify-center rounded-lg text-yellow-700 dark:text-yellow-400 hover:text-yellow-600 motion-safe:transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   title="Retirer des favoris"
                   :aria-label="'Retirer ' + fav.destination + ' des favoris'"
                   aria-pressed="true"
@@ -448,7 +452,7 @@ const formatTempsHoraire = (horaire) => {
                 <span class="text-sm text-gray-400">--</span>
               </template>
             </div>
-          </router-link>
+          </div>
         </div>
 
         <!-- État vide -->

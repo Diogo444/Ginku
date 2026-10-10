@@ -71,7 +71,7 @@ test('refuse endpoints privés, HTTP, fournisseurs inconnus et clés incorrectes
 })
 
 test('valide les favoris, borne le nombre et refuse doublons et entrées invalides', () => {
-  assert.deepEqual(validateStops([stop]), [stop])
+  assert.deepEqual(validateStops([stop]), [{ ...stop, notifyBeforeMinutes: 2, notifyIntervalMinutes: 1 }])
   for (const values of [null, [stop, stop], Array(21).fill(stop), [{ ...stop, nomArret: '' }]]) {
     assert.throws(() => validateStops(values), { status: 400 })
   }
@@ -165,13 +165,16 @@ test('API HTTP : configuration, création, validation, autorisation et suppressi
   const config = await fetch(`${base}/config`)
   assert.equal(config.headers.get('cache-control'), 'no-store')
   assert.equal((await config.json()).enabled, true)
-  const body = JSON.stringify({ subscription: subscription(), stops: [stop] })
+  const customStop = { ...stop, notifyBeforeMinutes: 8, notifyIntervalMinutes: 3 }
+  const body = JSON.stringify({ subscription: subscription(), stops: [customStop] })
   assert.equal((await fetch(`${base}/subscriptions`, { method: 'PUT', headers: { ...headers, Origin: 'https://evil.example' }, body })).status, 403)
   assert.equal((await fetch(`${base}/subscriptions`, { method: 'PUT', headers, body: '{}' })).status, 400)
   assert.equal((await fetch(`${base}/subscriptions`, { method: 'PUT', headers, body: '{' })).status, 400)
+  assert.equal((await fetch(`${base}/subscriptions`, { method: 'PUT', headers, body: JSON.stringify({ subscription: subscription(), stops: [{ ...customStop, notifyIntervalMinutes: 0 }] }) })).status, 400)
   const response = await fetch(`${base}/subscriptions`, { method: 'PUT', headers, body })
   assert.equal(response.status, 200)
   const credentials = await response.json()
+  assert.deepEqual(store.records.get(credentials.id).stops, [customStop])
   assert.equal((await fetch(`${base}/subscriptions/${credentials.id}`, { method: 'DELETE', headers })).status, 401)
   assert.equal((await fetch(`${base}/subscriptions/${credentials.id}`, { method: 'DELETE', headers: { ...headers, Authorization: `Bearer ${credentials.token}` } })).status, 204)
 })
@@ -225,4 +228,34 @@ test('backend réel configuré avec VAPID : démarrage et gestion HTTP des abonn
   assert.equal(response.status, 200)
   const credentials = await response.json()
   assert.equal((await fetch(`${base}/subscriptions/${credentials.id}`, { method: 'DELETE', headers: { ...headers, Authorization: `Bearer ${credentials.token}` } })).status, 204)
+})
+
+
+test('délais personnalisés : 8, 5, 2 minutes, sans doublon ni rafale', () => {
+  const custom = { ...stop, notifyBeforeMinutes: 8, notifyIntervalMinutes: 3 }
+  let state = null
+  for (const [seconds, expected] of [[600, false], [480, true], [470, false], [300, true], [290, false], [120, true], [0, false]]) {
+    const update = evaluateArrival(custom, [passage(seconds)], state)
+    assert.equal(Boolean(update.payload), expected)
+    state = update.state
+  }
+  const late = evaluateArrival(custom, [passage(60)], null)
+  assert.deepEqual(late.state.notified, [8, 5, 2])
+  assert.equal(evaluateArrival(custom, [passage(30)], late.state).payload, null)
+  assert.ok(evaluateArrival(custom, [passage(480, '43')], state).payload)
+})
+
+test('valide les délais, y compris un intervalle supérieur au délai initial', () => {
+  assert.equal(validateStops([{ ...stop, notifyBeforeMinutes: 8, notifyIntervalMinutes: 10 }])[0].notifyIntervalMinutes, 10)
+  for (const field of ['notifyBeforeMinutes', 'notifyIntervalMinutes']) {
+    for (const value of [0, -1, 61, 1.5, '3', null]) {
+      assert.throws(() => validateStops([{ ...stop, [field]: value }]), { status: 400 })
+    }
+  }
+})
+
+test('un changement de délais applique les nouveaux seuils au passage courant', () => {
+  const first = evaluateArrival(stop, [passage(120)], null)
+  const custom = { ...stop, notifyBeforeMinutes: 8, notifyIntervalMinutes: 3 }
+  assert.ok(evaluateArrival(custom, [passage(120)], first.state).payload)
 })

@@ -70,6 +70,15 @@ public class GinkuStopWatcherPlugin extends Plugin {
             sanitizedStop.put("idLigne", idLigne);
             sanitizedStop.put("numLigne", stop.optString("numLigne", ""));
             sanitizedStop.put("destination", destination);
+            for (String key : new String[] { "notifyBeforeMinutes", "notifyIntervalMinutes" }) {
+                Object value = stop.opt(key);
+                int fallback = key.equals("notifyBeforeMinutes") ? 2 : 1;
+                if (value != null && (!(value instanceof Number) || ((Number) value).doubleValue() != ((Number) value).intValue()
+                    || ((Number) value).intValue() < 1 || ((Number) value).intValue() > 60)) {
+                    throw new JSONException("Délais invalides : minutes entières entre 1 et 60");
+                }
+                sanitizedStop.put(key, value == null ? fallback : ((Number) value).intValue());
+            }
             sanitized.put(sanitizedStop);
         }
 

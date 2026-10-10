@@ -49,6 +49,14 @@ export function validateSubscription(value) {
   return { endpoint: url.href, keys: { p256dh: value.keys.p256dh, auth: value.keys.auth } }
 }
 
+function minutes(value, fallback) {
+  if (value === undefined) return fallback
+  if (!Number.isInteger(value) || value < 1 || value > 60) {
+    throw new NotificationError(400, 'Les délais doivent être des minutes entières entre 1 et 60')
+  }
+  return value
+}
+
 export function validateStops(value) {
   if (!Array.isArray(value) || value.length > 20) {
     throw new NotificationError(400, 'Maximum 20 favoris surveillés par navigateur')
@@ -59,6 +67,8 @@ export function validateStops(value) {
     idLigne: text(stop?.idLigne, 50),
     numLigne: text(stop?.numLigne, 50),
     destination: text(stop?.destination),
+    notifyBeforeMinutes: minutes(stop?.notifyBeforeMinutes, 2),
+    notifyIntervalMinutes: minutes(stop?.notifyIntervalMinutes, 1),
   }))
   if (new Set(stops.map((stop) => stop.id)).size !== stops.length) {
     throw new NotificationError(400, 'Favoris dupliqués')

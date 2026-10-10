@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { ref, watch } from 'vue'
 import GinkuStopWatcher from '@/plugins/ginkuStopWatcher'
-import { favorites, setNotifyEnabled } from '@/stores/favorites'
+import { favorites, setNotifyEnabled, setNotificationTiming } from '@/stores/favorites'
 import { isWebPushSupported, requestWebNotificationAccess, syncWebWatchedStops, notificationErrorMessage } from '@/services/webStopNotifications'
 
 const SYNC_DEBOUNCE_MS = 300
@@ -21,11 +21,17 @@ function toWatchedStop(favorite) {
     nomArret: favorite.nomArret,
     idLigne: favorite.idLigne,
     numLigne: favorite.numLigne,
-    destination: favorite.destination
+    destination: favorite.destination,
+    notifyBeforeMinutes: favorite.notifyBeforeMinutes ?? 2,
+    notifyIntervalMinutes: favorite.notifyIntervalMinutes ?? 1
   }
 }
 
 export async function syncWatchedStops() {
+  if (syncTimeoutId !== null) {
+    clearTimeout(syncTimeoutId)
+    syncTimeoutId = null
+  }
   const stops = favorites.value.filter(f => f.notifyEnabled === true).map(toWatchedStop)
 
   try {
@@ -59,7 +65,9 @@ export function startStopNotificationsSync() {
   if (started || !isSupported()) return
   started = true
 
-  watch(favorites, scheduleSync, { deep: true })
+  // Seuls les champs réellement transmis déclenchent une synchronisation.
+  // Le flush synchrone permet à une sauvegarde explicite d'annuler son debounce.
+  watch(() => JSON.stringify(favorites.value.filter(f => f.notifyEnabled === true).map(toWatchedStop)), scheduleSync, { flush: 'sync' })
   syncWatchedStops().catch(() => undefined)
   if (Capacitor.getPlatform() === 'web') {
     // Réessayer après reconnexion et renouveler la durée de conservation au retour.
@@ -100,4 +108,18 @@ export async function changeNotificationEnabled(favorite, enabled) {
     throw error
   }
   return true
+}
+
+export async function changeNotificationTiming(favorite, before, interval) {
+  const previousBefore = favorite.notifyBeforeMinutes ?? 2
+  const previousInterval = favorite.notifyIntervalMinutes ?? 1
+  if (before === previousBefore && interval === previousInterval) return
+  setNotificationTiming(favorite.id, before, interval)
+  if (!favorite.notifyEnabled) return
+  try {
+    await syncWatchedStops()
+  } catch (error) {
+    setNotificationTiming(favorite.id, previousBefore, previousInterval)
+    throw error
+  }
 }

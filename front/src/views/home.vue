@@ -9,6 +9,7 @@ import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NotificationToggle from '@/components/NotificationToggle.vue'
+import NotificationTiming from '@/components/NotificationTiming.vue'
 defineOptions({ name: 'HomePage' })
 
 const notificationsSupported = isStopNotificationsSupported()
@@ -381,7 +382,7 @@ const formatTempsHoraire = (horaire) => {
           <div
             v-for="fav in favorites"
             :key="fav.id"
-            class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex items-center justify-between group relative overflow-hidden"
+            class="bg-surface-light dark:bg-surface-dark rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-soft border border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between group relative overflow-hidden"
           >
             <!-- Barre de couleur gauche -->
             <div
@@ -452,6 +453,7 @@ const formatTempsHoraire = (horaire) => {
                 <span class="text-sm text-gray-400">--</span>
               </template>
             </div>
+            <NotificationTiming v-if="notificationsSupported" :favorite="fav" />
           </div>
         </div>
 

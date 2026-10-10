@@ -68,7 +68,7 @@ onBeforeUnmount(() => {
       Installez Ginku depuis le menu du navigateur pour l’utiliser comme une application.
       Sur iPhone et iPad, ajoutez Ginku à l’écran d’accueil pour recevoir les notifications.
     </p>
-    <p v-if="notificationsSupported">Activez la cloche d’un favori pour être averti à 2 puis 1 minute de l’arrivée, même après fermeture de l’application. La réception dépend du navigateur et de la connexion.</p>
+    <p v-if="notificationsSupported">Activez la cloche d’un favori et réglez ses délais pour être averti avant l’arrivée, même après fermeture de l’application. La réception dépend du navigateur et de la connexion.</p>
     <p v-else>Les notifications ne sont pas disponibles dans ce navigateur. Essayez un navigateur compatible ou ouvrez Ginku depuis l’écran d’accueil.</p>
     <button v-if="installPrompt" type="button" :disabled="isPending" @click="install"
       class="min-h-11 px-4 rounded-lg bg-primary text-white font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50">

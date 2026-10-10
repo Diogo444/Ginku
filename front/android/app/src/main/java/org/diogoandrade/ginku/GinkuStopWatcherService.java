@@ -58,7 +58,6 @@ public class GinkuStopWatcherService extends Service {
     private static final int WATCH_NOTIFICATION_ID = 1001;
 
     private static final int POLL_INTERVAL_SECONDS = 15;
-    private static final int[] THRESHOLDS_MINUTES = { 2, 1 };
     private static final int CONNECT_TIMEOUT_MS = 8000;
     private static final int READ_TIMEOUT_MS = 8000;
 
@@ -181,7 +180,7 @@ public class GinkuStopWatcherService extends Service {
             String numVehicule = match.optString("numVehicule", "");
 
             statusByStopId.put(id, new StopStatus(numLigne, destination, tempsRestant));
-            handlePassageUpdate(id, nomArret, numLigne, destination, numVehicule, tempsRestant);
+            handlePassageUpdate(id, nomArret, numLigne, destination, numVehicule, tempsRestant, tempsEnSeconde, stop.optInt("notifyBeforeMinutes", 2), stop.optInt("notifyIntervalMinutes", 1));
         } catch (IOException | JSONException exception) {
             Log.w(TAG, "Impossible de récupérer les horaires pour " + nomArret, exception);
         }
@@ -248,17 +247,23 @@ public class GinkuStopWatcherService extends Service {
         String numLigne,
         String destination,
         String numVehicule,
-        int tempsRestant
+        int tempsRestant,
+        int tempsEnSeconde,
+        int beforeMinutes,
+        int intervalMinutes
     ) {
         StopNotificationState state = stateByStopId.get(stopId);
-        boolean isNewPassage = state == null || !state.lastVehicule.equals(numVehicule);
+        long arrivalAt = System.currentTimeMillis() + tempsEnSeconde * 1000L;
+        boolean isNewPassage = state == null || !state.lastVehicule.equals(numVehicule)
+            || (numVehicule.isEmpty() && Math.abs(state.arrivalAt - arrivalAt) >= 90000)
+            || state.beforeMinutes != beforeMinutes || state.intervalMinutes != intervalMinutes;
         if (isNewPassage) {
-            state = new StopNotificationState(numVehicule);
+            state = new StopNotificationState(numVehicule, arrivalAt, beforeMinutes, intervalMinutes);
             stateByStopId.put(stopId, state);
         }
 
         boolean shouldNotify = false;
-        for (int threshold : THRESHOLDS_MINUTES) {
+        for (int threshold = beforeMinutes; threshold > 0; threshold -= intervalMinutes) {
             if (tempsRestant <= threshold && !state.notifiedThresholds.contains(threshold)) {
                 state.notifiedThresholds.add(threshold);
                 shouldNotify = true;
@@ -400,8 +405,15 @@ public class GinkuStopWatcherService extends Service {
         final String lastVehicule;
         final Set<Integer> notifiedThresholds = new HashSet<>();
 
-        StopNotificationState(String lastVehicule) {
+        final long arrivalAt;
+        final int beforeMinutes;
+        final int intervalMinutes;
+
+        StopNotificationState(String lastVehicule, long arrivalAt, int beforeMinutes, int intervalMinutes) {
             this.lastVehicule = lastVehicule;
+            this.arrivalAt = arrivalAt;
+            this.beforeMinutes = beforeMinutes;
+            this.intervalMinutes = intervalMinutes;
         }
     }
 

@@ -2,6 +2,15 @@
 
 Application web (frontend Vue + backend Node) qui consomme l’API `api.ginko.voyage` via un backend “proxy” (ajout de la clé API + cache).
 
+## Notifications d’arrivée
+
+Chaque favori dispose d’une cloche et d’une modale de réglage des délais :
+par exemple, 8 minutes avant l’arrivée avec un intervalle de 3 minutes produit
+les alertes à 8, 5 puis 2 minutes restantes, sur Web et Android.
+
+- [Utilisation, accessibilité, données et vérification](docs/notifications-par-favori.md)
+- [Configuration du serveur Web Push et de la PWA](docs/web-pwa-notifications.md)
+
 ## Stack technique
 
 - Frontend : Vue 3, Vite, Vue Router, Tailwind CSS, Axios

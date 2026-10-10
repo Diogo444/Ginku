@@ -1,6 +1,8 @@
 import { computed, ref } from 'vue'
 import { Preferences } from '@capacitor/preferences'
 
+const validNotificationMinutes = (value, fallback) => Number.isInteger(value) && value >= 1 && value <= 60 ? value : fallback
+
 const STORAGE_KEY = 'ginku-favorites'
 let initializationPromise = null
 let persistenceQueue = Promise.resolve()
@@ -17,6 +19,8 @@ let persistenceQueue = Promise.resolve()
  *   couleurFond: string,  // Couleur de fond de la ligne
  *   couleurTexte: string, // Couleur du texte de la ligne
  *   notifyEnabled: boolean, // Notifications d'arrivée Android ou Web Push (défaut false)
+ *   notifyBeforeMinutes: number, // Première alerte (1–60 min, défaut 2)
+ *   notifyIntervalMinutes: number, // Intervalle entre les seuils (1–60 min, défaut 1)
  *   createdAt: number     // Timestamp de création
  * }
  */
@@ -39,7 +43,9 @@ const deserializeFavorites = (serializedFavorites) => {
     .map((favorite) => ({
       ...favorite,
       // Les favoris sauvegardés avant l'ajout de cette fonctionnalité n'ont pas ce champ.
-      notifyEnabled: favorite.notifyEnabled === true
+      notifyEnabled: favorite.notifyEnabled === true,
+      notifyBeforeMinutes: validNotificationMinutes(favorite.notifyBeforeMinutes, 2),
+      notifyIntervalMinutes: validNotificationMinutes(favorite.notifyIntervalMinutes, 1)
     }))
 }
 
@@ -137,6 +143,8 @@ export const addFavorite = (favorite) => {
   if (!isFavorite(favorite.id)) {
     favorites.value.push({
       notifyEnabled: false,
+      notifyBeforeMinutes: 2,
+      notifyIntervalMinutes: 1,
       ...favorite,
       createdAt: Date.now()
     })
@@ -184,5 +192,17 @@ export const setNotifyEnabled = (id, enabled) => {
  */
 export const clearFavorites = () => {
   favorites.value = []
+  persistFavorites()
+}
+
+/** Délais entiers en minutes, de 1 à 60, propres à chaque favori. */
+export const setNotificationTiming = (id, before, interval) => {
+  if (![before, interval].every(value => Number.isInteger(value) && value >= 1 && value <= 60)) {
+    throw new TypeError('Choisis des minutes entières entre 1 et 60.')
+  }
+  const favorite = favorites.value.find(f => f.id === id)
+  if (!favorite) return
+  favorite.notifyBeforeMinutes = before
+  favorite.notifyIntervalMinutes = interval
   persistFavorites()
 }

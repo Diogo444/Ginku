@@ -6,7 +6,7 @@ Le Web utilise un service worker pour mettre en cache l'interface et recevoir le
 notifications push. Il ne peut pas maintenir une boucle de consultation toutes les
 15 secondes lorsque l'application est fermée. Le backend surveille donc les favoris
 activés, mutualise les demandes d'horaires par nom d'arrêt et envoie les alertes aux
-seuils de 2 puis 1 minute, avec le même arrondi que le service Android.
+seuils configurés par favori (2 puis 1 minute par défaut), avec le même arrondi que le service Android.
 
 Les horaires et les réponses API ne sont jamais mis en cache par le service worker.
 L'interface et les favoris restent accessibles hors ligne ; les horaires nécessitent
@@ -135,3 +135,45 @@ les clés VAPID du serveur et un véritable fournisseur push.
 - [Workbox precaching](https://developer.chrome.com/docs/workbox/modules/workbox-precaching)
 - [web-push 3.x](https://github.com/web-push-libs/web-push)
 - [Web Push sur iOS/iPadOS](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)
+
+## Délais par favori
+
+Voir le [guide complet des délais par favori](notifications-par-favori.md) pour
+le parcours utilisateur, la modale accessible, les règles de déclenchement,
+le contrat des données et les fichiers à maintenir.
+
+Le bouton « Délais » de chaque favori ouvre une boîte modale permettant de régler `notifyBeforeMinutes`
+(première alerte) et `notifyIntervalMinutes` (intervalle entre les seuils),
+deux entiers de 1 à 60 minutes transmis dans chaque entrée de `stops`.
+Les anciennes entrées utilisent 2 et 1. Exemple : 8 / 3 alerte à 8, 5 puis
+2 minutes restantes, sur Android et Web. Aucun seuil supplémentaire à zéro.
+Une observation tardive regroupe les seuils dépassés en une seule alerte.
+Les horaires sont arrondis à la minute et vérifiés environ toutes les 15 secondes ;
+les alertes suivent les estimations du réseau de transport. Modifier les délais
+réinitialise les seuils du passage courant et peut donc déclencher une nouvelle alerte.
+
+### Vérification des délais — 10 octobre 2026
+
+- Lint frontend ciblé, syntaxe backend, build Web et synchronisation Android : OK.
+- 18 tests backend : OK, avec démarrage réel du serveur et validation HTTP des délais.
+- 8 tests navigateur sur 9 : OK, dont réglage au clavier, transmission, sauvegarde
+  après rechargement et absence de débordement sur écran de 390 px.
+- `pnpm -C front run test:pwa` échoue sur la réception push après fermeture :
+  `getNotifications()` reste vide sous Chromium ; cause non déterminée.
+- `bash ./gradlew assembleDebug` échoue : l'installation Java 25 disponible
+  n'offre pas `JAVA_COMPILER`. Il reste à compiler avec un JDK complet compatible
+  puis à vérifier les rappels sur Android et la réception push réelle.
+
+### Intégration modale et accessibilité
+
+La modale utilise un dialogue HTML natif : arrière-plan inerte, champs libellés,
+focus initial sur le premier champ, boucle Tab/Maj+Tab, fermeture avec Échap ou
+Annuler et retour du focus au bouton. Les changements ne sont enregistrés qu'après
+validation ; une erreur laisse la saisie disponible pour réessayer. Les états de
+sauvegarde et les erreurs sont annoncés. Aucun effet animé n'est ajouté.
+Le formulaire est monté à l'ouverture et les délais des favoris désactivés restent
+locaux. Une sauvegarde identique n'écrit ni ne synchronise ; une sauvegarde explicite
+annule la synchronisation différée pour éviter les envois en double.
+Les quatre tests ciblés de modale passent, ainsi que le lint, le build Web et la
+synchronisation Capacitor. Le build Android reste bloqué par l'absence de
+`JAVA_COMPILER` dans Java 25 ; le test push après fermeture reste en échec.

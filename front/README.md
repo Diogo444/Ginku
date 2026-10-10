@@ -1,7 +1,8 @@
 # Ginku
 
 La version Web est une PWA installable avec notifications d'arrivée via Web Push.
-Voir [la configuration et les essais](../docs/web-pwa-notifications.md).
+Voir [la configuration et les essais](../docs/web-pwa-notifications.md), ainsi que
+[les délais par favori et la modale accessible](../docs/notifications-par-favori.md).
 
 This template should help get you started developing with Vue 3 in Vite.
 

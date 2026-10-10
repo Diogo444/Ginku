@@ -81,7 +81,17 @@ la fermeture. Une gestion locale des touches Tab complète le comportement natif
 
 Les favoris sont conservés avec Capacitor Preferences sous `ginku-favorites`.
 Au chargement, les valeurs absentes ou invalides des délais sont remplacées par
-les valeurs par défaut. Le store et les services valident les nouveaux réglages.
+les valeurs par défaut. Les données migrées sont sauvegardées immédiatement si
+elles diffèrent du stockage existant : aucun favori ne doit être supprimé puis
+recréé. Les délais personnalisés et l’état de la cloche sont conservés.
+Le store et les services valident les nouveaux réglages.
+
+Le bouton « Délais » apparaît pour tous les favoris, même si le navigateur ne
+prend pas en charge les notifications. Dans ce cas, la modale explique la limite
+et les réglages sont sauvegardés uniquement sur l’appareil, sans appel push.
+La cloche reste masquée lorsque la réception n’est pas prise en charge.
+Cette migration nécessite le chargement de la nouvelle version du site ou de
+l’application ; elle ne modifie pas une ancienne interface encore servie en cache.
 
 Sur le Web, les arrêts activés sont transmis dans `stops` à
 `PUT /api/notifications/subscriptions`. Exemple d’entrée :
@@ -165,3 +175,12 @@ La validation complète reste ouverte :
   La cause n’est pas déterminée ; les quatre tests ciblés ne valident pas ce parcours.
 - La réception avec un véritable fournisseur push et les réglages système sur
   appareil reste à vérifier. Les horaires en temps réel nécessitent une connexion.
+
+### Vérification de la reprise des anciens favoris
+
+Huit tests navigateur ciblés passent, dont trois cas de régression : anciens
+favoris dans `localStorage`, anciens favoris dans Preferences et navigateur
+incompatible. Ils vérifient la conservation des favoris et des réglages existants,
+la sauvegarde des champs migrés, le bouton de réglage et la persistance après
+rechargement. Lint ciblé, build Web et synchronisation Android : OK.
+Le build Android reste bloqué par l’absence de `JAVA_COMPILER` dans Java 25.

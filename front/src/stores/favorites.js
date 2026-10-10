@@ -93,6 +93,11 @@ export const initializeFavorites = () => {
 
       if (value !== null) {
         favorites.value = deserializeFavorites(value)
+        const migrated = JSON.stringify(favorites.value)
+        // Persister les nouveaux champs dès la mise à jour, sans recréer les favoris.
+        if (migrated !== value) {
+          await Preferences.set({ key: STORAGE_KEY, value: migrated })
+        }
         return
       }
 

@@ -453,7 +453,7 @@ const formatTempsHoraire = (horaire) => {
                 <span class="text-sm text-gray-400">--</span>
               </template>
             </div>
-            <NotificationTiming v-if="notificationsSupported" :favorite="fav" />
+            <NotificationTiming :favorite="fav" :notifications-supported="notificationsSupported" />
           </div>
         </div>
 

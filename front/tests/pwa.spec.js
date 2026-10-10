@@ -8,11 +8,13 @@ ecdh.generateKeys()
 const publicKey = ecdh.getPublicKey().toString('base64url')
 const subscription = { endpoint: 'https://fcm.googleapis.com/fcm/send/test', keys: { p256dh: publicKey, auth: Buffer.alloc(16).toString('base64url') } }
 
-async function setup(context, { enabled = true, permission = 'granted', failSave = false, unsupported = false } = {}) {
+async function setup(context, { enabled = true, permission = 'granted', failSave = false, unsupported = false, initialFavorites = [stop], storage = 'legacy' } = {}) {
   const saves = []
   const deletes = []
-  await context.addInitScript(({ stop, subscription, permission, unsupported }) => {
-    if (!localStorage.getItem('CapacitorStorage.ginku-favorites')) localStorage.setItem('ginku-favorites', JSON.stringify([stop]))
+  await context.addInitScript(({ initialFavorites, storage, subscription, permission, unsupported }) => {
+    if (!localStorage.getItem('CapacitorStorage.ginku-favorites')) {
+      localStorage.setItem(storage === 'preferences' ? 'CapacitorStorage.ginku-favorites' : 'ginku-favorites', JSON.stringify(initialFavorites))
+    }
     if (unsupported) {
       delete window.PushManager
       return
@@ -26,7 +28,7 @@ async function setup(context, { enabled = true, permission = 'granted', failSave
       current = { toJSON: () => subscription, unsubscribe: async () => { current = null; return true } }
       return current
     }
-  }, { stop, subscription, permission, unsupported })
+  }, { initialFavorites, storage, subscription, permission, unsupported })
   await context.route('**/api/**', async (route) => {
     const request = route.request()
     const path = new URL(request.url()).pathname
@@ -241,4 +243,42 @@ test('erreur dans la modale : conserve la saisie et permet de réessayer', async
   await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await expect(page.getByRole('dialog')).not.toBeVisible()
   await expect(trigger).toContainText('8 / 1 min')
+})
+
+
+for (const storage of ['legacy', 'preferences']) {
+  test(`anciens favoris (${storage}) : migration sans perte et délais accessibles`, async ({ page, context }) => {
+    const old = { ...stop }
+    delete old.notifyEnabled
+    const custom = { ...stop, id: 'gare-custom', notifyBeforeMinutes: 8, notifyIntervalMinutes: 3 }
+    await setup(context, { initialFavorites: [old, custom], storage })
+    await page.goto('/')
+    const triggers = page.getByRole('button', { name: /Régler les notifications/ })
+    await expect(triggers).toHaveCount(2)
+    await expect(triggers.nth(0)).toContainText('2 / 1 min')
+    await expect(triggers.nth(1)).toContainText('8 / 3 min')
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('CapacitorStorage.ginku-favorites')))).toEqual([
+      { ...old, notifyEnabled: false, notifyBeforeMinutes: 2, notifyIntervalMinutes: 1 }, custom,
+    ])
+    await triggers.nth(0).click()
+    await page.getByLabel('Prévenir avant (min)').fill('9')
+    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
+    await page.reload()
+    await expect(triggers.nth(0)).toContainText('9 / 1 min')
+    await expect(triggers.nth(1)).toContainText('8 / 3 min')
+  })
+}
+
+test('ancien favori sur navigateur incompatible : réglage local disponible', async ({ page, context }) => {
+  const { saves } = await setup(context, { unsupported: true, storage: 'preferences' })
+  await page.goto('/')
+  const trigger = page.getByRole('button', { name: /Régler les notifications/ })
+  await expect(trigger).toBeVisible()
+  await trigger.click()
+  await expect(page.getByRole('dialog')).toContainText('ce navigateur ne permet pas de recevoir les notifications')
+  await page.getByLabel('Prévenir avant (min)').fill('8')
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
+  await page.reload()
+  await expect(trigger).toContainText('8 / 1 min')
+  expect(saves).toHaveLength(0)
 })

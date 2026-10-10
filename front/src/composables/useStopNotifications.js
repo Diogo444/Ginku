@@ -115,7 +115,7 @@ export async function changeNotificationTiming(favorite, before, interval) {
   const previousInterval = favorite.notifyIntervalMinutes ?? 1
   if (before === previousBefore && interval === previousInterval) return
   setNotificationTiming(favorite.id, before, interval)
-  if (!favorite.notifyEnabled) return
+  if (!favorite.notifyEnabled || !isSupported()) return
   try {
     await syncWatchedStops()
   } catch (error) {

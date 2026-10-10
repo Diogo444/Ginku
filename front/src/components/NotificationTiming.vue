@@ -3,7 +3,10 @@ import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import { changeNotificationTiming } from '@/composables/useStopNotifications'
 import { notificationErrorMessage } from '@/services/webStopNotifications'
 
-const props = defineProps({ favorite: { type: Object, required: true } })
+const props = defineProps({
+  favorite: { type: Object, required: true },
+  notificationsSupported: { type: Boolean, default: true }
+})
 const dialog = ref(null)
 const trigger = ref(null)
 const isOpen = ref(false)
@@ -104,7 +107,8 @@ onBeforeUnmount(() => dialog.value?.close())
             <input v-model.number="intervalMinutes" type="number" inputmode="numeric" min="1" max="60" step="1" required :disabled="isPending" class="min-h-11 w-full rounded border border-gray-500 bg-white dark:bg-gray-900 px-3 focus-visible:outline-2 focus-visible:outline-primary" />
           </label>
           <p class="text-sm">De 1 à 60 minutes. {{ preview }}</p>
-          <p v-if="!favorite.notifyEnabled" class="text-sm">Active la cloche du favori pour recevoir ces notifications.</p>
+          <p v-if="!notificationsSupported" class="text-sm">Tu peux enregistrer les délais, mais ce navigateur ne permet pas de recevoir les notifications. Utilise un navigateur compatible ou la PWA installée.</p>
+          <p v-else-if="!favorite.notifyEnabled" class="text-sm">Active la cloche du favori pour recevoir ces notifications.</p>
           <p v-if="errorMessage" role="alert" class="text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</p>
           <p role="status" class="sr-only">{{ isPending ? 'Enregistrement des délais…' : '' }}</p>
           <div class="flex flex-wrap justify-end gap-3">

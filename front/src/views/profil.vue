@@ -48,8 +48,7 @@ const upcomingSettings = [
               <option value="dark">Sombre</option>
             </select>
           </div>
-          <p id="theme-hint" class="text-sm text-gray-600 dark:text-gray-300 mt-3">Choisissez l’apparence de l’application.</p>
-          <p role="status" class="mt-2 text-xs text-gray-600 dark:text-gray-300">Thème {{ isDark ? 'sombre' : 'clair' }} activé.</p>
+          
         </div>
 
         <button

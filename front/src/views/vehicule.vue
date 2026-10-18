@@ -6,7 +6,7 @@ import BackButton from '@/components/BackButton.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import Loader from '@/components/loader.vue'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 
 defineOptions({ name: 'VehiculePage' })
 
@@ -220,7 +220,7 @@ onBeforeUnmount(() => {
             Véhicule {{ vehicleNumber || 'inconnu' }}
           </p>
         </div>
-        <ThemeToggle />
+        <ProfileButton />
       </div>
     </header>
 

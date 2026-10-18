@@ -6,7 +6,7 @@ import BackButton from '@/components/BackButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 
 defineOptions({ name: 'MessagePage' })
 
@@ -146,7 +146,7 @@ const maxEtat = computed(() => {
             Ligne {{ ligne.numLignePublic }}
           </p>
         </div>
-        <ThemeToggle />
+        <ProfileButton />
       </div>
       
       <!-- Badge de ligne -->

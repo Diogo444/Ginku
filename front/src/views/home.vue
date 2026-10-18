@@ -4,7 +4,7 @@ import { isStopNotificationsSupported } from '@/composables/useStopNotifications
 import PwaStatus from '@/components/PwaStatus.vue'
 import { getArrets, getLignes, getTempsLieu } from '@/services/api'
 import { favorites, removeFavorite } from '@/stores/favorites'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -290,7 +290,7 @@ const formatTempsHoraire = (horaire) => {
           <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Bonjour,</h1>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Où souhaitez-vous aller ?</p>
         </div>
-        <ThemeToggle />
+        <ProfileButton />
       </div>
 
       <!-- Barre de recherche -->

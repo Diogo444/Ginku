@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getArretsProches, getTempsArret } from '@/services/api'
 import { useGeolocation } from '@/composables/useGeolocation'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
@@ -674,7 +674,7 @@ onBeforeUnmount(() => {
           </p>
         </div>
 
-        <ThemeToggle />
+        <ProfileButton />
       </div>
 
       <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-gray-600 dark:text-gray-300">

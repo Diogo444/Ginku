@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { getEtatLignes, getMessages } from '@/services/api'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
@@ -141,7 +141,7 @@ const stripHtml = (html) => {
           <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Infos Trafic</h1>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">État du réseau en temps réel</p>
         </div>
-        <ThemeToggle />
+        <ProfileButton />
       </div>
       
       <!-- Barre de recherche -->

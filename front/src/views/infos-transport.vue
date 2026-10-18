@@ -5,7 +5,7 @@ import { getDetailsVehicule } from '@/services/api'
 import BackButton from '@/components/BackButton.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 
 defineOptions({ name: 'InfosTransportPage' })
 
@@ -94,7 +94,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
             N° {{ details.numParc || route.params.id }}
           </p>
         </div>
-        <ThemeToggle />
+        <ProfileButton />
       </div>
     </header>
     

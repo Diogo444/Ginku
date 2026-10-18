@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { nextTick } from 'vue'
 
 const Home = () => import('@/views/home.vue')
+const Profil = () => import('@/views/profil.vue')
 const Proches = () => import('@/views/proches.vue')
 const Lignes = () => import('@/views/lignes.vue')
 const Arret = () => import('@/views/arret.vue')
@@ -19,6 +20,15 @@ const router = createRouter({
     return { left: 0, top: 0 }
   },
   routes: [
+    {
+      path: '/profil',
+      name: 'profil',
+      component: Profil,
+      meta: {
+        title: 'Mon profil — Ginku',
+        description: 'Personnalisez l’apparence de Ginku depuis votre profil.',
+      },
+    },
     {
       path: '/',
       name: 'home',

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onBeforeUnmount, watch, computed } from 'vue'
 import { getLignes, getArretsFromLigne } from '@/services/api'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import BackButton from '@/components/BackButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
       
       <!-- Toggle thème en haut à droite -->
       <div class="absolute right-4 sm:right-6 top-4 sm:top-6">
-        <ThemeToggle />
+        <ProfileButton />
       </div>
     </header>
     

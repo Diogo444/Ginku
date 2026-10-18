@@ -5,6 +5,7 @@ import PwaStatus from '@/components/PwaStatus.vue'
 import { getArrets, getLignes, getTempsLieu } from '@/services/api'
 import { favorites, removeFavorite } from '@/stores/favorites'
 import ProfileButton from '@/components/ProfileButton.vue'
+import { getProfileName } from '@/services/profile'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -13,6 +14,16 @@ import NotificationTiming from '@/components/NotificationTiming.vue'
 defineOptions({ name: 'HomePage' })
 
 const notificationsSupported = isStopNotificationsSupported()
+const profileName = ref('')
+
+onMounted(() => {
+  try {
+    profileName.value = getProfileName()
+  } catch {
+    // La personnalisation est facultative : une erreur de stockage ne bloque pas les horaires.
+    console.warn('Impossible de lire le nom du profil sur cet appareil.')
+  }
+})
 
 // ========== SEARCH ==========
 const arrets = ref([])
@@ -284,10 +295,10 @@ const formatTempsHoraire = (horaire) => {
   <div class="flex flex-col min-h-full w-full">
     <!-- Header sticky -->
     <header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-4 sm:px-6 pt-4 sm:pt-6 pb-2 border-b border-transparent transition-colors duration-300">
-      <!-- Titre + Toggle thème -->
-      <div class="flex justify-between items-center mb-4 sm:mb-5">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Bonjour,</h1>
+      <!-- Accueil et accès au profil -->
+      <div class="flex justify-between items-center gap-3 mb-4 sm:mb-5">
+        <div class="min-w-0 flex-1">
+          <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white [overflow-wrap:anywhere]">{{ profileName ? `Bonjour ${profileName}` : 'Bonjour' }}</h1>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Où souhaitez-vous aller ?</p>
         </div>
         <ProfileButton />

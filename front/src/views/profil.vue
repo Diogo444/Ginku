@@ -1,5 +1,6 @@
 <script setup>
 import BackButton from '@/components/BackButton.vue'
+import ProfileIdentity from '@/components/ProfileIdentity.vue'
 import { isDark, setTheme } from '@/stores/theme'
 
 defineOptions({ name: 'ProfilPage' })
@@ -22,16 +23,7 @@ const upcomingSettings = [
     </header>
 
     <div class="w-full max-w-2xl mx-auto px-4 sm:px-6 pt-5 pb-8 space-y-7">
-      <section aria-labelledby="profile-name" class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-5 sm:p-6 shadow-soft">
-        <div class="flex items-center gap-4">
-          <div class="w-16 h-16 shrink-0 rounded-2xl bg-primary/10 text-rose-700 dark:text-rose-300 flex items-center justify-center text-xl font-semibold" aria-hidden="true">AM</div>
-          <div class="min-w-0">
-            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Bienvenue dans votre espace</p>
-            <h2 id="profile-name" class="text-xl font-semibold text-gray-900 dark:text-white">Alex Martin</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">Profil de démonstration</p>
-          </div>
-        </div>
-      </section>
+      <ProfileIdentity />
 
       <section aria-labelledby="preferences-title" class="space-y-3">
         <div>

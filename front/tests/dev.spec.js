@@ -314,3 +314,27 @@ test('contraste : refus de sauvegarde signalé sans conserver un état trompeur'
   await expect(toggle).toHaveAttribute('aria-checked', 'false')
   await expect(page.locator('html')).not.toHaveClass(/high-contrast/)
 })
+
+test('profil : cartes légales accessibles au clavier et liens retirés du footer', async ({ page, context }) => {
+  await page.setViewportSize({ width: 320, height: 740 })
+  await mockApi(context)
+  await page.goto('/profil')
+  const legal = page.getByRole('navigation', { name: 'Informations légales' })
+  await expect(legal).toBeVisible()
+  await expect(page.getByRole('contentinfo').getByRole('link', { name: /confidentialité|Conditions/ })).toHaveCount(0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  for (const [title, path] of [
+    ['Politique de confidentialité', '/politique-confidentialite'],
+    ['Conditions d’utilisation', '/conditions-utilisation'],
+  ]) {
+    const link = legal.getByRole('link', { name: new RegExp(title) })
+    const size = await link.boundingBox()
+    expect(size.height).toBeGreaterThanOrEqual(44)
+    await link.focus()
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(new RegExp(`${path}$`))
+    await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeFocused()
+    await page.getByRole('button', { name: 'Retour à la page précédente' }).click()
+    await expect(page).toHaveURL(/\/profil$/)
+  }
+})

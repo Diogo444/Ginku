@@ -270,6 +270,13 @@ for (const theme of ['light', 'dark']) {
     const focus = await toggle.evaluate((element) => getComputedStyle(element).outlineWidth)
     expect(focus).toBe('3px')
     await page.screenshot({ path: `test-results/contrast-${theme}-mobile.png`, fullPage: true })
+    // Toute la carte réagit, y compris son bord et la représentation du switch.
+    await toggle.click({ position: { x: 8, y: 8 } })
+    await expect(toggle).toBeEnabled()
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await toggle.locator('.contrast-switch-thumb').click()
+    await expect(toggle).toBeEnabled()
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
     await page.reload()
     await expect(toggle).toHaveAttribute('aria-checked', 'true')
     await page.getByRole('link', { name: 'Aller à Lignes' }).click()

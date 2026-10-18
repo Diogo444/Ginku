@@ -52,6 +52,20 @@ const legalLinks = [
         <ContrastSetting />
       </section>
 
+      <section aria-labelledby="support-title" class="space-y-3">
+        <h2 id="support-title" class="text-base font-semibold text-gray-900 dark:text-white">Assistance</h2>
+        <a href="mailto:ginku@diogo-andrade.org"
+          class="flex items-center gap-3 min-h-11 rounded-2xl bg-surface-light dark:bg-surface-dark p-4 sm:p-5 shadow-soft border border-gray-100 dark:border-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <span class="w-11 h-11 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center" aria-hidden="true">
+            <span class="material-icons-round text-xl">mail_outline</span>
+          </span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-sm font-semibold text-gray-900 dark:text-white">Contacter le support</span>
+          </span>
+          <span class="material-icons-round shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true">chevron_right</span>
+        </a>
+      </section>
+
       <nav aria-labelledby="legal-title" class="space-y-3">
         <h2 id="legal-title" class="text-base font-semibold text-gray-900 dark:text-white">Informations légales</h2>
         <router-link v-for="link in legalLinks" :key="link.to" :to="link.to"

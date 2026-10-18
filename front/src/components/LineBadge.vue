@@ -56,7 +56,8 @@ const toHex = (color) => {
 </script>
 
 <template>
-  <div 
+  <div
+    data-line-badge
     :class="[
       'flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-gray-700 flex-shrink-0 whitespace-nowrap',
       isLongText ? 'rounded-full' : 'rounded-full',

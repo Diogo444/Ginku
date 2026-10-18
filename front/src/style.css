@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './high-contrast.css';
 
 /* Activer le dark mode basé sur la classe .dark */
 @custom-variant dark (&:where(.dark, .dark *));

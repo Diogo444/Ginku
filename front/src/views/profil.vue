@@ -1,16 +1,10 @@
 <script setup>
 import BackButton from '@/components/BackButton.vue'
 import ProfileIdentity from '@/components/ProfileIdentity.vue'
+import ContrastSetting from '@/components/ContrastSetting.vue'
 import { isDark, setTheme } from '@/stores/theme'
 
 defineOptions({ name: 'ProfilPage' })
-
-// Cartes de présentation uniquement : aucun réglage ni appel réseau associé.
-const upcomingSettings = [
-  { icon: 'notifications_none', title: 'Notifications', description: 'Vos alertes, à votre rythme.' },
-  { icon: 'route', title: 'Déplacements', description: 'Des trajets qui vous ressemblent.' },
-  { icon: 'lock_outline', title: 'Confidentialité', description: 'Gardez la main sur vos préférences.' },
-]
 </script>
 
 <template>
@@ -40,7 +34,6 @@ const upcomingSettings = [
             <select
               id="profile-theme"
               :value="isDark ? 'dark' : 'light'"
-              aria-describedby="theme-hint"
               class="w-28 shrink-0 min-h-11 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-base text-gray-900 dark:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               @change="setTheme($event.target.value)"
             >
@@ -51,24 +44,7 @@ const upcomingSettings = [
           
         </div>
 
-        <button
-          v-for="setting in upcomingSettings"
-          :key="setting.title"
-          type="button"
-          disabled
-          class="w-full text-left rounded-2xl bg-surface-light dark:bg-surface-dark p-4 sm:p-5 shadow-soft border border-gray-100 dark:border-gray-800 cursor-not-allowed"
-        >
-          <span class="flex items-center gap-3">
-            <span class="w-11 h-11 shrink-0 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center" aria-hidden="true">
-              <span class="material-icons-round text-xl">{{ setting.icon }}</span>
-            </span>
-            <span class="flex-1 min-w-0">
-              <span class="block text-sm font-semibold text-gray-700 dark:text-gray-200">{{ setting.title }}</span>
-              <span class="block text-xs text-gray-600 dark:text-gray-400 mt-1">{{ setting.description }}</span>
-            </span>
-            <span class="shrink-0 rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-600 dark:text-gray-300">Bientôt</span>
-          </span>
-        </button>
+        <ContrastSetting />
       </section>
     </div>
   </div>

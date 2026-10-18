@@ -115,7 +115,7 @@ test('lignes et perturbations : affiche les données renvoyées par le backend',
   await expect(page.getByText('1 perturbation en cours')).toBeVisible()
 })
 
-test('profil : accès au clavier, thème local persistant et cartes de présentation', async ({ page, context }) => {
+test('profil : accès au clavier, thème local persistant et réglages', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await mockApi(context)
   await page.goto('/')
@@ -140,9 +140,8 @@ test('profil : accès au clavier, thème local persistant et cartes de présenta
   await expect(page.locator('html')).toHaveClass(/dark/)
   await expect.poll(() => page.evaluate(() => localStorage.getItem('CapacitorStorage.ginku-theme'))).toBe('dark')
   await page.screenshot({ path: 'test-results/profile-dark-mobile.png', fullPage: true })
-  for (const name of ['Notifications', 'Déplacements', 'Confidentialité']) {
-    await expect(page.getByRole('button', { name: new RegExp(name) })).toBeDisabled()
-  }
+  await expect(page.getByRole('switch', { name: 'Contraste élevé' })).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByText('Bientôt')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.reload()
   await expect(theme).toHaveValue('dark')
@@ -210,16 +209,101 @@ test('accueil : affiche le pseudo enregistré après modification et rechargemen
   await page.setViewportSize({ width: 320, height: 740 })
   await mockApi(context)
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Bonjour,', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Bonjour', exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'Ouvrir mon profil' }).click()
   await page.getByRole('button', { name: 'Modifier le nom' }).click()
   const nickname = 'Voyageur'.repeat(10)
   await page.getByRole('textbox', { name: 'Nom ou pseudo' }).fill(nickname)
   await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await page.getByRole('link', { name: 'Aller à Favoris' }).click()
-  await expect(page.getByRole('heading', { name: `Bonjour, ${nickname}`, exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: `Bonjour ${nickname}`, exact: true })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await expect(page.getByRole('link', { name: 'Ouvrir mon profil' })).toBeInViewport()
   await page.reload()
-  await expect(page.getByRole('heading', { name: `Bonjour, ${nickname}`, exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: `Bonjour ${nickname}`, exact: true })).toBeVisible()
+})
+
+async function checkEnhancedContrast(page) {
+  const samples = await page.locator('h1, h2, h3, p, label, button, select, footer a, nav a, [data-line-badge]').evaluateAll((elements) => {
+    function rgb(color) { return color.match(/[\d.]+/g)?.map(Number) || [0, 0, 0, 0] }
+    function luminance(channels) {
+      const values = channels.slice(0, 3).map((value) => {
+        const channel = value / 255
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+      })
+      return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2]
+    }
+    return elements.filter((element) => element.getClientRects().length && element.textContent.trim()).map((element) => {
+      let background = [255, 255, 255]
+      for (let parent = element; parent; parent = parent.parentElement) {
+        const color = rgb(getComputedStyle(parent).backgroundColor)
+        if (color.length === 3 || color[3] === 1) { background = color; break }
+      }
+      const text = luminance(rgb(getComputedStyle(element).color))
+      const surface = luminance(background)
+      return { text: element.textContent.trim().slice(0, 60), ratio: (Math.max(text, surface) + 0.05) / (Math.min(text, surface) + 0.05) }
+    })
+  })
+  for (const sample of samples) expect(sample.ratio, sample.text).toBeGreaterThanOrEqual(7)
+}
+
+for (const theme of ['light', 'dark']) {
+  test(`contraste élevé ${theme} : clavier, lisibilité, persistance et retour au mode normal`, async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await context.route('**/api/**', async (route) => {
+      const path = new URL(route.request().url()).pathname
+      let data = []
+      if (path.endsWith('/getLingnes')) data = [{ ...line, couleurFond: '00A5C2', couleurTexte: 'FFFFFF' }]
+      if (path.endsWith('/etatLignes')) data = [{ idLigne: line.id, numLignePublic: 'T1', etat: 5 }]
+      if (path.endsWith('/messages/101')) data = [{ id: 'travaux', titre: 'Travaux sur le tramway', texte: 'Arrêt temporairement déplacé' }]
+      await route.fulfill({ json: data })
+    })
+    await page.goto('/profil')
+    await page.getByRole('combobox', { name: 'Thème' }).selectOption(theme)
+    const toggle = page.getByRole('switch', { name: 'Contraste élevé' })
+    await toggle.focus()
+    await page.keyboard.press('Space')
+    await expect(toggle).toBeEnabled()
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await expect(page.locator('html')).toHaveClass(/high-contrast/)
+    await checkEnhancedContrast(page)
+    const focus = await toggle.evaluate((element) => getComputedStyle(element).outlineWidth)
+    expect(focus).toBe('3px')
+    await page.screenshot({ path: `test-results/contrast-${theme}-mobile.png`, fullPage: true })
+    await page.reload()
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('link', { name: 'Aller à Lignes' }).click()
+    await expect(page.locator('[data-line-badge]')).toBeVisible()
+    await checkEnhancedContrast(page)
+    await page.getByRole('link', { name: 'Aller à Infos' }).click()
+    await expect(page.getByText('Travaux sur le tramway')).toBeVisible()
+    await checkEnhancedContrast(page)
+    await page.getByRole('link', { name: 'Ouvrir mon profil' }).click()
+    await page.getByRole('combobox', { name: 'Thème' }).selectOption(theme === 'light' ? 'dark' : 'light')
+    await checkEnhancedContrast(page)
+    await toggle.focus()
+    await page.keyboard.press('Enter')
+    await expect(toggle).toBeEnabled()
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await expect(page.locator('html')).not.toHaveClass(/high-contrast/)
+    await page.reload()
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+  })
+}
+
+test('contraste : refus de sauvegarde signalé sans conserver un état trompeur', async ({ page, context }) => {
+  await mockApi(context)
+  await context.addInitScript(() => {
+    const setItem = Storage.prototype.setItem
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'CapacitorStorage.ginku-high-contrast') throw new DOMException('Stockage bloqué', 'QuotaExceededError')
+      return setItem.call(this, key, value)
+    }
+  })
+  await page.goto('/profil')
+  const toggle = page.getByRole('switch', { name: 'Contraste élevé' })
+  await toggle.click()
+  await expect(page.getByRole('alert')).toContainText('Le contraste n’a pas pu être enregistré')
+  await expect(toggle).toHaveAttribute('aria-checked', 'false')
+  await expect(page.locator('html')).not.toHaveClass(/high-contrast/)
 })

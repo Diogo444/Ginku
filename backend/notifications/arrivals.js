@@ -1,10 +1,13 @@
 /** Même arrondi et seuils que le service Android. Les seuils ne sont marqués
  * qu'après l'envoi réussi, pour pouvoir réessayer après une panne du push. */
 export function evaluateArrival(stop, passages, previous) {
-  const passage = passages.find((item) =>
-    String(item.idLigne) === stop.idLigne && item.destination === stop.destination,
-  )
-  if (!passage || !Number.isFinite(passage.tempsEnSeconde) || passage.tempsEnSeconde < 0) return null
+  // L'API ne garantit pas l'ordre des passages et peut renvoyer des entrées invalides.
+  const passage = passages.reduce((nearest, item) => {
+    if (!item || String(item.idLigne) !== stop.idLigne || item.destination !== stop.destination ||
+        !Number.isFinite(item.tempsEnSeconde) || item.tempsEnSeconde < 0) return nearest
+    return !nearest || item.tempsEnSeconde < nearest.tempsEnSeconde ? item : nearest
+  }, null)
+  if (!passage) return null
   const minutes = Math.round(passage.tempsEnSeconde / 60)
   // Sans numéro de véhicule, l'heure estimée permet de distinguer les passages.
   const vehicle = String(passage.numVehicule || '')

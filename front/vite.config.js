@@ -13,6 +13,7 @@ export default defineConfig({
     filename: 'sw.js',
     injectRegister: false,
     manifest: false,
+    devOptions: { enabled: true, type: 'module', navigateFallback: '/index.html' },
     injectManifest: { globPatterns: ['**/*.{js,css,html,png,ico}'] },
   })],
     resolve: {

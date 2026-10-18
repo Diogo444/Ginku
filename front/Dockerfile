@@ -3,11 +3,11 @@ FROM node:26-alpine AS build
 WORKDIR /app
 
 # pnpm + outils
-RUN npm install --global pnpm@11.9.0
 RUN apk add --no-cache curl
 
 # Copier les fichiers de workspace pour le cache
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+RUN npm install --global "$(node -p 'require("./package.json").packageManager.split("+")[0]')"
 COPY front/package.json ./front/
 
 # Install des deps du front uniquement

@@ -33,12 +33,16 @@ function handleClickOutside(e) {
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
 
-  abortController.value = new AbortController()
+  const controller = new AbortController()
+  abortController.value = controller
   try {
     const [arretsResult, lignesResult] = await Promise.allSettled([
-      getArrets(abortController.value.signal),
-      getLignes(abortController.value.signal)
+      getArrets(controller.signal),
+      getLignes(controller.signal)
     ])
+
+    // Quitter la page annule normalement ses appels : ne plus modifier cet écran.
+    if (controller.signal.aborted) return
 
     if (arretsResult.status === 'fulfilled') {
       arrets.value = arretsResult.value.filter((obj) => obj && typeof obj.nom === 'string' && obj.id)
@@ -54,11 +58,12 @@ onMounted(async () => {
       lignes.value = []
     }
   } catch (error) {
+    if (controller.signal.aborted) return
     console.error('Erreur lors de la requête:', error)
     arrets.value = []
     lignes.value = []
   } finally {
-    searchLoading.value = false
+    if (!controller.signal.aborted) searchLoading.value = false
   }
 })
 

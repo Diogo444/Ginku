@@ -76,6 +76,24 @@ Le frontend lit `VITE_API_BASE_URL` :
 - `front/.env.development` (dev) : `http://localhost:3000/api`
 - `front/.env.production` (build) : `/api` (prévu pour fonctionner derrière le reverse proxy Caddy)
 
+## Maintenance et vérifications
+
+Voir la [revue du 18 octobre 2026](docs/maintenance-2026-10-18.md) pour les changements,
+les contrôles effectués et les limites connues.
+
+```sh
+pnpm test
+pnpm -C front lint
+pnpm -C front run build
+pnpm -C front exec playwright install chromium
+pnpm -C front run test:pwa
+pnpm -C front run test:dev
+pnpm -C front exec cap sync android
+```
+
+Le build Android nécessite un JDK 21 et un SDK Android configuré via `ANDROID_HOME`
+ou `front/android/local.properties`. Depuis `front/android`, lancer `./gradlew assembleDebug`.
+
 ## Commandes utiles
 
 À la racine :

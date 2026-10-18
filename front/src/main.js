@@ -4,13 +4,15 @@ import App from './App.vue'
 import router from './router'
 import { initializeFavorites } from '@/stores/favorites'
 import { initializeTheme } from '@/stores/theme'
+import { initializeAccessibility } from '@/stores/accessibility'
 import { startStopNotificationsSync } from '@/composables/useStopNotifications'
 import { registerPwa } from '@/services/pwa'
 
 const startApp = async () => {
   await Promise.all([
     initializeFavorites(),
-    initializeTheme()
+    initializeTheme(),
+    initializeAccessibility()
   ])
 
   startStopNotificationsSync()

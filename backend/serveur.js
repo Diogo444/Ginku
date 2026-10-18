@@ -1,9 +1,8 @@
 import express from 'express'
 import { configDotenv } from 'dotenv'
-import axios from 'axios'
 import cors from 'cors'
-import http from 'http'
-import https from 'https'
+import { createGinkoClient, logUpstreamError } from './clients/ginko.js'
+import { parseCoordinate } from './utils/coordinates.js'
 import { initializeWebPush } from './notifications/index.js'
 
 configDotenv()
@@ -16,11 +15,7 @@ const REALTIME_TTL = 15 * 1000
 const NEARBY_TTL = 30 * 1000
 const VEHICLE_DETAILS_TTL = 24 * 60 * 60 * 1000
 
-const api = axios.create({
-  baseURL: 'https://api.ginko.voyage',
-  httpAgent: new http.Agent({ keepAlive: true }),
-  httpsAgent: new https.Agent({ keepAlive: true }),
-})
+const api = createGinkoClient()
 
 app.use(cors())
 
@@ -62,11 +57,6 @@ async function fetchWithCache(key, fetcher, ttl = DEFAULT_TTL) {
   inflight.set(key, request)
 
   return request
-}
-
-function parseCoordinate(value) {
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : null
 }
 
 function roundedCoordinateKey(latitude, longitude, precision = 3) {
@@ -274,7 +264,7 @@ app.get('/api/rechercherArrets', async (req, res) => {
       resultats: results,
     })
   } catch (error) {
-    console.error('[/api/rechercherArrets] error:', error?.response?.data || error)
+    logUpstreamError('[/api/rechercherArrets] error:', error)
     return res.status(502).json({ error: 'Erreur lors de la recherche des arrêts' })
   }
 })
@@ -495,7 +485,7 @@ app.get('/api/itineraire', async (req, res) => {
         'Itinéraires calculés selon les variantes du jour. Le départ de la première ligne est vérifié en temps réel lorsqu’un prochain passage est disponible, mais les horaires aux correspondances ne sont pas prédits.',
     })
   } catch (error) {
-    console.error('[/api/itineraire] error:', error?.response?.data || error)
+    logUpstreamError('[/api/itineraire] error:', error)
     return res.status(502).json({ error: 'Erreur lors du calcul de l’itinéraire' })
   }
 })
@@ -608,17 +598,17 @@ app.get('/api/getTempsArret/:idArret', async (req, res) => {
 
     return res.json(data)
   } catch (error) {
-    console.error(`[/api/getTempsArret/${idArret}] error:`, error?.response?.data || error)
+    logUpstreamError(`[/api/getTempsArret/${idArret}] error:`, error)
     return res.status(502).json({ error: 'Error fetching data' })
   }
 })
 
 app.get('/api/getArretsProches', async (req, res) => {
-  const latitude = parseCoordinate(req.query.latitude)
-  const longitude = parseCoordinate(req.query.longitude)
+  const latitude = parseCoordinate(req.query.latitude, 90)
+  const longitude = parseCoordinate(req.query.longitude, 180)
 
   if (latitude == null || longitude == null) {
-    return res.status(400).json({ error: 'Paramètres latitude et longitude requis' })
+    return res.status(400).json({ error: 'Latitude entre -90 et 90 et longitude entre -180 et 180 requises' })
   }
 
   const cacheKey = `getArretsProches-${roundedCoordinateKey(latitude, longitude)}`
@@ -633,7 +623,7 @@ app.get('/api/getArretsProches', async (req, res) => {
 
     return res.json(data)
   } catch (error) {
-    console.error('[/api/getArretsProches] error:', error?.response?.data || error)
+    logUpstreamError('[/api/getArretsProches] error:', error)
     return res.status(502).json({ error: 'Error fetching data' })
   }
 })
@@ -660,7 +650,7 @@ app.get('/api/etatLignes', async (_req, res) => {
 
     return res.json(data)
   } catch (error) {
-    console.error('[/api/etatLignes] error:', error)
+    logUpstreamError('[/api/etatLignes]', error)
     return res.status(502).json({ error: 'Upstream fetch failed' })
   }
 })
@@ -672,8 +662,7 @@ app.get('/api/messages/:idLigne', async (req, res) => {
   }
 
   try {
-    // Même base que l’URL appelée + clé unique par idLigne (et apiKey si besoin)
-    const cacheKey = `/TR/getMessages.do?apiKey=${APIKEY}&idLignes=${encodeURIComponent(idLigne)}`
+    const cacheKey = `messages-${idLigne}`
 
     const data = await fetchWithCache(cacheKey, async () => {
       const response = await api.get('/TR/getMessages.do', {
@@ -684,7 +673,7 @@ app.get('/api/messages/:idLigne', async (req, res) => {
 
     res.json(data)
   } catch (error) {
-    console.error('Error fetching /DR/getMessages.do:', error?.response?.data || error)
+    logUpstreamError('Error fetching /DR/getMessages.do:', error)
     res.status(502).json({ error: 'Error fetching data' })
   }
 })

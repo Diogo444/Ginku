@@ -6,6 +6,8 @@ precacheAndRoute(self.__WB_MANIFEST)
 // Seule l'interface est disponible hors ligne. Les horaires restent toujours réseau.
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
   denylist: [/^\/api(?:\/|$)/],
+  // En développement, laisser Vite servir les modules, routes et mises à jour HMR.
+  allowlist: import.meta.env.DEV ? [/^\/$/] : undefined,
 }))
 
 self.addEventListener('push', (event) => {

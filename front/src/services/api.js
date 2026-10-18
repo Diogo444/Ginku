@@ -23,6 +23,10 @@ const buildKey = (url, params = {}) => `${url}|${JSON.stringify(params)}`
  * Effectue une requête GET avec cache
  */
 async function get(url, config = {}) {
+  if (config.signal?.aborted) throw new axios.CanceledError()
+  // Un signal appartient à son écran : son annulation ne doit pas se propager
+  // aux autres consommateurs de la même URL. Seuls les appels sans signal partagent leur promesse.
+  const canShare = !config.signal
   const key = buildKey(url, config.params || {})
   const cached = cache.get(key)
   const now = Date.now()
@@ -34,7 +38,7 @@ async function get(url, config = {}) {
   }
 
   // Évite les requêtes en double
-  if (inflight.has(key)) {
+  if (canShare && inflight.has(key)) {
     return inflight.get(key)
   }
 
@@ -50,18 +54,17 @@ async function get(url, config = {}) {
         throw error
       }
 
-      return {
-        data: null,
-        status: error?.response?.status ?? 0,
-        error: true,
-        message: error?.message || 'Request failed',
-      }
+      // Les écrans doivent distinguer une panne d'une liste réellement vide.
+      // Conserver le rejet permet à leurs états d'erreur et boutons Réessayer de fonctionner.
+      throw new Error(error?.response
+        ? 'Le serveur ne peut pas charger les données. Réessayez dans un instant.'
+        : 'Connexion au serveur impossible. Vérifiez votre connexion et réessayez.')
     })
     .finally(() => {
-      inflight.delete(key)
+      if (canShare) inflight.delete(key)
     })
 
-  inflight.set(key, request)
+  if (canShare) inflight.set(key, request)
   return request
 }
 

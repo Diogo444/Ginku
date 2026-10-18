@@ -1,0 +1,138 @@
+/* Palette volontairement franche : textes noir/blanc, accent Ginku >= 7:1.
+   Les utilitaires existants sont adaptés uniquement lorsque le réglage est actif.
+   Aucun filtre global : images, cartes et autres médias gardent leur rendu. */
+html.high-contrast {
+  --hc-background: #fff;
+  --hc-surface: #fff;
+  --hc-text: #000;
+  --hc-border: #111;
+  --hc-accent: #8a0020;
+  --hc-on-accent: #fff;
+  background-color: var(--hc-background);
+  color: var(--hc-text);
+  color-scheme: light;
+}
+
+html.high-contrast.dark {
+  --hc-background: #000;
+  --hc-surface: #080808;
+  --hc-text: #fff;
+  --hc-border: #eee;
+  --hc-accent: #ffb3c1;
+  --hc-on-accent: #000;
+  color-scheme: dark;
+}
+
+.high-contrast body {
+  color: var(--hc-text);
+  background-color: var(--hc-background);
+}
+
+.high-contrast :where(
+  [class*="bg-background-"], [class*="bg-surface-"], [class*="bg-gray-"],
+  [class*="bg-white"], [class*="bg-primary/"], .bg-primary-soft,
+  [class*="bg-red-"], [class*="bg-rose-"], [class*="bg-green-"],
+  [class*="bg-blue-"], [class*="bg-yellow-"], [class*="bg-orange-"],
+  [class*="bg-teal-"], [class*="bg-purple-"], [class*="bg-amber-"], [class*="bg-cyan-"]
+) {
+  background-color: var(--hc-surface) !important;
+}
+
+.high-contrast :where([class*="bg-background-"]) {
+  background-color: var(--hc-background) !important;
+}
+
+.high-contrast :where(
+  [class*="text-gray-"], [class*="text-red-"], [class*="text-rose-"],
+  [class*="text-green-"], [class*="text-blue-"], [class*="text-yellow-"],
+  [class*="text-orange-"], [class*="text-teal-"], [class*="text-purple-"],
+  [class*="text-amber-"], [class*="text-cyan-"], [class*="text-line-"], .text-white, .text-black
+) {
+  color: var(--hc-text) !important;
+}
+
+.high-contrast .text-primary {
+  color: var(--hc-accent) !important;
+}
+
+.high-contrast .bg-primary {
+  background-color: var(--hc-accent) !important;
+  color: var(--hc-on-accent) !important;
+}
+
+.high-contrast .bg-primary :where(*) {
+  color: inherit !important;
+}
+
+/* Les numéros restent lisibles même quand les couleurs fournies par Ginko
+   n'offrent pas assez de contraste. L'identification ne dépend pas de la couleur. */
+.high-contrast [data-line-badge] {
+  background-color: var(--hc-surface) !important;
+  color: var(--hc-text) !important;
+  border-color: var(--hc-border) !important;
+}
+
+.high-contrast :where([class*="border"], .timeline-connector) {
+  border-color: var(--hc-border) !important;
+}
+
+.high-contrast .timeline-connector {
+  background-color: var(--hc-border);
+}
+
+/* Les champs et actions pleines gardent un contour renforcé ; les boutons
+   d'icône et les switches conservent leur forme sans cadre supplémentaire. */
+.high-contrast :where(input, select, textarea, button.bg-primary, button.bg-rose-700, button.bg-rose-800) {
+  border: 2px solid var(--hc-border);
+}
+
+.high-contrast :where(input, textarea)::placeholder {
+  color: var(--hc-text);
+  opacity: 1;
+}
+
+.high-contrast :where([class*="shadow-"]) {
+  box-shadow: none !important;
+}
+
+.high-contrast :where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--hc-accent) !important;
+  outline-offset: 3px !important;
+  box-shadow: none !important;
+}
+
+.high-contrast [aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 700;
+}
+
+.high-contrast :disabled {
+  opacity: 1;
+  border-style: dashed;
+}
+
+.high-contrast .contrast-switch-track {
+  background-color: var(--hc-surface) !important;
+  border: 2px solid var(--hc-text);
+}
+
+.high-contrast .contrast-switch-thumb {
+  background-color: var(--hc-text) !important;
+}
+
+.high-contrast [aria-checked="true"] .contrast-switch-track {
+  background-color: var(--hc-accent) !important;
+}
+
+.high-contrast [aria-checked="true"] .contrast-switch-thumb {
+  background-color: var(--hc-on-accent) !important;
+}
+
+/* Éviter les couleurs intermédiaires peu lisibles pendant un changement de thème. */
+html.high-contrast,
+.high-contrast *,
+.high-contrast *::before,
+.high-contrast *::after {
+  transition: none !important;
+}

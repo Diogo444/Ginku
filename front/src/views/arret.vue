@@ -3,7 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTempsLieu, getVariantesDesservantArret } from '@/services/api'
 import { generateFavoriteId, isFavorite, toggleFavorite } from '@/stores/favorites'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import BackButton from '@/components/BackButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
       
       <!-- Toggle thème -->
       <div class="absolute right-4 sm:right-6 top-4 sm:top-6">
-        <ThemeToggle />
+        <ProfileButton />
       </div>
     </header>
     

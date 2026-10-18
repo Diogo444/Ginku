@@ -61,6 +61,14 @@ test('sans numéro de véhicule, distingue un nouveau passage éloigné', () => 
   assert.ok(evaluateArrival(stop, [passage(60, '')], older).payload)
 })
 
+test('choisit le prochain passage valide même si les horaires sont désordonnés', () => {
+  const values = [null, passage(-1), passage('30'), passage(600, '43'), passage(60), passage(120, '44')]
+  const update = evaluateArrival(stop, values, null)
+  assert.equal(update.state.vehicle, '42')
+  assert.match(update.payload.body, /1 min/)
+  assert.equal(evaluateArrival(stop, values.toReversed(), update.state).payload, null)
+})
+
 test('refuse endpoints privés, HTTP, fournisseurs inconnus et clés incorrectes', () => {
   for (const endpoint of ['https://127.0.0.1/push', 'http://fcm.googleapis.com/push', 'https://example.com/push', 'https://fcm.googleapis.com:8443/push', 'https://user@fcm.googleapis.com/push']) {
     assert.throws(() => validateSubscription({ ...subscription(), endpoint }), { status: 400 })
@@ -219,6 +227,13 @@ test('backend réel configuré avec VAPID : démarrage et gestion HTTP des abonn
     child.once('exit', () => { clearTimeout(timeout); reject(new Error('Backend arrêté avant le démarrage')) })
   })
   const base = `http://127.0.0.1:${port}/api/notifications`
+  const serverBase = `http://127.0.0.1:${port}`
+  assert.equal(await (await fetch(`${serverBase}/health`)).text(), 'ok')
+  for (const query of ['', '?latitude=47abc&longitude=6', '?latitude=91&longitude=6', '?latitude=47&longitude=181', '?latitude=47&latitude=48&longitude=6']) {
+    const invalid = await fetch(`${serverBase}/api/getArretsProches${query}`)
+    assert.equal(invalid.status, 400)
+    assert.match((await invalid.json()).error, /Latitude/)
+  }
   const config = await (await fetch(`${base}/config`)).json()
   assert.equal(config.enabled, true)
   assert.equal(config.publicKey, keys.publicKey)

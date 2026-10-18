@@ -2,15 +2,14 @@
 FROM node:26-alpine AS build
 WORKDIR /app
 
-# Installer la version de pnpm declaree dans package.json
-RUN npm install --global pnpm@11.9.0
-
 # Copier workspace + lockfile + config pnpm racine
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Utiliser la même version de pnpm en local et dans les images.
+RUN npm install --global "$(node -p 'require("./package.json").packageManager.split("+")[0]')"
 COPY backend/package.json ./backend/
 
 # Install des deps backend uniquement
-RUN pnpm install --frozen-lockfile --filter ./backend...
+RUN pnpm install --frozen-lockfile --prod --filter ./backend...
 
 # Copier le code
 COPY backend ./backend

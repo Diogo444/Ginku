@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { getLignes } from '@/services/api'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import LineBadge from '@/components/LineBadge.vue'
 import Loader from '@/components/loader.vue'
 import ErrorState from '@/components/ErrorState.vue'
@@ -84,7 +84,7 @@ const groupedLignes = computed(() => {
           <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Le Réseau</h1>
           <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Explorez toutes les lignes</p>
         </div>
-        <ThemeToggle />
+        <ProfileButton />
       </div>
     </header>
     

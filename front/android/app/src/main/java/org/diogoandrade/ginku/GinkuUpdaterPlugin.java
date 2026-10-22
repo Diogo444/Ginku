@@ -17,6 +17,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.io.File;
+import java.util.Locale;
 
 @CapacitorPlugin(name = "GinkuUpdater")
 public class GinkuUpdaterPlugin extends Plugin {
@@ -175,7 +176,7 @@ public class GinkuUpdaterPlugin extends Plugin {
             !RELEASE_HOST.equalsIgnoreCase(host) ||
             path == null ||
             !path.startsWith(RELEASE_PATH_PREFIX) ||
-            !path.toLowerCase().endsWith(".apk")
+            !path.toLowerCase(Locale.ROOT).endsWith(".apk")
         ) {
             return null;
         }

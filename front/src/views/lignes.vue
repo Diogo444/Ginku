@@ -89,7 +89,7 @@ const groupedLignes = computed(() => {
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-4 sm:px-6 pb-8 space-y-5 sm:space-y-6 pt-3 sm:pt-4">
+    <div class="flex-grow px-4 sm:px-6 pb-8 space-y-5 sm:space-y-6 pt-3 sm:pt-4">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -149,6 +149,6 @@ const groupedLignes = computed(() => {
       <div v-else class="text-center text-gray-500 dark:text-gray-400 mt-10">
         Aucune ligne trouvée.
       </div>
-    </main>
+    </div>
   </div>
 </template>

@@ -31,6 +31,7 @@ const lignes = ref([])
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const searchWrapperRef = ref(null)
+const searchInputRef = ref(null)
 const searchLoading = ref(true)
 const abortController = ref(null)
 
@@ -305,28 +306,30 @@ const formatTempsHoraire = (horaire) => {
       </div>
 
       <!-- Barre de recherche -->
-      <div ref="searchWrapperRef" class="relative mb-2" role="search">
+      <div ref="searchWrapperRef" class="relative mb-2" role="search" @keydown.escape="searchInputRef?.focus(); showDropdown = false">
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-30" aria-hidden="true">
           <span class="material-icons-round text-primary">search</span>
         </div>
         <input
+          ref="searchInputRef"
           v-model="searchTerm"
           @focus="showDropdown = searchResults.length > 0"
-          @keydown.escape="showDropdown = false"
-          type="text"
+          type="search"
           :placeholder="searchLoading ? 'Chargement...' : 'Rechercher une ligne, un arrêt, un véhicule...'"
           :disabled="searchLoading"
           :class="[
-            'relative z-20 w-full py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 shadow-sm transition-all text-sm sm:text-base font-normal focus:outline-none',
+            'relative z-20 w-full py-3 sm:py-3.5 pl-11 sm:pl-12 pr-4 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-600 dark:placeholder-gray-400 shadow-sm transition-all text-sm sm:text-base font-normal focus:outline-none',
             showDropdown && searchResults.length > 0
               ? 'rounded-t-2xl rounded-b-none border-b-0 focus:border-gray-200 dark:focus:border-gray-700'
               : 'rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary'
           ]"
           autocomplete="off"
           aria-label="Rechercher une ligne, un arrêt ou un véhicule"
-          :aria-expanded="showDropdown"
           aria-controls="search-results"
+          aria-describedby="search-results-status"
         />
+
+        <p id="search-results-status" role="status" class="sr-only">{{ showDropdown ? `${searchResults.length} résultat(s). Utilisez la touche Tabulation pour parcourir les liens.` : '' }}</p>
 
         <!-- Dropdown résultats -->
         <div
@@ -334,12 +337,11 @@ const formatTempsHoraire = (horaire) => {
           id="search-results"
           class="absolute top-full left-0 w-full bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 border-t-0 rounded-b-2xl shadow-xl z-10 overflow-hidden"
         >
-          <ul role="listbox">
+          <ul>
             <li
               v-for="result in searchResults"
               :key="result.key"
               class="border-b border-gray-50 dark:border-gray-800 last:border-0"
-              role="option"
             >
               <router-link
                 :to="result.to"
@@ -385,7 +387,7 @@ const formatTempsHoraire = (horaire) => {
     </header>
 
     <!-- Contenu principal -->
-    <main class="flex-grow px-4 sm:px-6 pb-8 space-y-6 sm:space-y-8 pt-3 sm:pt-4">
+    <div class="flex-grow px-4 sm:px-6 pb-8 space-y-6 sm:space-y-8 pt-3 sm:pt-4">
       <!-- Section Favoris -->
       <PwaStatus />
       <section>
@@ -489,6 +491,6 @@ const formatTempsHoraire = (horaire) => {
         </EmptyState>
       </section>
 
-    </main>
+    </div>
   </div>
 </template>

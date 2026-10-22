@@ -275,7 +275,7 @@ onBeforeUnmount(() => {
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-3 sm:px-4 pb-8 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
+    <div class="flex-grow px-3 sm:px-4 pb-8 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -372,7 +372,7 @@ onBeforeUnmount(() => {
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Pas de véhicule prévu prochainement à cet arrêt</p>
       </div>
 
-    </main>
+    </div>
     
     <!-- Modal Véhicule -->
     <VehicleModal 

@@ -338,3 +338,20 @@ test('profil : cartes légales accessibles au clavier et liens retirés du foote
     await expect(page).toHaveURL(/\/profil$/)
   }
 })
+
+test('recherche : suggestions accessibles par Tabulation et fermeture avec Échap', async ({ page, context }) => {
+  await context.route('**/api/**', (route) => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/getLingnes') ? [line] : [] }))
+  await page.goto('/')
+  const search = page.getByRole('searchbox', { name: 'Rechercher une ligne, un arrêt ou un véhicule' })
+  await expect(search).toBeEnabled()
+  await search.fill('T1')
+  const result = page.getByRole('link', { name: 'Aller à Ligne T1', exact: true })
+  await expect(result).toBeVisible()
+  await search.press('Tab')
+  await expect(result).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(search).toBeFocused()
+  await expect(result).not.toBeVisible()
+  await page.getByRole('link', { name: 'Ouvrir mon profil' }).click()
+  await expect(page.getByRole('link', { name: 'Contacter le support' })).toHaveAttribute('href', 'mailto:ginku@diogo-andrade.org')
+})

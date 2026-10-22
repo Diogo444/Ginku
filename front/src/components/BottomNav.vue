@@ -28,7 +28,7 @@ const isActive = (item) => {
         'bottom-nav-item group transition-colors',
         isActive(item) 
           ? 'text-primary' 
-          : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
       ]"
       :aria-label="`Aller à ${item.name}`"
       :aria-current="isActive(item) ? 'page' : undefined"

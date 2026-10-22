@@ -162,7 +162,7 @@ onBeforeUnmount(() => {
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-4 sm:px-6 pb-8 pt-4 sm:pt-6">
+    <div class="flex-grow px-4 sm:px-6 pb-8 pt-4 sm:pt-6">
       <!-- Header avec compteur et bouton inverser -->
       <div class="flex justify-between items-center mb-4 sm:mb-6">
         <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
@@ -236,6 +236,6 @@ onBeforeUnmount(() => {
         Aucun arrêt trouvé pour {{ numLigne }}.
       </div>
 
-    </main>
+    </div>
   </div>
 </template>

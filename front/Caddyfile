@@ -3,10 +3,22 @@
 
   root * /srv
 
-  # Fallback SPA : toute URL non fichier retourne index.html
-  try_files {path} {path}/ /index.html
+  route {
+    # Seuls les fichiers Vite avec empreinte peuvent rester immuables.
+    # Un ancien chunk absent doit retourner 404, jamais du HTML mis en cache.
+    handle /assets/* {
+      @existing file
+      header @existing Cache-Control "public, max-age=31536000, immutable"
+      file_server
+    }
 
-  file_server
+    handle {
+      # Revalider aussi les fichiers publics sans empreinte, notamment sw.js.
+      header Cache-Control "no-cache"
+      try_files {path} {path}/ /index.html
+      file_server
+    }
+  }
 
   header {
     Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
@@ -17,24 +29,13 @@
     Permissions-Policy "geolocation=(self), microphone=(), camera=()"
   }
 
-  # Cache pour les assets statiques
-  @assets path *.js *.css *.woff2 *.woff *.ttf *.png *.jpg *.jpeg *.webp *.svg *.ico
-  header @assets Cache-Control "public, max-age=31536000, immutable"
-
-  # Cache court pour le HTML (pour permettre les mises à jour)
-  @html path *.html /
-  header @html Cache-Control "public, max-age=3600, must-revalidate"
-
   # Forcer le bon Content-Type pour les fichiers importants
   @sitemap path /sitemap.xml
   header @sitemap Content-Type "application/xml; charset=utf-8"
-  header @sitemap Cache-Control "public, max-age=86400"
 
   @robots path /robots.txt
   header @robots Content-Type "text/plain; charset=utf-8"
-  header @robots Cache-Control "public, max-age=86400"
 
   @manifest path /manifest.json
   header @manifest Content-Type "application/manifest+json; charset=utf-8"
-  header @manifest Cache-Control "public, max-age=86400"
 }

@@ -7,6 +7,8 @@ const STORAGE_KEY = 'ginku-favorites'
 let initializationPromise = null
 let persistenceQueue = Promise.resolve()
 
+export const waitForFavoritesPersistence = () => persistenceQueue
+
 /**
  * Structure d'un favori :
  * {

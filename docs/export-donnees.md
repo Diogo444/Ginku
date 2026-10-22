@@ -3,7 +3,8 @@
 La carte « Exporter mes données », dans « Mon profil » → « Vos données », crée
 un fichier JSON contenant les données enregistrées par l’application dans
 `localStorage` et Capacitor Preferences. L’export lit les stockages sans les modifier.
-L’import et la restauration ne sont pas encore disponibles.
+La carte « Importer mes données » permet de restaurer ce fichier après confirmation ;
+voir [l’import des données](import-donnees.md).
 
 ## Utilisation
 
@@ -94,8 +95,10 @@ Exemple simplifié d’un export Android :
 | `storage.localStorage` | Objet associant chaque clé Web à sa valeur brute, chaîne ou `null` |
 | `storage.preferences` | Objet associant chaque clé Preferences à sa valeur brute, chaîne ou `null` |
 
-Ces sections restent séparées pour permettre une future restauration fidèle.
-La compatibilité d’un futur import entre plateformes reste à définir et à tester.
+Ces sections restent séparées pour distinguer les stockages d’origine.
+L’import normalise les préférences entre Web et Android ; sa priorité entre copies,
+ses validations et l’exclusion des identifiants Web Push sont décrites dans
+[le contrat d’import](import-donnees.md).
 
 ## Implémentation et accessibilité
 

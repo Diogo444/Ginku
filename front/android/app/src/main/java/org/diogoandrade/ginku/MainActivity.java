@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GinkuUpdaterPlugin.class);
         registerPlugin(GinkuStopWatcherPlugin.class);
         registerPlugin(GinkuDataExportPlugin.class);
+        registerPlugin(GinkuDataImportPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

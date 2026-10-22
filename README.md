@@ -11,14 +11,15 @@ les alertes à 8, 5 puis 2 minutes restantes, sur Web et Android.
 - [Utilisation, accessibilité, données et vérification](docs/notifications-par-favori.md)
 - [Configuration du serveur Web Push et de la PWA](docs/web-pwa-notifications.md)
 
-## Export des données
+## Export et import des données
 
 Depuis « Mon profil » → « Vos données » → « Exporter mes données », télécharger
 une sauvegarde JSON du stockage local et des préférences de l’application.
 Sur Android, le sélecteur système permet de choisir l’emplacement du fichier.
-L’import n’est pas encore disponible.
+La carte « Importer mes données » restaure une sauvegarde après validation et confirmation.
 
 - [Utilisation, format JSON et vérifications Web/Android](docs/export-donnees.md)
+- [Import, compatibilité Web/Android et gestion des erreurs](docs/import-donnees.md)
 
 ## Stack technique
 

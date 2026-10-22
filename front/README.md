@@ -6,6 +6,7 @@ Voir [la configuration et les essais](../docs/web-pwa-notifications.md), ainsi q
 
 Le profil permet aussi d’[exporter les données locales et les préférences en JSON](../docs/export-donnees.md),
 sur Web et Android.
+La carte d’[import des données](../docs/import-donnees.md) permet de restaurer ces sauvegardes.
 
 This template should help get you started developing with Vue 3 in Vite.
 

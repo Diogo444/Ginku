@@ -20,12 +20,12 @@ const abortController = ref(null)
 
 // Configuration des états
 const ETAT_CONFIG = {
-  1: { label: 'Normal', color: 'green', icon: 'check_circle', bgColor: 'bg-green-50 dark:bg-green-900/10', textColor: 'text-green-600 dark:text-green-400', borderColor: 'border-green-500' },
-  2: { label: 'Information', color: 'blue', icon: 'info', bgColor: 'bg-blue-50 dark:bg-blue-900/10', textColor: 'text-blue-600 dark:text-blue-400', borderColor: 'border-blue-500' },
+  1: { label: 'Normal', color: 'green', icon: 'check_circle', bgColor: 'bg-green-50 dark:bg-green-900/10', textColor: 'text-green-700 dark:text-green-400', borderColor: 'border-green-500' },
+  2: { label: 'Information', color: 'blue', icon: 'info', bgColor: 'bg-blue-50 dark:bg-blue-900/10', textColor: 'text-blue-700 dark:text-blue-400', borderColor: 'border-blue-500' },
   3: { label: 'Hors service', color: 'gray', icon: 'cancel', bgColor: 'bg-gray-50 dark:bg-gray-900/10', textColor: 'text-gray-600 dark:text-gray-400', borderColor: 'border-gray-500' },
-  4: { label: 'Perturbation prévue', color: 'yellow', icon: 'schedule', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20', textColor: 'text-yellow-700 dark:text-yellow-500', borderColor: 'border-yellow-500' },
-  5: { label: 'Perturbation en cours', color: 'orange', icon: 'warning', bgColor: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-600 dark:text-orange-400', borderColor: 'border-orange-500' },
-  6: { label: 'Circulation interrompue', color: 'red', icon: 'construction', bgColor: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500' }
+  4: { label: 'Perturbation prévue', color: 'yellow', icon: 'schedule', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20', textColor: 'text-yellow-800 dark:text-yellow-300', borderColor: 'border-yellow-500' },
+  5: { label: 'Perturbation en cours', color: 'orange', icon: 'warning', bgColor: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-800 dark:text-orange-300', borderColor: 'border-orange-500' },
+  6: { label: 'Circulation interrompue', color: 'red', icon: 'construction', bgColor: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-700 dark:text-red-300', borderColor: 'border-red-500' }
 }
 
 async function loadData() {
@@ -173,7 +173,7 @@ const maxEtat = computed(() => {
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+    <div class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -262,7 +262,7 @@ const maxEtat = computed(() => {
         <p class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300">Aucune perturbation</p>
         <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Cette ligne fonctionne normalement</p>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 

@@ -6,7 +6,7 @@
 
 @theme {
   /* Couleurs principales selon le design */
-  --color-primary: #D84358;
+  --color-primary: #C52D45;
   --color-primary-soft: #FFEDF0;
   
   /* Backgrounds */
@@ -171,4 +171,24 @@
 .ft-reg-bubble,
 .ft-styless-button {
   display: none !important;
+}
+
+/* Accent lisible sur les surfaces sombres, sans modifier la palette de contraste élevé. */
+html.dark:not(.high-contrast) .text-primary {
+  color: #ffa6b7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot::after {
+    animation: none;
+  }
+  .modal-enter-active,
+  .modal-leave-active,
+  .backdrop-enter-active,
+  .backdrop-leave-active,
+  .bottom-nav-item .material-icons-round {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
 }

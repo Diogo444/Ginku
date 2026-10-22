@@ -9,6 +9,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(GinkuUpdaterPlugin.class);
         registerPlugin(GinkuStopWatcherPlugin.class);
+        registerPlugin(GinkuDataExportPlugin.class);
+        registerPlugin(GinkuDataImportPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

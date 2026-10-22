@@ -49,10 +49,30 @@ const sizeClasses = computed(() => {
 })
 
 const toHex = (color) => {
-  if (!color) return '#222222'
-  const clean = String(color).replace('#', '').trim()
-  return `#${clean}`
+  const clean = String(color || '').replace('#', '').trim()
+  return /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(clean) ? `#${clean}` : '#222222'
 }
+
+function luminance(hex) {
+  const expanded = hex.length === 4 ? hex.slice(1).split('').map((digit) => digit + digit).join('') : hex.slice(1)
+  const channels = expanded.match(/../g).map((pair) => {
+    const value = Number.parseInt(pair, 16) / 255
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  })
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+}
+
+const badgeColors = computed(() => {
+  const backgroundColor = toHex(props.couleurFond)
+  let color = toHex(props.couleurTexte)
+  const background = luminance(backgroundColor)
+  const foreground = luminance(color)
+  const ratio = (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05)
+  // Conserver la couleur Ginko lorsqu'elle est lisible, sinon choisir le meilleur
+  // contraste noir/blanc pour les petits numéros (minimum 4,5:1).
+  if (ratio < 4.5) color = (background + 0.05) / 0.05 >= 1.05 / (background + 0.05) ? '#000000' : '#FFFFFF'
+  return { backgroundColor, color }
+})
 </script>
 
 <template>
@@ -63,10 +83,7 @@ const toHex = (color) => {
       isLongText ? 'rounded-full' : 'rounded-full',
       sizeClasses
     ]"
-    :style="{
-      backgroundColor: toHex(couleurFond),
-      color: toHex(couleurTexte)
-    }"
+    :style="badgeColors"
     :aria-label="'Ligne ' + num"
     role="img"
   >

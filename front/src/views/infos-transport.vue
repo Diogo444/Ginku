@@ -99,7 +99,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+    <div class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -219,7 +219,7 @@ const climConfig = computed(() => CLIM_CONFIG[details.value?.climatisation] || C
         <p class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300">Véhicule introuvable</p>
         <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Aucune information disponible pour ce véhicule</p>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 

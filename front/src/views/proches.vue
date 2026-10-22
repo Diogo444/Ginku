@@ -697,7 +697,7 @@ onBeforeUnmount(() => {
       <p class="sr-only" aria-live="polite">{{ liveAnnouncement }}</p>
     </header>
 
-    <main class="flex-grow space-y-4 px-4 pb-8 pt-4 sm:px-6 sm:pt-6">
+    <div class="flex-grow space-y-4 px-4 pb-8 pt-4 sm:px-6 sm:pt-6">
       <Loader v-if="loading && !nearbyStops.length" />
 
       <section
@@ -998,6 +998,6 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </section>
-    </main>
+    </div>
   </div>
 </template>

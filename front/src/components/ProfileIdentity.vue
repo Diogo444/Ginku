@@ -90,6 +90,6 @@ async function saveName() {
       </div>
     </form>
     <p v-if="error" id="profile-name-error" role="alert" class="mt-3 text-sm text-red-700 dark:text-red-300">{{ error }}</p>
-    <p role="status" class="mt-2 text-xs text-gray-600 dark:text-gray-300 empty:hidden">{{ status }}</p>
+    <p role="status" :class="['text-xs text-gray-600 dark:text-gray-300', status ? 'mt-2' : '']">{{ status }}</p>
   </section>
 </template>

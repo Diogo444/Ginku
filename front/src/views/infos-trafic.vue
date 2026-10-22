@@ -16,12 +16,12 @@ const abortController = ref(null)
 
 // États des lignes avec leurs significations
 const ETAT_CONFIG = {
-  1: { label: 'Normal', color: 'green', icon: 'check_circle', bgColor: 'bg-green-50 dark:bg-green-900/10', textColor: 'text-green-600 dark:text-green-400', borderColor: 'border-green-500' },
-  2: { label: 'Information', color: 'blue', icon: 'info', bgColor: 'bg-blue-50 dark:bg-blue-900/10', textColor: 'text-blue-600 dark:text-blue-400', borderColor: 'border-blue-500' },
+  1: { label: 'Normal', color: 'green', icon: 'check_circle', bgColor: 'bg-green-50 dark:bg-green-900/10', textColor: 'text-green-700 dark:text-green-400', borderColor: 'border-green-500' },
+  2: { label: 'Information', color: 'blue', icon: 'info', bgColor: 'bg-blue-50 dark:bg-blue-900/10', textColor: 'text-blue-700 dark:text-blue-400', borderColor: 'border-blue-500' },
   3: { label: 'Hors service', color: 'gray', icon: 'cancel', bgColor: 'bg-gray-50 dark:bg-gray-900/10', textColor: 'text-gray-600 dark:text-gray-400', borderColor: 'border-gray-500' },
-  4: { label: 'Perturbation prévue', color: 'yellow', icon: 'schedule', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20', textColor: 'text-yellow-700 dark:text-yellow-500', borderColor: 'border-yellow-500' },
-  5: { label: 'Perturbation en cours', color: 'orange', icon: 'warning', bgColor: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-600 dark:text-orange-400', borderColor: 'border-orange-500' },
-  6: { label: 'Circulation interrompue', color: 'red', icon: 'construction', bgColor: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500' }
+  4: { label: 'Perturbation prévue', color: 'yellow', icon: 'schedule', bgColor: 'bg-yellow-50 dark:bg-yellow-900/20', textColor: 'text-yellow-800 dark:text-yellow-300', borderColor: 'border-yellow-500' },
+  5: { label: 'Perturbation en cours', color: 'orange', icon: 'warning', bgColor: 'bg-orange-50 dark:bg-orange-900/20', textColor: 'text-orange-800 dark:text-orange-300', borderColor: 'border-orange-500' },
+  6: { label: 'Circulation interrompue', color: 'red', icon: 'construction', bgColor: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-700 dark:text-red-300', borderColor: 'border-red-500' }
 }
 
 // Charger les données
@@ -160,7 +160,7 @@ const stripHtml = (html) => {
     </header>
     
     <!-- Contenu -->
-    <main class="flex-grow px-4 sm:px-6 pb-8 space-y-4 sm:space-y-6 pt-3 sm:pt-4">
+    <div class="flex-grow px-4 sm:px-6 pb-8 space-y-4 sm:space-y-6 pt-3 sm:pt-4">
       <!-- Loading -->
       <Loader v-if="loading" />
       
@@ -174,9 +174,9 @@ const stripHtml = (html) => {
             <span class="material-icons-round text-xl sm:text-2xl">{{ networkSummary.icon }}</span>
           </div>
           <div>
-            <h3 class="font-semibold text-xs sm:text-sm" :class="networkSummary.status === 'ok' ? 'text-green-800 dark:text-green-200' : networkSummary.status === 'warning' ? 'text-yellow-800 dark:text-yellow-200' : 'text-red-800 dark:text-red-200'">
+            <h2 class="font-semibold text-xs sm:text-sm" :class="networkSummary.status === 'ok' ? 'text-green-800 dark:text-green-200' : networkSummary.status === 'warning' ? 'text-yellow-800 dark:text-yellow-200' : 'text-red-800 dark:text-red-200'">
               {{ networkSummary.title }}
-            </h3>
+            </h2>
             <p class="text-[10px] sm:text-xs" :class="networkSummary.status === 'ok' ? 'text-green-700 dark:text-green-300/80' : networkSummary.status === 'warning' ? 'text-yellow-700 dark:text-yellow-300/80' : 'text-red-700 dark:text-red-300/80'">
               {{ networkSummary.subtitle }}
             </p>
@@ -222,7 +222,7 @@ const stripHtml = (html) => {
             
             <!-- Lignes impactées -->
             <div v-if="msg.ligne || msg.lignes?.length" class="flex items-center gap-2 mt-0.5 sm:mt-1 pt-2.5 sm:pt-3 border-t border-gray-100 dark:border-gray-800">
-              <span class="text-[10px] sm:text-xs text-gray-500">Ligne impactée :</span>
+              <span class="text-[10px] sm:text-xs text-gray-600 dark:text-gray-300">Ligne impactée :</span>
               <div class="flex -space-x-2">
                 <LineBadge 
                   v-if="msg.ligne"
@@ -273,6 +273,6 @@ const stripHtml = (html) => {
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Aucune perturbation signalée sur le réseau</p>
         </div>
       </template>
-    </main>
+    </div>
   </div>
 </template>

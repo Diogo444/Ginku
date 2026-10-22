@@ -1,4 +1,202 @@
 import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+
+test('profil : export JSON complet au clavier, sans modifier les données', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  await expect(page.getByRole('button', { name: 'Exporter mes données', exact: true })).toBeVisible()
+  const stored = JSON.parse(await page.evaluate(() => {
+    localStorage.setItem('CapacitorStorage.export-test-preference', '{"enabled":true}')
+    localStorage.setItem('ginku-profile-name', 'Élodie 🚋')
+    localStorage.setItem('export-test-empty', '')
+    localStorage.setItem('__proto__', 'valeur à conserver')
+    localStorage.setItem('export-test-raw', '{JSON invalide')
+    return JSON.stringify(Object.fromEntries(Object.keys(localStorage).map((key) => [key, localStorage.getItem(key)])))
+  }))
+  const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await button.focus()
+  const downloadEvent = page.waitForEvent('download')
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText('vos favoris, votre nom, vos réglages')
+  await expect(dialog.getByRole('button', { name: 'Annuler', exact: true })).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(dialog.getByRole('button', { name: 'Exporter', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  const download = await downloadEvent
+  expect(download.suggestedFilename()).toMatch(/^ginku-sauvegarde-.*\.json$/)
+  const backup = JSON.parse(await readFile(await download.path(), 'utf8'))
+  expect(backup).toMatchObject({ app: 'Ginku', version: 1, platform: 'web' })
+  expect(Number.isNaN(Date.parse(backup.exportedAt))).toBe(false)
+  expect(backup.storage.localStorage).toEqual(stored)
+  expect(backup.storage.preferences['export-test-preference']).toBe('{"enabled":true}')
+  expect(JSON.parse(await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.keys(localStorage).map((key) => [key, localStorage.getItem(key)])))))).toEqual(stored)
+  await expect(page.getByRole('status').filter({ hasText: 'Le téléchargement de votre sauvegarde JSON a été lancé.' })).toBeVisible()
+  await expect(button).toBeEnabled()
+  await expect(dialog).not.toBeVisible()
+  await expect(button).toBeFocused()
+})
+
+test('profil : annuler la fenêtre d’export ne lit pas les données et ne télécharge rien', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await expect(button).toBeVisible()
+  const downloads = []
+  page.on('download', (download) => downloads.push(download))
+  // La confirmation et l'annulation doivent fonctionner même si le stockage est indisponible.
+  await page.evaluate(() => {
+    Storage.prototype.getItem = function () { throw new Error('Stockage indisponible') }
+  })
+  for (const escape of [true, false]) {
+    await button.click()
+    const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+    await expect(dialog).toBeVisible()
+    if (escape) await page.keyboard.press('Escape')
+    else await dialog.getByRole('button', { name: 'Annuler', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(button).toBeFocused()
+    await expect(page.getByRole('alert')).toHaveCount(0)
+  }
+  expect(downloads).toHaveLength(0)
+})
+
+test('export : clic extérieur, contenu et glissements sans fermeture accidentelle', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  const trigger = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+  const title = dialog.getByRole('heading')
+  await title.click()
+  await expect(dialog).toBeVisible()
+  const box = await dialog.boundingBox()
+  await page.mouse.click(box.x + 12, box.y + 12)
+  await expect(dialog).toBeVisible()
+  const heading = await title.boundingBox()
+  const inside = { x: heading.x + heading.width / 2, y: heading.y + heading.height / 2 }
+  for (const [start, end] of [[inside, { x: 5, y: 5 }], [{ x: 5, y: 5 }, inside]]) {
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(end.x, end.y)
+    await page.mouse.up()
+    await expect(dialog).toBeVisible()
+  }
+  await page.mouse.click(5, 5)
+  await expect(dialog).not.toBeVisible()
+  await expect(trigger).toBeFocused()
+  await expect(page).toHaveURL(/\/profil$/)
+})
+
+test.describe('export tactile', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } })
+  test('un toucher sur le fond ferme la fenêtre et rend le focus', async ({ page, context }) => {
+    await mockApi(context)
+    await page.goto('/profil')
+    const trigger = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+    await trigger.tap()
+    const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+    await expect(dialog).toBeVisible()
+    await page.touchscreen.tap(5, 5)
+    await expect(dialog).not.toBeVisible()
+    await expect(trigger).toBeFocused()
+  })
+})
+
+test('profil : erreur de lecture pendant l’export puis nouvelle tentative', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  await expect(page.getByRole('button', { name: 'Exporter mes données', exact: true })).toBeVisible()
+  await page.evaluate(() => {
+    const original = Storage.prototype.getItem
+    Storage.prototype.getItem = function (key) {
+      Storage.prototype.getItem = original
+      throw new Error(`Lecture indisponible : ${key}`)
+    }
+    localStorage.setItem('export-error-test', 'test')
+  })
+  const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await button.click()
+  const confirm = page.getByRole('dialog', { name: 'Exporter mes données ?' }).getByRole('button', { name: 'Exporter', exact: true })
+  await confirm.click()
+  await expect(page.getByRole('alert')).toContainText('Impossible d’exporter vos données')
+  await expect(confirm).toBeEnabled()
+  const download = page.waitForEvent('download')
+  await confirm.click()
+  await download
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('profil : la fenêtre reste ouverte pendant l’enregistrement Android', async ({ page, context }) => {
+  await mockApi(context)
+  await page.addInitScript(() => {
+    window.Capacitor = {
+      PluginHeaders: [{ name: 'GinkuDataExport', methods: [{ name: 'save', rtype: 'promise' }] }],
+      nativePromise: () => new Promise((resolve) => { window.finishTestExport = resolve }),
+    }
+  })
+  await page.goto('/profil')
+  await page.getByRole('button', { name: 'Exporter mes données', exact: true }).click()
+  // Basculer uniquement l'export vers le pont simulé, après le démarrage Web.
+  await page.evaluate(() => { window.androidBridge = {} })
+  const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+  await dialog.getByRole('button', { name: 'Exporter', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: 'Annuler', exact: true })).toBeDisabled()
+  await expect(dialog.getByRole('button', { name: 'Export en cours…', exact: true })).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  await page.mouse.click(5, 5)
+  await expect(dialog).toBeVisible()
+  await expect.poll(() => page.evaluate(() => typeof window.finishTestExport)).toBe('function')
+  await page.evaluate(() => window.finishTestExport({ cancelled: false }))
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Votre sauvegarde JSON a été enregistrée.' })).toBeVisible()
+})
+
+test('export Android : préférences natives, enregistrement, annulation et erreur', async ({ page }) => {
+  // Isoler le service de l'application pour simuler uniquement le pont Capacitor.
+  await page.route('**/export-test-blank', (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="fr"><title>Export</title></html>' }))
+  await page.goto('/export-test-blank')
+  const result = await page.evaluate(async () => {
+    window.androidBridge = {}
+    let outcome = 'saved'
+    let exported
+    window.Capacitor = {
+      PluginHeaders: [
+        { name: 'Preferences', methods: ['keys', 'get'].map((name) => ({ name, rtype: 'promise' })) },
+        { name: 'GinkuDataExport', methods: [{ name: 'save', rtype: 'promise' }] },
+      ],
+      nativePromise: async (plugin, method, options) => {
+        if (plugin === 'Preferences') {
+          return method === 'keys' ? { keys: ['ginku-theme'] } : { value: 'dark' }
+        }
+        exported = options
+        if (outcome === 'failed') throw new Error('Écriture impossible')
+        return { cancelled: outcome === 'cancelled' }
+      },
+    }
+    localStorage.setItem('ginku-profile-name', 'Camille')
+    localStorage.setItem('ginku-theme', 'light')
+    const { exportUserData } = await import('/src/services/dataExport.js')
+    const saved = await exportUserData()
+    outcome = 'cancelled'
+    const cancelled = await exportUserData()
+    outcome = 'failed'
+    let failed = false
+    try { await exportUserData() } catch { failed = true }
+    return { saved, cancelled, failed, exported }
+  })
+  expect(result).toMatchObject({ saved: 'saved', cancelled: 'cancelled', failed: true })
+  expect(result.exported.filename).toMatch(/^ginku-sauvegarde-[0-9TZ-]+\.json$/)
+  expect(JSON.parse(result.exported.data)).toMatchObject({
+    platform: 'android',
+    storage: {
+      localStorage: { 'ginku-profile-name': 'Camille', 'ginku-theme': 'light' },
+      preferences: { 'ginku-theme': 'dark' },
+    },
+  })
+})
 
 async function mockApi(context, delay = 0) {
   await context.route('**/api/**', async (route) => {
@@ -337,4 +535,21 @@ test('profil : cartes légales accessibles au clavier et liens retirés du foote
     await page.getByRole('button', { name: 'Retour à la page précédente' }).click()
     await expect(page).toHaveURL(/\/profil$/)
   }
+})
+
+test('recherche : suggestions accessibles par Tabulation et fermeture avec Échap', async ({ page, context }) => {
+  await context.route('**/api/**', (route) => route.fulfill({ json: new URL(route.request().url()).pathname.endsWith('/getLingnes') ? [line] : [] }))
+  await page.goto('/')
+  const search = page.getByRole('searchbox', { name: 'Rechercher une ligne, un arrêt ou un véhicule' })
+  await expect(search).toBeEnabled()
+  await search.fill('T1')
+  const result = page.getByRole('link', { name: 'Aller à Ligne T1', exact: true })
+  await expect(result).toBeVisible()
+  await search.press('Tab')
+  await expect(result).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(search).toBeFocused()
+  await expect(result).not.toBeVisible()
+  await page.getByRole('link', { name: 'Ouvrir mon profil' }).click()
+  await expect(page.getByRole('link', { name: 'Contacter le support' })).toHaveAttribute('href', 'mailto:ginku@diogo-andrade.org')
 })

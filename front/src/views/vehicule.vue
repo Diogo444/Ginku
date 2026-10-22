@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <main class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6" aria-live="polite">
+    <div class="flex-grow px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6" aria-live="polite">
       <EmptyState
         v-if="!isValidNumber"
         icon="error_outline"
@@ -371,6 +371,6 @@ onBeforeUnmount(() => {
           Retour à l'accueil
         </router-link>
       </EmptyState>
-    </main>
+    </div>
   </div>
 </template>

@@ -6,6 +6,9 @@ let initializationPromise = null
 let persistenceQueue = Promise.resolve()
 let hasSavedTheme = false
 
+// L'import attend les écritures antérieures avant de remplacer les préférences.
+export const waitForThemePersistence = () => persistenceQueue
+
 // Vérifie la préférence système
 const getSystemPreference = () => {
   if (typeof window !== 'undefined' && window.matchMedia) {

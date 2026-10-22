@@ -2,6 +2,8 @@
 import BackButton from '@/components/BackButton.vue'
 import ProfileIdentity from '@/components/ProfileIdentity.vue'
 import ContrastSetting from '@/components/ContrastSetting.vue'
+import DataExport from '@/components/DataExport.vue'
+import DataImport from '@/components/DataImport.vue'
 import { isDark, setTheme } from '@/stores/theme'
 
 defineOptions({ name: 'ProfilPage' })
@@ -50,6 +52,12 @@ const legalLinks = [
         </div>
 
         <ContrastSetting />
+      </section>
+
+      <section aria-labelledby="data-title" class="space-y-3">
+        <h2 id="data-title" class="text-base font-semibold text-gray-900 dark:text-white">Vos données</h2>
+        <DataExport />
+        <DataImport />
       </section>
 
       <section aria-labelledby="support-title" class="space-y-3">

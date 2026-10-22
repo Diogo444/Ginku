@@ -185,3 +185,16 @@ une copie séparée sous `org.diogoandrade.ginku.exporttest`, avec des données 
 La copie et les fichiers d’essai ont été retirés ensuite ; l’application habituelle
 et ses données ont été conservées. Les fournisseurs de documents cloud, une erreur
 d’écriture réelle et un parcours TalkBack complet n’ont pas été testés sur appareil.
+
+### Ajout de la fenêtre explicative — 22 octobre 2026
+
+Cinq tests ciblés passent : export confirmé au clavier, annulation sans lecture
+ni téléchargement, erreur puis nouvelle tentative, maintien de la fenêtre pendant
+l’enregistrement Android et pont natif simulé. Le lint ciblé, le build Web, la
+synchronisation Capacitor et le build Android passent également.
+
+Sur le même téléphone, la fenêtre et ses boutons ont été vérifiés visuellement
+et dans l’arbre d’accessibilité Android. « Annuler » revient au profil ; après une
+nouvelle ouverture, « Exporter » ouvre bien le sélecteur système. Son annulation
+ferme la fenêtre et affiche le résultat sous la carte. Aucun crash natif n’a été
+détecté. La copie de test a été retirée sans modifier l’application habituelle.

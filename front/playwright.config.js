@@ -4,7 +4,7 @@ import process from 'node:process'
 export default defineConfig({
   testDir: './tests',
   outputDir: './test-results/pwa',
-  testMatch: '**/pwa.spec.js',
+  testMatch: '**/pwa*.spec.js',
   workers: 1,
   timeout: 30000,
   use: {

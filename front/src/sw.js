@@ -1,6 +1,14 @@
 import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
 
+// Ne pas attendre la fermeture de tous les onglets pour activer une mise à jour.
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting())
+})
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
 // Seule l'interface est disponible hors ligne. Les horaires restent toujours réseau.

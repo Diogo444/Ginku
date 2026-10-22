@@ -1,4 +1,99 @@
 import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+
+test('profil : export JSON complet au clavier, sans modifier les données', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  await expect(page.getByRole('button', { name: 'Exporter mes données', exact: true })).toBeVisible()
+  const stored = JSON.parse(await page.evaluate(() => {
+    localStorage.setItem('CapacitorStorage.export-test-preference', '{"enabled":true}')
+    localStorage.setItem('ginku-profile-name', 'Élodie 🚋')
+    localStorage.setItem('export-test-empty', '')
+    localStorage.setItem('__proto__', 'valeur à conserver')
+    localStorage.setItem('export-test-raw', '{JSON invalide')
+    return JSON.stringify(Object.fromEntries(Object.keys(localStorage).map((key) => [key, localStorage.getItem(key)])))
+  }))
+  const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await button.focus()
+  const downloadEvent = page.waitForEvent('download')
+  await page.keyboard.press('Enter')
+  const download = await downloadEvent
+  expect(download.suggestedFilename()).toMatch(/^ginku-sauvegarde-.*\.json$/)
+  const backup = JSON.parse(await readFile(await download.path(), 'utf8'))
+  expect(backup).toMatchObject({ app: 'Ginku', version: 1, platform: 'web' })
+  expect(Number.isNaN(Date.parse(backup.exportedAt))).toBe(false)
+  expect(backup.storage.localStorage).toEqual(stored)
+  expect(backup.storage.preferences['export-test-preference']).toBe('{"enabled":true}')
+  expect(JSON.parse(await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.keys(localStorage).map((key) => [key, localStorage.getItem(key)])))))).toEqual(stored)
+  await expect(page.getByRole('status').filter({ hasText: 'Le téléchargement de votre sauvegarde JSON a été lancé.' })).toBeVisible()
+  await expect(button).toBeEnabled()
+})
+
+test('profil : erreur de lecture pendant l’export puis nouvelle tentative', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  await expect(page.getByRole('button', { name: 'Exporter mes données', exact: true })).toBeVisible()
+  await page.evaluate(() => {
+    const original = Storage.prototype.getItem
+    Storage.prototype.getItem = function (key) {
+      Storage.prototype.getItem = original
+      throw new Error(`Lecture indisponible : ${key}`)
+    }
+    localStorage.setItem('export-error-test', 'test')
+  })
+  const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await button.click()
+  await expect(page.getByRole('alert')).toContainText('Impossible d’exporter vos données')
+  await expect(button).toBeEnabled()
+  const download = page.waitForEvent('download')
+  await button.click()
+  await download
+  await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('export Android : préférences natives, enregistrement, annulation et erreur', async ({ page }) => {
+  // Isoler le service de l'application pour simuler uniquement le pont Capacitor.
+  await page.route('**/export-test-blank', (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="fr"><title>Export</title></html>' }))
+  await page.goto('/export-test-blank')
+  const result = await page.evaluate(async () => {
+    window.androidBridge = {}
+    let outcome = 'saved'
+    let exported
+    window.Capacitor = {
+      PluginHeaders: [
+        { name: 'Preferences', methods: ['keys', 'get'].map((name) => ({ name, rtype: 'promise' })) },
+        { name: 'GinkuDataExport', methods: [{ name: 'save', rtype: 'promise' }] },
+      ],
+      nativePromise: async (plugin, method, options) => {
+        if (plugin === 'Preferences') {
+          return method === 'keys' ? { keys: ['ginku-theme'] } : { value: 'dark' }
+        }
+        exported = options
+        if (outcome === 'failed') throw new Error('Écriture impossible')
+        return { cancelled: outcome === 'cancelled' }
+      },
+    }
+    localStorage.setItem('ginku-profile-name', 'Camille')
+    localStorage.setItem('ginku-theme', 'light')
+    const { exportUserData } = await import('/src/services/dataExport.js')
+    const saved = await exportUserData()
+    outcome = 'cancelled'
+    const cancelled = await exportUserData()
+    outcome = 'failed'
+    let failed = false
+    try { await exportUserData() } catch { failed = true }
+    return { saved, cancelled, failed, exported }
+  })
+  expect(result).toMatchObject({ saved: 'saved', cancelled: 'cancelled', failed: true })
+  expect(result.exported.filename).toMatch(/^ginku-sauvegarde-[0-9TZ-]+\.json$/)
+  expect(JSON.parse(result.exported.data)).toMatchObject({
+    platform: 'android',
+    storage: {
+      localStorage: { 'ginku-profile-name': 'Camille', 'ginku-theme': 'light' },
+      preferences: { 'ginku-theme': 'dark' },
+    },
+  })
+})
 
 async function mockApi(context, delay = 0) {
   await context.route('**/api/**', async (route) => {

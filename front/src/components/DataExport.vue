@@ -1,6 +1,7 @@
 <script setup>
 import { nextTick, onBeforeUnmount, ref } from 'vue'
 import { exportUserData } from '@/services/dataExport'
+import { createDialogBackdropHandlers } from '@/utils/dialogBackdrop'
 
 const exporting = ref(false)
 const trigger = ref(null)
@@ -9,6 +10,7 @@ const confirmButton = ref(null)
 const isOpen = ref(false)
 const status = ref('')
 const error = ref('')
+const backdrop = createDialogBackdropHandlers(cancelExport)
 
 async function openDialog() {
   if (exporting.value || isOpen.value) return
@@ -89,7 +91,8 @@ onBeforeUnmount(() => dialog.value?.close())
     <Teleport to="body">
       <dialog ref="dialog" aria-labelledby="export-dialog-title" aria-describedby="export-dialog-description"
         class="data-export m-auto w-[calc(100%-2rem)] max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-gray-100 p-5 shadow-xl backdrop:bg-black/60"
-        @close="onClose" @cancel.prevent="cancelExport" @keydown="keepFocusInside">
+        @close="onClose" @cancel.prevent="cancelExport" @keydown="keepFocusInside"
+        @pointerdown="backdrop.onPointerDown" @pointerup="backdrop.onPointerUp" @pointercancel="backdrop.onPointerCancel" @click="backdrop.onClick">
         <div v-if="isOpen" class="space-y-4" :aria-busy="exporting">
           <h2 id="export-dialog-title" class="text-xl font-semibold">Exporter mes données ?</h2>
           <p id="export-dialog-description" class="text-sm">Ce fichier contiendra vos favoris, votre nom, vos réglages et les autres données enregistrées dans Ginku.</p>

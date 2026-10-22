@@ -62,6 +62,48 @@ test('profil : annuler la fenêtre d’export ne lit pas les données et ne tél
   expect(downloads).toHaveLength(0)
 })
 
+test('export : clic extérieur, contenu et glissements sans fermeture accidentelle', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  const trigger = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await trigger.click()
+  const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+  const title = dialog.getByRole('heading')
+  await title.click()
+  await expect(dialog).toBeVisible()
+  const box = await dialog.boundingBox()
+  await page.mouse.click(box.x + 12, box.y + 12)
+  await expect(dialog).toBeVisible()
+  const heading = await title.boundingBox()
+  const inside = { x: heading.x + heading.width / 2, y: heading.y + heading.height / 2 }
+  for (const [start, end] of [[inside, { x: 5, y: 5 }], [{ x: 5, y: 5 }, inside]]) {
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(end.x, end.y)
+    await page.mouse.up()
+    await expect(dialog).toBeVisible()
+  }
+  await page.mouse.click(5, 5)
+  await expect(dialog).not.toBeVisible()
+  await expect(trigger).toBeFocused()
+  await expect(page).toHaveURL(/\/profil$/)
+})
+
+test.describe('export tactile', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } })
+  test('un toucher sur le fond ferme la fenêtre et rend le focus', async ({ page, context }) => {
+    await mockApi(context)
+    await page.goto('/profil')
+    const trigger = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+    await trigger.tap()
+    const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+    await expect(dialog).toBeVisible()
+    await page.touchscreen.tap(5, 5)
+    await expect(dialog).not.toBeVisible()
+    await expect(trigger).toBeFocused()
+  })
+})
+
 test('profil : erreur de lecture pendant l’export puis nouvelle tentative', async ({ page, context }) => {
   await mockApi(context)
   await page.goto('/profil')
@@ -103,6 +145,8 @@ test('profil : la fenêtre reste ouverte pendant l’enregistrement Android', as
   await expect(dialog.getByRole('button', { name: 'Annuler', exact: true })).toBeDisabled()
   await expect(dialog.getByRole('button', { name: 'Export en cours…', exact: true })).toBeDisabled()
   await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  await page.mouse.click(5, 5)
   await expect(dialog).toBeVisible()
   await expect.poll(() => page.evaluate(() => typeof window.finishTestExport)).toBe('function')
   await page.evaluate(() => window.finishTestExport({ cancelled: false }))

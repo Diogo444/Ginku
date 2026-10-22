@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, ref } from 'vue'
 import { MAX_BACKUP_BYTES, parseDataBackup, restoreDataBackup, selectNativeBackup, usesNativeImport } from '@/services/dataImport'
 import { contrastPending } from '@/stores/accessibility'
+import { createDialogBackdropHandlers } from '@/utils/dialogBackdrop'
 
 const trigger = ref(null)
 const fileInput = ref(null)
@@ -12,6 +13,7 @@ const importing = ref(false)
 const imported = ref(false)
 const status = ref('')
 const error = ref('')
+const backdrop = createDialogBackdropHandlers(dismissDialog)
 
 async function preview(backup) {
   if (!backup) {
@@ -55,6 +57,13 @@ async function readFile(event) {
 function closeDialog() {
   if (importing.value || imported.value) return
   dialog.value.close()
+}
+
+function dismissDialog() {
+  if (importing.value) return
+  // Après restauration, fermer revient à « Continuer » pour réinitialiser les stores.
+  if (imported.value) reloadApp()
+  else closeDialog()
 }
 
 function onClose() {
@@ -119,7 +128,8 @@ onBeforeUnmount(() => dialog.value?.close())
     <Teleport to="body">
       <dialog ref="dialog" aria-labelledby="import-title" aria-describedby="import-description"
         class="data-import m-auto w-[calc(100%-2rem)] max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-gray-100 p-5 shadow-xl backdrop:bg-black/60"
-        @close="onClose" @cancel="(importing || imported) && $event.preventDefault()" @keydown="keepFocusInside">
+        @close="onClose" @cancel.prevent="dismissDialog" @keydown="keepFocusInside"
+        @pointerdown="backdrop.onPointerDown" @pointerup="backdrop.onPointerUp" @pointercancel="backdrop.onPointerCancel" @click="backdrop.onClick">
         <div v-if="selected" class="space-y-4" :aria-busy="importing">
           <h2 id="import-title" class="text-xl font-semibold">{{ imported ? 'Données importées' : 'Importer cette sauvegarde ?' }}</h2>
           <p id="import-description" class="text-sm">{{ imported ? 'Votre sauvegarde a bien été restaurée.' : 'Retrouvez les favoris, le nom et les réglages enregistrés dans cette sauvegarde. Ils remplaceront ceux déjà présents dans Ginku.' }}</p>

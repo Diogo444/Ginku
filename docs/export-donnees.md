@@ -14,6 +14,7 @@ voir [l’import des données](import-donnees.md).
    autres données enregistrées dans Ginku. Elle rappelle que le fichier permettra
    de retrouver ces données plus tard grâce à « Importer mes données ».
 4. Choisir « Exporter » pour créer le fichier, ou « Annuler » pour revenir au profil.
+   Cliquer ou toucher à côté de la fenêtre permet aussi d’annuler.
 5. Sur le Web, récupérer le fichier téléchargé par le navigateur.
 6. Sur Android, choisir un emplacement dans le sélecteur système puis enregistrer.
 
@@ -138,8 +139,11 @@ le test sur WebView Android a montré qu’un `aria-labelledby` pointant vers le
 interne ne remontait pas correctement son nom. `aria-describedby` fournit la
 description et `aria-busy` indique l’opération en cours. La fenêtre de confirmation
 est un dialogue HTML natif : le focus arrive sur « Annuler », Tab/Maj+Tab restent
-dans la fenêtre et Échap permet d’annuler avant le début de l’export. Pendant
-l’export, les boutons sont désactivés et Échap ne ferme pas la fenêtre.
+dans la fenêtre et Échap permet d’annuler avant le début de l’export. Un clic ou
+un toucher sur le fond permet aussi d’annuler. Un geste commencé dans le contenu
+et terminé dehors, ou l’inverse, ne ferme pas la fenêtre ; son padding et sa barre
+de défilement restent utilisables. Pendant l’export, les boutons sont désactivés
+et ni Échap ni le fond ne ferment la fenêtre.
 À la fermeture, le focus revient à la carte ; après une erreur, il revient sur
 « Exporter » pour réessayer. Les messages sont annoncés
 par `role="status"`, les erreurs par `role="alert"`. Aucune animation n’est ajoutée.
@@ -198,3 +202,17 @@ et dans l’arbre d’accessibilité Android. « Annuler » revient au profil ; 
 nouvelle ouverture, « Exporter » ouvre bien le sélecteur système. Son annulation
 ferme la fenêtre et affiche le résultat sous la carte. Aucun crash natif n’a été
 détecté. La copie de test a été retirée sans modifier l’application habituelle.
+
+### Fermeture par le fond — 22 octobre 2026
+
+La suite de développement de 31 tests passe, dont les clics extérieurs, les gestes
+tactiles, les glissements entre contenu et fond, le retour du focus et le blocage
+pendant les écritures. Après un ajustement spécifique au focus WebView, les six
+tests ciblés de fermeture ont été rejoués avec succès. Lint ciblé, build Web,
+synchronisation Capacitor et build Android : réussis.
+
+Sur le HONOR connecté via ADB, un toucher extérieur ferme la fenêtre d’export,
+rend le focus à la carte et conserve les données. La fermeture attend le clic
+qui suit les événements de pointeur : fermer dès le relâchement tactile permettait
+aux événements souris de compatibilité de reprendre le focus sur Android.
+Le comportement commun est implémenté dans `front/src/utils/dialogBackdrop.js`.

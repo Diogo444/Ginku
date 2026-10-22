@@ -61,13 +61,78 @@ test('import : sauvegarde Android restaurée sur Web et prise en compte après r
     empty: localStorage.getItem('import-empty'), push: localStorage.getItem('ginku-web-push'),
     theme: localStorage.getItem('CapacitorStorage.ginku-theme'),
   }))).toEqual({ name: 'Camille 🚋', keep: 'conserver', empty: '', push: '{"id":"courant","token":"test"}', theme: 'dark' })
-  await page.getByRole('button', { name: 'Continuer', exact: true }).click()
+  // Après le succès, le fond ferme la fenêtre en appliquant aussi le rechargement.
+  await page.mouse.click(5, 5)
   await expect(page.getByText('Camille 🚋', { exact: true })).toBeVisible()
   await expect(page.locator('html')).toHaveClass(/dark/)
   await expect(page.locator('html')).toHaveClass(/high-contrast/)
   await page.goto('/')
   await expect(page.getByText('Gare Viotte', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: /Régler les notifications de T1/ })).toContainText('Délais : 8 / 3 min')
+})
+
+test('import : clic dans la fenêtre conservé, clic extérieur annule sans écriture', async ({ page, context }) => {
+  await openProfile(page, context)
+  await selectBackup(page)
+  const dialog = page.getByRole('dialog', { name: 'Importer cette sauvegarde ?' })
+  await dialog.getByRole('heading').click()
+  await expect(dialog).toBeVisible()
+  await page.mouse.click(5, 5)
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Importer mes données', exact: true })).toBeFocused()
+  expect(await page.evaluate(() => localStorage.getItem('ginku-profile-name'))).toBeNull()
+})
+
+test.describe('import tactile', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } })
+  test('un toucher sur le fond annule avant toute écriture', async ({ page, context }) => {
+    await openProfile(page, context)
+    await selectBackup(page)
+    const dialog = page.getByRole('dialog', { name: 'Importer cette sauvegarde ?' })
+    await expect(dialog).toBeVisible()
+    await page.touchscreen.tap(5, 5)
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByRole('button', { name: 'Importer mes données', exact: true })).toBeFocused()
+    expect(await page.evaluate(() => localStorage.getItem('ginku-profile-name'))).toBeNull()
+  })
+})
+
+test('import : fond et Échap bloqués pendant les écritures', async ({ page, context }) => {
+  await context.route('**/api/**', (route) => route.fulfill({ json: [] }))
+  await context.route('https://api.github.com/**', (route) => route.fulfill({ json: { tag_name: 'v0.0.0', assets: [] } }))
+  await page.addInitScript((fixture) => {
+    window.androidBridge = {}
+    window.Capacitor = {
+      PluginHeaders: [
+        { name: 'Preferences', methods: ['get', 'set', 'remove'].map((name) => ({ name, rtype: 'promise' })) },
+        { name: 'GinkuDataImport', methods: [{ name: 'open', rtype: 'promise' }] },
+        { name: 'GinkuStopWatcher', methods: [{ name: 'sync', rtype: 'promise' }] },
+      ],
+      nativePromise: async (plugin, method, options) => {
+        if (plugin === 'GinkuDataImport') return { cancelled: false, data: JSON.stringify(fixture) }
+        if (plugin !== 'Preferences') return {}
+        const key = `native-test-${options.key}`
+        if (method === 'get') return { value: localStorage.getItem(key) }
+        if (method === 'remove') localStorage.removeItem(key)
+        if (method === 'set') {
+          if (options.key === 'ginku-theme') await new Promise((resolve) => { window.finishTestImport = resolve })
+          localStorage.setItem(key, options.value)
+        }
+        return {}
+      },
+    }
+  }, backup('web'))
+  await page.goto('/profil')
+  await page.getByRole('button', { name: 'Importer mes données', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Importer cette sauvegarde ?' })
+  await dialog.getByRole('button', { name: 'Importer', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: 'Annuler', exact: true })).toBeDisabled()
+  await page.mouse.click(5, 5)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  await expect.poll(() => page.evaluate(() => typeof window.finishTestImport)).toBe('function')
+  await page.evaluate(() => window.finishTestImport())
+  await expect(page.getByRole('dialog', { name: 'Données importées' })).toBeVisible()
 })
 
 test('import : échec d’écriture, restauration des anciennes valeurs puis nouvelle tentative', async ({ page, context }) => {

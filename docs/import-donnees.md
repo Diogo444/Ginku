@@ -10,6 +10,7 @@ jusqu’à **5 Mio**, et permet leur transfert entre Web et Android.
 2. Vérifier la date de sauvegarde dans la fenêtre de confirmation. Le texte explique
    que les favoris, le nom et les réglages sauvegardés remplacent ceux déjà présents.
 3. Choisir « Importer », ou « Annuler » pour conserver l’état actuel.
+   Cliquer ou toucher à côté de la fenêtre permet aussi d’annuler avant l’import.
 4. Après le succès, choisir « Continuer » : l’application se recharge pour appliquer les données
    dans le profil, les favoris, le thème et le contraste élevé.
 
@@ -72,12 +73,16 @@ interruption du processus ou de l’appareil pendant les écritures reste une li
 
 La carte est un bouton nommé explicitement, utilisable au clavier, avec focus visible
 et hauteur minimale de 44 px. Le dialogue HTML natif rend le reste de la page inerte.
-Le focus arrive sur « Annuler » ; Tab/Maj+Tab restent dans le dialogue. Échap annule
-avant la restauration et le focus revient à la carte.
+Le focus arrive sur « Annuler » ; Tab/Maj+Tab restent dans le dialogue. Échap, un
+clic ou un toucher sur le fond annulent avant la restauration et le focus revient
+à la carte. Un geste commencé dans le contenu et terminé dehors, ou l’inverse,
+ne ferme pas la fenêtre.
 
-Pendant les écritures, les boutons sont désactivés et Échap ne ferme pas le dialogue.
-Après le succès, seul le rechargement est proposé pour éviter de continuer à modifier
-des stores Vue qui contiennent encore l’ancien état. Les états importants utilisent
+Pendant les écritures, les boutons sont désactivés et ni Échap ni le fond ne ferment
+le dialogue. Après le succès, « Continuer », Échap ou un clic/toucher sur le fond
+ferment la fenêtre en rechargeant l’application pour appliquer les nouvelles données.
+Cela évite de continuer à modifier des stores Vue qui contiennent encore l’ancien
+état. Les états importants utilisent
 `role="status"`, les erreurs `role="alert"`. Aucune animation n’est ajoutée.
 
 ## Fichiers et vérification
@@ -89,6 +94,7 @@ des stores Vue qui contiennent encore l’ancien état. Les états importants ut
 | Sélection et lecture Android, limite de taille pendant la lecture | `front/android/app/src/main/java/org/diogoandrade/ginku/GinkuDataImportPlugin.java` |
 | Enregistrement du plugin | `front/android/app/src/main/java/org/diogoandrade/ginku/MainActivity.java` |
 | Tests navigateur et pont Android simulé | `front/tests/data-import.spec.js` |
+| Détection du fond, commune à l’import et à l’export | `front/src/utils/dialogBackdrop.js` |
 
 Depuis la racine :
 
@@ -130,3 +136,13 @@ vérifiés. Aucun crash natif n’a été détecté dans les journaux du process
 La copie et les fichiers d’essai ont été retirés ; l’application habituelle et ses
 données ont été conservées. Les fournisseurs cloud, une erreur d’écriture native
 réelle, un parcours TalkBack complet et iOS n’ont pas été testés sur appareil.
+
+### Fermeture par le fond — 22 octobre 2026
+
+Les tests souris et tactiles vérifient l’annulation avant écriture, le retour du
+focus à la carte, le blocage pendant la restauration et le rechargement après
+succès. Sur le HONOR connecté via ADB, le toucher extérieur a également été
+vérifié avant l’import et après sa réussite : annulation sans modification dans
+le premier cas, fermeture avec rechargement et application des données dans le
+second. Aucun crash natif n’a été détecté. La copie de test a été retirée et
+l’application habituelle a été conservée.

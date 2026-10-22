@@ -17,6 +17,13 @@ test('profil : export JSON complet au clavier, sans modifier les données', asyn
   await button.focus()
   const downloadEvent = page.waitForEvent('download')
   await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText('vos favoris, votre nom, vos réglages')
+  await expect(dialog.getByRole('button', { name: 'Annuler', exact: true })).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(dialog.getByRole('button', { name: 'Exporter', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
   const download = await downloadEvent
   expect(download.suggestedFilename()).toMatch(/^ginku-sauvegarde-.*\.json$/)
   const backup = JSON.parse(await readFile(await download.path(), 'utf8'))
@@ -27,6 +34,32 @@ test('profil : export JSON complet au clavier, sans modifier les données', asyn
   expect(JSON.parse(await page.evaluate(() => JSON.stringify(Object.fromEntries(Object.keys(localStorage).map((key) => [key, localStorage.getItem(key)])))))).toEqual(stored)
   await expect(page.getByRole('status').filter({ hasText: 'Le téléchargement de votre sauvegarde JSON a été lancé.' })).toBeVisible()
   await expect(button).toBeEnabled()
+  await expect(dialog).not.toBeVisible()
+  await expect(button).toBeFocused()
+})
+
+test('profil : annuler la fenêtre d’export ne lit pas les données et ne télécharge rien', async ({ page, context }) => {
+  await mockApi(context)
+  await page.goto('/profil')
+  const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
+  await expect(button).toBeVisible()
+  const downloads = []
+  page.on('download', (download) => downloads.push(download))
+  // La confirmation et l'annulation doivent fonctionner même si le stockage est indisponible.
+  await page.evaluate(() => {
+    Storage.prototype.getItem = function () { throw new Error('Stockage indisponible') }
+  })
+  for (const escape of [true, false]) {
+    await button.click()
+    const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+    await expect(dialog).toBeVisible()
+    if (escape) await page.keyboard.press('Escape')
+    else await dialog.getByRole('button', { name: 'Annuler', exact: true }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(button).toBeFocused()
+    await expect(page.getByRole('alert')).toHaveCount(0)
+  }
+  expect(downloads).toHaveLength(0)
 })
 
 test('profil : erreur de lecture pendant l’export puis nouvelle tentative', async ({ page, context }) => {
@@ -43,12 +76,38 @@ test('profil : erreur de lecture pendant l’export puis nouvelle tentative', as
   })
   const button = page.getByRole('button', { name: 'Exporter mes données', exact: true })
   await button.click()
+  const confirm = page.getByRole('dialog', { name: 'Exporter mes données ?' }).getByRole('button', { name: 'Exporter', exact: true })
+  await confirm.click()
   await expect(page.getByRole('alert')).toContainText('Impossible d’exporter vos données')
-  await expect(button).toBeEnabled()
+  await expect(confirm).toBeEnabled()
   const download = page.waitForEvent('download')
-  await button.click()
+  await confirm.click()
   await download
   await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('profil : la fenêtre reste ouverte pendant l’enregistrement Android', async ({ page, context }) => {
+  await mockApi(context)
+  await page.addInitScript(() => {
+    window.Capacitor = {
+      PluginHeaders: [{ name: 'GinkuDataExport', methods: [{ name: 'save', rtype: 'promise' }] }],
+      nativePromise: () => new Promise((resolve) => { window.finishTestExport = resolve }),
+    }
+  })
+  await page.goto('/profil')
+  await page.getByRole('button', { name: 'Exporter mes données', exact: true }).click()
+  // Basculer uniquement l'export vers le pont simulé, après le démarrage Web.
+  await page.evaluate(() => { window.androidBridge = {} })
+  const dialog = page.getByRole('dialog', { name: 'Exporter mes données ?' })
+  await dialog.getByRole('button', { name: 'Exporter', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: 'Annuler', exact: true })).toBeDisabled()
+  await expect(dialog.getByRole('button', { name: 'Export en cours…', exact: true })).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  await expect.poll(() => page.evaluate(() => typeof window.finishTestExport)).toBe('function')
+  await page.evaluate(() => window.finishTestExport({ cancelled: false }))
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Votre sauvegarde JSON a été enregistrée.' })).toBeVisible()
 })
 
 test('export Android : préférences natives, enregistrement, annulation et erreur', async ({ page }) => {

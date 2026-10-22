@@ -10,8 +10,17 @@ voir [l’import des données](import-donnees.md).
 
 1. Ouvrir le profil depuis le bouton « Ouvrir mon profil » de l’accueil.
 2. Dans « Vos données », choisir « Exporter mes données ».
-3. Sur le Web, récupérer le fichier téléchargé par le navigateur.
-4. Sur Android, choisir un emplacement dans le sélecteur système puis enregistrer.
+3. Lire la fenêtre qui présente le contenu du fichier : favoris, nom, réglages et
+   autres données enregistrées dans Ginku. Elle rappelle que le fichier permettra
+   de retrouver ces données plus tard grâce à « Importer mes données ».
+4. Choisir « Exporter » pour créer le fichier, ou « Annuler » pour revenir au profil.
+5. Sur le Web, récupérer le fichier téléchargé par le navigateur.
+6. Sur Android, choisir un emplacement dans le sélecteur système puis enregistrer.
+
+Aucune donnée n’est lue et aucun fichier n’est créé avant le choix « Exporter ».
+La fenêtre reste ouverte en cas d’erreur pour permettre une nouvelle tentative.
+Elle se ferme après le téléchargement Web, l’enregistrement ou l’annulation du
+sélecteur Android ; le résultat est alors annoncé sous la carte.
 
 Le nom proposé contient la date et l’heure UTC de création, par exemple
 `ginku-sauvegarde-2026-10-22T09-00-00-000Z.json`.
@@ -127,7 +136,12 @@ La carte est un bouton HTML utilisable au clavier, avec un focus visible et une
 hauteur minimale de 44 px. Son libellé accessible est explicite via `aria-label` :
 le test sur WebView Android a montré qu’un `aria-labelledby` pointant vers le texte
 interne ne remontait pas correctement son nom. `aria-describedby` fournit la
-description et `aria-busy` indique l’opération en cours. Les messages sont annoncés
+description et `aria-busy` indique l’opération en cours. La fenêtre de confirmation
+est un dialogue HTML natif : le focus arrive sur « Annuler », Tab/Maj+Tab restent
+dans la fenêtre et Échap permet d’annuler avant le début de l’export. Pendant
+l’export, les boutons sont désactivés et Échap ne ferme pas la fenêtre.
+À la fermeture, le focus revient à la carte ; après une erreur, il revient sur
+« Exporter » pour réessayer. Les messages sont annoncés
 par `role="status"`, les erreurs par `role="alert"`. Aucune animation n’est ajoutée.
 
 ## Vérifications réalisées — 22 octobre 2026
